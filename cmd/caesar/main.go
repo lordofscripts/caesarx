@@ -1,0 +1,239 @@
+/* -----------------------------------------------------------------
+ *					L o r d  O f   S c r i p t s (tm)
+ *				  Copyright (C)2025 Dídimo Grimaldo T.
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ * Extended Caesar Cipher command-line application. It supports the
+ * following ciphers: Caesar, Didimus, Fibonacci, Bellaso & Vigenère.
+ *-----------------------------------------------------------------*/
+package main
+
+import (
+	"flag"
+	"fmt"
+	z "lordofscripts/caesarx"
+	"lordofscripts/caesarx/app"
+	"lordofscripts/caesarx/ciphers"
+	"lordofscripts/caesarx/ciphers/affine"
+	"lordofscripts/caesarx/ciphers/commands"
+	"lordofscripts/caesarx/cmd"
+	"lordofscripts/caesarx/cmn"
+)
+
+/* ----------------------------------------------------------------
+ *							G l o b a l s
+ *-----------------------------------------------------------------*/
+const (
+	// CLI application name and its alter-egos
+	APP_NAME      = "caesarx"
+	APP_NAME_ALT1 = "bellaso"
+	APP_NAME_ALT2 = "vigenere"
+	APP_NAME_ALT3 = "didimus"
+
+	VariantCaesar CaesarVariant = iota
+	VariantDidimus
+	VariantFibonacci
+	VariantBellaso
+	VariantVigenere
+	VariantAffine
+)
+
+type CaesarVariant uint8
+
+/* ----------------------------------------------------------------
+ *				M o d u l e   I n i t i a l i z a t i o n
+ *-----------------------------------------------------------------*/
+func init() {
+	//fmt.Println("GoCaesarPlus v1.0 (C)2025 Didimo Grimaldo \u2720 " + caesarx.RuneString("LordOfScripts"))
+	z.Copyright(z.CO1, true)
+	z.BuyMeCoffee()
+	fmt.Println("\t=========================================")
+}
+
+/* ----------------------------------------------------------------
+ *							F u n c t i o n s
+ *-----------------------------------------------------------------*/
+
+func Demo(copts *cmd.CommonOptions, aopts *CaesarxOptions) (int, error) {
+	var passed bool // the demos return whether the Round-trip Encode/Decode was good
+	switch aopts.VariantID {
+	case VariantCaesar: // -variant caesar -alpha <ALPHABET_NAME> -key <LETTER>
+		passed = commands.DemoCaesarCommand(copts.Alphabet(), copts.Numbers(), copts.DefaultPhrase)
+
+	case VariantDidimus: // -variant didimus -alpha <ALPHABET_NAME> -key <LETTER> -offset <NUMBER>
+		passed = commands.DemoDidimusCommand(copts.Alphabet(), copts.Numbers(), copts.DefaultPhrase)
+
+	case VariantFibonacci: // -variant fibonacci -alpha <ALPHABET_NAME> -key <LETTER>
+		passed = commands.DemoFibonacciCommand(copts.Alphabet(), copts.Numbers(), copts.DefaultPhrase)
+
+	case VariantBellaso: // -variant bellaso -alpha <ALPHABET_NAME> -secret <SECRET_WORD>
+		passed = commands.DemoBellasoCommand(copts.Alphabet(), copts.Numbers(), copts.DefaultPhrase)
+
+	case VariantVigenere: // -variant vigenere -alpha <ALPHABET_NAME> -secret <SECRET_WORD>
+		passed = commands.DemoVigenereCommand(copts.Alphabet(), copts.Numbers(), copts.DefaultPhrase)
+
+	case VariantAffine:
+		passed = affine.DemoAffine()
+	}
+
+	var err error = nil
+	var exitCode int = z.EXIT_CODE_SUCCESS
+	if !passed {
+		err = fmt.Errorf("round-trip encryption/decryption FAILED")
+		exitCode = z.ERR_DEMO_ERROR
+	}
+
+	return exitCode, err
+}
+
+func DoCrypto(co *cmd.CommonOptions, ao *CaesarxOptions) (int, error) {
+	// These commands implement IPipe, ICipherCommand & ICommand
+	var cmdCipher ciphers.ICipherCommand
+	switch ao.VariantID {
+	case VariantCaesar:
+		// single key, space not included
+		cmdCipher = commands.NewCaesarCommand(co.Alphabet(), ao.MainKey.Value)
+
+	case VariantDidimus:
+		// double alternating key, space, numbers and number-related symbols included
+		cmdCipher = commands.NewDidimusCommand(co.Alphabet(), ao.MainKey.Value, uint8(ao.Offset))
+
+	case VariantFibonacci:
+		// key plus 10-term Fibonacci offsets, space, numbers and number-related symbols included
+		cmdCipher = commands.NewFibonacciCommand(co.Alphabet(), ao.MainKey.Value)
+
+	case VariantBellaso:
+		// multi-letter secret, space, numbers and number-related symbols included
+		cmdCipher = commands.NewBellasoCommand(co.Alphabet(), ao.Secret)
+
+	case VariantVigenere:
+		// multi-letter secret & autokey, space, numbers and number-related symbols included
+		cmdCipher = commands.NewVigenereCommand(co.Alphabet(), ao.Secret)
+
+	case VariantAffine:
+
+	default:
+		return z.ERR_PARAMETER, fmt.Errorf("unknown algorithm") // @audit other error code please
+	}
+
+	// Check if user wants to enhance cipher with Slave alphabet
+	if _, wants := co.WantsSlave(); wants {
+		cmdCipher.WithChain(co.Numbers())
+	}
+
+	// If NGram formatting wanted, create it as Pipe command, only for Encoding
+	if ao.NGramSize > 0 && !ao.IsDecode {
+		ngramCmd := cmn.NewNgramFormatter(uint8(ao.NGramSize), '·')
+		cmdCipher.WithPipe(ngramCmd) // @audit add Tee Command to output regular and NGram
+	}
+
+	// Do the (de)cipher operation
+	var plain, cipher, operation string
+	var err error
+	if ao.IsDecode {
+		operation = "Decrypt"
+		cipher = flag.Arg(0)
+		plain, err = cmdCipher.Decode(cipher)
+	} else {
+		operation = "Encrypt"
+		plain = flag.Arg(0)
+		cipher, err = cmdCipher.Encode(plain)
+	}
+
+	if err != nil {
+		return z.ERR_INTERNAL, err
+	} else {
+		// common output
+		numbersName, _ := co.WantsSlave()
+		fmt.Println("Algorithm: ", cmdCipher.String())
+		fmt.Println("Info     : ", ao.VariantVersion)
+		fmt.Println("Operation: ", operation)
+		fmt.Printf("Alphabet : %s (Master/Primary)\n", co.Alphabet().Name)
+		fmt.Printf("Alphabet : %s (Slave/Secondary)\n", numbersName)
+		// assorted parameters
+		switch ao.ItNeeds {
+		case NeedCompositeKey:
+			fmt.Printf("Offset   : %d \n", ao.Offset)
+			fallthrough // composite needs -key as well
+
+		case NeedKey:
+			fmt.Printf("Key      : %c (shift=%d)\n", ao.MainKey.Value, co.Alphabet().PositionOf(ao.MainKey.Value))
+
+		case NeedsSecret:
+			fmt.Printf("Secret   :  %s\n", ao.Secret)
+
+		}
+		// input/output relations
+		if ao.IsDecode {
+			fmt.Println("Encoded  : ", cipher)
+			fmt.Println("Decoded  : ", plain)
+		} else {
+			fmt.Println("Plain    : ", plain)
+			fmt.Println("Encoded  : ", cipher)
+		}
+		fmt.Println()
+	}
+
+	return z.EXIT_CODE_SUCCESS, nil
+}
+
+func Help(co *cmd.CommonOptions, ao *CaesarxOptions) {
+	fmt.Println("Usage:")
+	co.ShowUsage(APP_NAME)
+	ao.ShowUsage(APP_NAME)
+
+	flag.Usage()
+}
+
+/* ----------------------------------------------------------------
+ *						M A I N | E X A M P L E
+ *-----------------------------------------------------------------*/
+func main() {
+	var exitCode int = -1
+	var err error
+	// -------	CLI FLAGS ------
+	copts := cmd.NewCommonOptions() // -help|-demo|-alpha ALPHA|-num N
+	aopts := NewCaesarxOptions(copts)
+
+	// -------	CLI VALIDATION ------
+	exitCode, err = copts.Validate()
+	if err != nil {
+		app.DieWithError(err, exitCode)
+	}
+
+	exitCode, err = aopts.Validate()
+	if err != nil {
+		app.DieWithError(err, exitCode)
+	}
+
+	// -------	EXECUTION ------
+	switch {
+	// -demo
+	case copts.NeedsDemo(): // @note pass Numeric disk to Demo functions
+		exitCode, err = Demo(copts, aopts)
+
+	// -list
+	case copts.NeedsList():
+		fmt.Println("List of available Caesar-cipher class variants:")
+		fmt.Println(ciphers.PrintAvailableCiphers())
+
+	// -help
+	case copts.NeedsHelp():
+		Help(copts, aopts)
+		exitCode = z.EXIT_CODE_SUCCESS
+
+	// -d or encrypt
+	default:
+		exitCode, err = DoCrypto(copts, aopts)
+	}
+
+	// epilogue
+	if exitCode != z.EXIT_CODE_SUCCESS {
+		if err != nil {
+			app.DieWithError(err, exitCode)
+		} else {
+			app.Die("an error ocurred", exitCode)
+		}
+	}
+
+	z.BuyMeCoffee()
+}

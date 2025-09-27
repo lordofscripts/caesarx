@@ -1,0 +1,141 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Affine (ES)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/affine/",
+            "args": ["-alpha", "latin", "-A", "7", "-B", "13", "-num", "E", "Mañana 2025 será otro día"],
+            "envFile": "${workspaceRoot}/.env"
+        },        
+        {
+            "name": "Bellaso (ES)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/caesar/",
+            "args": ["-alpha", "latin", "-variant", "bellaso", "-secret", "SÉCRETOÑ", "Mañana será otro día"],
+            "envFile": "${workspaceRoot}/.env"
+        },
+        {
+            "name": "Vigenère (EN)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/caesar/",
+            "args": ["-alpha", "english", "-variant", "vigenere", "-secret", "secret", "This is a test"],
+            "envFile": "${workspaceRoot}/.env"
+        },           
+        {
+            "name": "Tabula Recta",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/tabularecta/",
+            "args": ["-alpha", "latin", "-foldcase"]
+        },          
+        {
+            "name": "Caesar Standard (Demo)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/caesar/",
+            "args": ["-alpha", "spanish", "-demo"]
+        },
+        {
+            "name": "Caesar Standard (ES)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/caesar/",
+            "args": ["-alpha", "spanish", "-key", "M", "ABCD EF"]
+        },        
+        {
+            "name": "Didimus (ES) Encode",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/caesar/",
+            "args": ["-alpha", "spanish", "-key", "M", "-offset", "5", "-variant", "didimus", "ABCD EF"],
+            "envFile": "${workspaceRoot}/.env"
+        },
+        {
+            "name": "Didimus (ES) Decode",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/caesar/",
+            "args": ["-alpha", "spanish", "-key", "M", "-offset", "5", "-variant", "didimus", "-d", "MRÑTLUQ"]
+        },        
+        {
+            "name": "Fibonacci (ES)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/caesar/",
+            "args": ["-alpha", "spanish", "-key", "M", "-variant", "fibonacci", "ABCD EF"]
+        },                
+        {
+            "name": "Caesar Extended",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/cli/",
+            "args": ["-mode=2", "-key=5", "-tape", "This año is 1920 áéíóú +-*/"]
+        },
+        {
+            "name": "Caesar Augustus",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/cli/",
+            "args": ["-mode=3", "-key=5", "-altkey=3", "This año is 1920 áéíóú +-*/"]
+        },
+        {
+            "name": "Caesar Tiberius",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/cli/",
+            "args": ["-mode=4", "-key=5", "-altkey=3", "This año is 1920 áéíóú +-*/"]
+        },
+        {
+            "name": "Caesar Tiberius [Verbose]",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/cli/",
+            "args": ["-verbose", "-mode=4", "-key=5", "-altkey=3", "This año is 1920 áéíóú +-*/"]
+        },     
+        {
+            "name": "No Caesar",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/cli/",
+            "args": ["-key=0", "This año is áéíóú aliased"]
+        },        
+        {
+            "name": "List-Caesar",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceRoot}/cmd/cli/",
+            "args": ["-list"]
+        },
+        {
+            "name": "GUI",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceRoot}/cmd/gui/",
+            "args": ["-help"]
+        },
+
+    ]
+}

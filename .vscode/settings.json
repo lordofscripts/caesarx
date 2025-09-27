@@ -1,0 +1,7 @@
+{
+    "files.eol": "\n",
+    "go.diagnostic.vulncheck": "Imports",
+    "go.editorContextMenuCommands": {
+        "testPackage": true
+    }
+}

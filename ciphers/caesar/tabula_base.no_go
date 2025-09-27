@@ -1,0 +1,200 @@
+/* -----------------------------------------------------------------
+ *					L o r d  O f   S c r i p t s (tm)
+ *				  Copyright (C)2025 Dídimo Grimaldo T.
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ * Base Tabula Recta encoder from which Caesar and the other variants derive.
+ *-----------------------------------------------------------------*/
+package caesar
+
+import (
+	"fmt"
+	"lordofscripts/caesarx/ciphers"
+	"lordofscripts/caesarx/cmn"
+	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"strings"
+	"unicode/utf8"
+)
+
+/* ----------------------------------------------------------------
+ *							G l o b a l s
+ *-----------------------------------------------------------------*/
+
+/* ----------------------------------------------------------------
+ *				M o d u l e   I n i t i a l i z a t i o n
+ *-----------------------------------------------------------------*/
+
+/* ----------------------------------------------------------------
+ *						I n t e r f a c e s
+ *-----------------------------------------------------------------*/
+
+//var _ ciphers.ICipher = (*BaseTabulaRecta[iciphers.IKeySequencer])(nil)
+
+/* ----------------------------------------------------------------
+ *							T y p e s
+ *-----------------------------------------------------------------*/
+
+type BaseTabulaRecta[K iciphers.IKeySequencer] struct {
+	alpha     *cmn.Alphabet
+	slaves    []*BaseTabulaRecta[K]
+	sequencer K
+}
+
+/* ----------------------------------------------------------------
+ *							C o n s t r u c t o r s
+ *-----------------------------------------------------------------*/
+
+/**
+ * (Ctor) Caesar Cipher using a Tabula Recta that supports ASCII and
+ * foreign (UTF8) alphabets.
+ * · Always follow it with a call to VerifyKey() or VerifySecret() prior to
+ *	 begining encoding/decoding.
+ * · follow with WithChain() to chain with supplemental alphabets.
+ * · follow with WithAlphabet() to specify a different alphabet prior to encoding.
+ * · It does case-folding by default, so it handles & preserves upper/lowercase
+ */
+func newBaseTabulaRecta[K iciphers.IKeySequencer](alphabet *cmn.Alphabet, seq K) *BaseTabulaRecta[K] {
+	return &BaseTabulaRecta[K]{
+		alpha:     alphabet,
+		slaves:    make([]*BaseTabulaRecta[K], 0),
+		sequencer: seq,
+	}
+}
+
+/* ----------------------------------------------------------------
+ *							M e t h o d s
+ *-----------------------------------------------------------------*/
+
+func (cx *BaseTabulaRecta[K]) WithChain(extra ciphers.ICipher) ciphers.ICipher {
+	if ptr, ok := extra.(*BaseTabulaRecta[K]); ok {
+		if extra != nil && extra != cx {
+			cx.slaves = append(cx.slaves, ptr)
+		}
+	} else {
+		fmt.Printf("not the correct slave type '%T'", extra)
+	}
+
+	return cx
+}
+
+func (cx *BaseTabulaRecta[K]) WithAlphabet(alphabet *cmn.Alphabet) ciphers.ICipher {
+	cx.alpha = alphabet
+	return cx
+}
+
+/**
+ * Verify key(s). If none given it checks the key given in the constructor,
+ * else it checks all the given keys. The key (single character) must be
+ * present in the encoding alphabet.
+ */
+func (cx *BaseTabulaRecta[K]) VerifyKey(keys ...rune) error {
+	verify := func(k rune) error {
+		if !cx.alpha.Contains(k, cmn.CaseInsensitive) { // @audit what if TR is not case folded!
+			return fmt.Errorf("key '%c' is not part of the alphabet", k)
+		}
+		return nil
+	}
+
+	if len(keys) == 0 {
+		const DUMMY_POS = -1
+		const DUMMY_RUNE = ' '
+		return verify(cx.sequencer.GetKey(DUMMY_POS, DUMMY_RUNE))
+	} else {
+		for i, key := range keys {
+			err := verify(key)
+			if err != nil {
+				return fmt.Errorf("key #%d (%c): %w", i+1, key, err)
+			}
+		}
+	}
+
+	return nil
+}
+
+/**
+ * Does the same as VerifyKey() except it checks that all the given keys
+ * (if any) have exactly ONE character (could be multi-byte Unicode character).
+ */
+func (cx *BaseTabulaRecta[K]) VerifySecret(secrets ...string) error {
+	if len(secrets) == 0 {
+		return cx.VerifyKey()
+	}
+
+	allKeys := make([]rune, len(secrets))
+	for i, keyStr := range secrets {
+		if utf8.RuneCountInString(keyStr) != 1 {
+			return fmt.Errorf("key #%d '%s' contains more than one char", i+1, keyStr)
+		}
+
+		allKeys[i] = []rune(keyStr)[0]
+	}
+
+	return cx.VerifyKey(allKeys...)
+}
+
+func (cx *BaseTabulaRecta[K]) seek(r rune, caseInsensitive bool) *cmn.Alphabet {
+	if cx.alpha.Contains(r, caseInsensitive) {
+		return cx.alpha
+	} else {
+
+	}
+}
+
+func (cx *BaseTabulaRecta[K]) Encode(plain string) string {
+	var cnv *ciphers.TabulaRecta = nil
+	var sb strings.Builder
+
+	// Plain Caesar uses ONE key; therefore, we only need one Tabula Recta
+	cnv = ciphers.NewTabulaRecta(cx.alpha, cmn.CaseInsensitive)
+
+	for _, char := range plain {
+		if exists, _ := cnv.HasRune(char); !exists {
+			sb.WriteRune(char)
+			cx.sequencer.Skip()
+		} else {
+			const DUMMY_POS = -1
+			const DUMMY_RUNE = ' '
+			key := cx.sequencer.GetKey(DUMMY_POS, DUMMY_RUNE) // Caesar always the same...
+			encR := cnv.EncodeRune(char, key)
+			sb.WriteRune(encR)
+		}
+	}
+
+	return sb.String()
+}
+
+func (cx *BaseTabulaRecta[K]) Decode(cipher string) string {
+	var cnv *ciphers.TabulaRecta = nil
+	var sb strings.Builder
+
+	cnv = ciphers.NewTabulaRecta(cx.alpha, cmn.CaseInsensitive)
+	for _, char := range cipher {
+		if exists, _ := cnv.HasRune(char); !exists {
+			sb.WriteRune(char)
+			cx.sequencer.Skip()
+		} else {
+			const DUMMY_POS = -1
+			const DUMMY_RUNE = ' '
+			key := cx.sequencer.GetKey(DUMMY_POS, DUMMY_RUNE)
+			decR := cnv.DecodeRune(char, key)
+			sb.WriteRune(decR)
+		}
+	}
+
+	return sb.String()
+}
+
+func (cx *BaseTabulaRecta[K]) GetAlphabet() string {
+	return cx.alpha.Chars
+}
+
+func (cx *BaseTabulaRecta[K]) GetLanguage() string {
+	return cx.alpha.Name
+}
+
+/* ----------------------------------------------------------------
+ *							F u n c t i o n s
+ *-----------------------------------------------------------------*/
+
+/* ----------------------------------------------------------------
+ *						M A I N | E X A M P L E
+ *-----------------------------------------------------------------*/

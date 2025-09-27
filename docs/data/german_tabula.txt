@@ -1,0 +1,71 @@
+                                 « German »
+           0                   1                   2     
+           0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9                                 
+           A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ß 
+          ┌───────────────────────────────────────────────────────────
+         A│A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ß 
+         B│B C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ß A 
+         C│C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ß A B 
+         D│D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ß A B C 
+         E│E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ß A B C D 
+         F│F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ß A B C D E 
+         G│G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ß A B C D E F 
+         H│H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ß A B C D E F G 
+         I│I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ß A B C D E F G H 
+         J│J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ß A B C D E F G H I 
+         K│K L M N O P Q R S T U V W X Y Z Ä Ö Ü ß A B C D E F G H I J 
+         L│L M N O P Q R S T U V W X Y Z Ä Ö Ü ß A B C D E F G H I J K 
+         M│M N O P Q R S T U V W X Y Z Ä Ö Ü ß A B C D E F G H I J K L 
+         N│N O P Q R S T U V W X Y Z Ä Ö Ü ß A B C D E F G H I J K L M 
+         O│O P Q R S T U V W X Y Z Ä Ö Ü ß A B C D E F G H I J K L M N 
+         P│P Q R S T U V W X Y Z Ä Ö Ü ß A B C D E F G H I J K L M N O 
+         Q│Q R S T U V W X Y Z Ä Ö Ü ß A B C D E F G H I J K L M N O P 
+         R│R S T U V W X Y Z Ä Ö Ü ß A B C D E F G H I J K L M N O P Q 
+         S│S T U V W X Y Z Ä Ö Ü ß A B C D E F G H I J K L M N O P Q R 
+         T│T U V W X Y Z Ä Ö Ü ß A B C D E F G H I J K L M N O P Q R S 
+         U│U V W X Y Z Ä Ö Ü ß A B C D E F G H I J K L M N O P Q R S T 
+         V│V W X Y Z Ä Ö Ü ß A B C D E F G H I J K L M N O P Q R S T U 
+         W│W X Y Z Ä Ö Ü ß A B C D E F G H I J K L M N O P Q R S T U V 
+         X│X Y Z Ä Ö Ü ß A B C D E F G H I J K L M N O P Q R S T U V W 
+         Y│Y Z Ä Ö Ü ß A B C D E F G H I J K L M N O P Q R S T U V W X 
+         Z│Z Ä Ö Ü ß A B C D E F G H I J K L M N O P Q R S T U V W X Y 
+         Ä│Ä Ö Ü ß A B C D E F G H I J K L M N O P Q R S T U V W X Y Z 
+         Ö│Ö Ü ß A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä 
+         Ü│Ü ß A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö 
+         ß│ß A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü
+
+                                 « German »
+                                (with Space)                                     
+          A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   
+         ┌─────────────────────────────────────────────────────────────
+        A│A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   
+        B│B C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   A 
+        C│C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   A B 
+        D│D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   A B C 
+        E│E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   A B C D 
+        F│F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   A B C D E 
+        G│G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   A B C D E F 
+        H│H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   A B C D E F G 
+        I│I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   A B C D E F G H 
+        J│J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   A B C D E F G H I 
+        K│K L M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   A B C D E F G H I J 
+        L│L M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   A B C D E F G H I J K 
+        M│M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   A B C D E F G H I J K L 
+        N│N O P Q R S T U V W X Y Z Ä Ö Ü ẞ   A B C D E F G H I J K L M 
+        O│O P Q R S T U V W X Y Z Ä Ö Ü ẞ   A B C D E F G H I J K L M N 
+        P│P Q R S T U V W X Y Z Ä Ö Ü ẞ   A B C D E F G H I J K L M N O 
+        Q│Q R S T U V W X Y Z Ä Ö Ü ẞ   A B C D E F G H I J K L M N O P 
+        R│R S T U V W X Y Z Ä Ö Ü ẞ   A B C D E F G H I J K L M N O P Q 
+        S│S T U V W X Y Z Ä Ö Ü ẞ   A B C D E F G H I J K L M N O P Q R 
+        T│T U V W X Y Z Ä Ö Ü ẞ   A B C D E F G H I J K L M N O P Q R S 
+        U│U V W X Y Z Ä Ö Ü ẞ   A B C D E F G H I J K L M N O P Q R S T 
+        V│V W X Y Z Ä Ö Ü ẞ   A B C D E F G H I J K L M N O P Q R S T U 
+        W│W X Y Z Ä Ö Ü ẞ   A B C D E F G H I J K L M N O P Q R S T U V 
+        X│X Y Z Ä Ö Ü ẞ   A B C D E F G H I J K L M N O P Q R S T U V W 
+        Y│Y Z Ä Ö Ü ẞ   A B C D E F G H I J K L M N O P Q R S T U V W X 
+        Z│Z Ä Ö Ü ẞ   A B C D E F G H I J K L M N O P Q R S T U V W X Y 
+        Ä│Ä Ö Ü ẞ   A B C D E F G H I J K L M N O P Q R S T U V W X Y Z 
+        Ö│Ö Ü ẞ   A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä 
+        Ü│Ü ẞ   A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö 
+        ẞ│ẞ   A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü 
+         │  A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Ä Ö Ü ẞ         
