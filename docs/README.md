@@ -1,11 +1,11 @@
 # GO Caesar X Encryption
 
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/lordofscripts/caesarx)
-[![Go Reference](https://pkg.go.dev/badge/github.com/lordofscripts/caesarx.svg)](https://pkg.go.dev/github.com/lordofscripts/caesarx)
 [![Go Report Card](https://goreportcard.com/badge/github.com/lordofscripts/caesarx?style=flat-square)](https://goreportcard.com/report/github.com/lordofscripts/caesarx)
+[![Go Reference](https://pkg.go.dev/badge/github.com/lordofscripts/caesarx.svg)](https://pkg.go.dev/github.com/lordofscripts/caesarx)
 [![GitHub release (with filter)](https://img.shields.io/github/v/release/lordofscripts/caesarx)](https://github.com/lordofscripts/caesarx/releases/latest)
 [![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC_BY--NC--ND_4.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
-[![Go Report](https://goreportcard.com/badge/github.com/lordofscripts/caesarx)](https://goreportcard.com/report/github.com/lordofscripts/caesarx)
+
 
 ![](./assets/caesarx_header.jpg)
 
