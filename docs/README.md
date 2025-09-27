@@ -1,8 +1,6 @@
 # GO Caesar X Encryption
 
-[![Years](https://badges.pufler.dev/years/lordofscripts)](https://badges.pufler.dev)
 ![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/lordofscripts/caesarx)
-[![Visits](https://badges.pufler.dev/visits/lordofscripts/caesarx)](https://badges.pufler.dev)
 [![Go Reference](https://pkg.go.dev/badge/github.com/lordofscripts/caesarx.svg)](https://pkg.go.dev/github.com/lordofscripts/caesarx)
 [![Go Report Card](https://goreportcard.com/badge/github.com/lordofscripts/caesarx?style=flat-square)](https://goreportcard.com/report/github.com/lordofscripts/caesarx)
 [![GitHub release (with filter)](https://img.shields.io/github/v/release/lordofscripts/caesarx)](https://github.com/lordofscripts/caesarx/releases/latest)
@@ -10,6 +8,7 @@
 [![Go Report](https://goreportcard.com/badge/github.com/lordofscripts/caesarx)](https://goreportcard.com/report/github.com/lordofscripts/caesarx)
 
 ![](./assets/caesarx_header.jpg)
+
 
 The ultimate application for modern-day usage of the ancient Caesar cipher and some of its variants. While Caesar-type ciphers are no match and certainly not a replacement for modern-day cryptography, there are situations like in family and friend circles, even for games, where it is handy to encrypt some text that can —should disaster strike— be able to decrypt it by hand. And sometimes you just need to hide in plain view if it is not that critical.
 
