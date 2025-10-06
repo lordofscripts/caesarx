@@ -34,6 +34,7 @@ func Test_GetRune(t *testing.T) {
 		{cmn.ALPHA_DISK_GREEK, 'Α', 'Λ', 'Ω', 10},
 		{cmn.ALPHA_DISK_GERMAN, 'A', 'O', 'ẞ', 14},
 		{cmn.ALPHA_DISK_CYRILLIC, 'А', 'П', 'Я', 16},
+		{cmn.BINARY_DISK, rune(0), rune(128), rune(0xFF), 128},
 	}
 
 	for i, tc := range allCases {
@@ -78,6 +79,7 @@ func Test_PositionOf(t *testing.T) {
 		{cmn.ALPHA_DISK_GREEK, 'Λ', 10},
 		{cmn.ALPHA_DISK_GERMAN, 'O', 14},
 		{cmn.ALPHA_DISK_CYRILLIC, 'П', 16},
+		{cmn.BINARY_DISK, rune(130), 130},
 	}
 
 	for i, tc := range allCases {
@@ -113,6 +115,12 @@ func Test_Contains(t *testing.T) {
 	r = 'a'
 	if alpha.Contains(r, true) != true {
 		t.Errorf("(case insensitive) rune '%c' isn't in %s", r, MIXED2)
+	}
+
+	alpha = cmn.BINARY_DISK
+	r = rune(130)
+	if alpha.Contains(r, true) != true {
+		t.Errorf("binary rune 0x'%02x' isn't in %s", r, alpha.Name)
 	}
 }
 

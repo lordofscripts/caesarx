@@ -22,7 +22,7 @@ func Help() {
 	fmt.Println("Usage:")
 	fmt.Printf("\t%s -demo\n", APP_NAME)
 	fmt.Printf("\t%s -alpha latin [-foldcase]\n", APP_NAME)
-	fmt.Printf("\t%s [-foldcase] -alpha custom ABCDÉFÏJKLMNÖPQRST\n", APP_NAME)
+	fmt.Printf("\t%s [-foldcase] -alpha custom 'ABCDÉFÏJKLMNÖPQRST'\n", APP_NAME)
 	fmt.Printf("\t%s -alpha NAME [-foldcase] -key CHAR -e CHAR\n", APP_NAME)
 	fmt.Printf("\t%s -alpha NAME [-foldcase] -key CHAR -d CHAR\n", APP_NAME)
 	flag.PrintDefaults()
@@ -35,8 +35,8 @@ func main() {
 	flag.BoolVar(&actHelp, "help", false, "Show help")
 	flag.BoolVar(&actDemo, "demo", false, "Demonstration")
 	flag.BoolVar(&optCaseFold, "foldcase", true, "Use case folding (preserves case)")
-	flag.StringVar(&optAlpha, "alpha", "english", "Alphabet: english|latin|german|greek|cyrillic|custom")
-	flag.Var(&optKey, "key", "Caesar Key")
+	flag.StringVar(&optAlpha, "alpha", cmn.ALPHA_NAME_ENGLISH, "Alphabet: english|latin|german|greek|cyrillic|custom")
+	flag.Var(&optKey, "key", "Caesar (Main) Key")
 	flag.Var(&actEncode, "e", "Rune to encode")
 	flag.Var(&actDecode, "d", "Rune to decode")
 	flag.Var(&optNumbers, "num", "Include Numbers disk: (N)one, (A)rabic, (H)indi (E)xtended")
@@ -63,6 +63,7 @@ func main() {
 
 	var alphabet *cmn.Alphabet
 	var demoMsg1, demoMsg2 string
+	var isBinary bool = false
 	optAlpha = strings.ToLower(optAlpha)
 	switch optAlpha {
 	case cmn.ALPHA_NAME_ENGLISH:
@@ -96,6 +97,10 @@ func main() {
 		demoMsg1 = "АБВГ0123юяьъ"
 		demoMsg2 = "Я люблю криптографию"
 
+	case cmn.ALPHA_NAME_BINARY:
+		alphabet = cmn.BINARY_DISK.Clone()
+		isBinary = true
+
 	case "custom":
 		if flag.NArg() == 1 {
 			alphabet = cmn.NewAlphabet("Custom", flag.Arg(0), false, false)
@@ -111,18 +116,23 @@ func main() {
 
 	if actDemo {
 		//Demo(alphabet)
-		caesar.DemoCaesarPlain(alphabet, demoMsg1)
-		caesar.DemoCaesarPlain(alphabet, demoMsg2)
+		if !isBinary {
+			caesar.DemoCaesarPlain(alphabet, demoMsg1)
+			caesar.DemoCaesarPlain(alphabet, demoMsg2)
+		} else {
+			ciphers.DemoBinaryTabulaRecta()
+		}
+
 		os.Exit(0)
-	} else if actEncode.IsSet {
+	} else if !isBinary && actEncode.IsSet {
 		trAlpha := ciphers.NewTabulaRecta(alphabet, optCaseFold)
 		result := trAlpha.EncodeRune(actEncode.Value, optKey.Value)
 		fmt.Printf("(Plain Caesar) ƒ𝓍Enc(char:%c, key:%c) 🡪 %c\n", actEncode.Value, optKey.Value, result)
-	} else if actDecode.IsSet {
+	} else if !isBinary && actDecode.IsSet {
 		trAlpha := ciphers.NewTabulaRecta(alphabet, optCaseFold)
 		result := trAlpha.DecodeRune(actDecode.Value, optKey.Value)
 		fmt.Printf("(Plain Caesar) ƒ𝓍Dec(char:%c, key:%c) 🡪 %c\n", actDecode.Value, optKey.Value, result)
-	} else {
+	} else if !isBinary {
 		// Prepare Numbers disk if solicited
 		var numerics *cmn.Alphabet = nil
 		if optNumbers.IsSet {

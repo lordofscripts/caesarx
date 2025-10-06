@@ -1,0 +1,353 @@
+/* -----------------------------------------------------------------
+ *					L o r d  O f   S c r i p t s (tm)
+ *				  Copyright (C)2025 Dídimo Grimaldo T.
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ * A Tabula Recta implementation for simple ciphers. This Tabula Recta
+ * folds the alphabet to uppercase but supports mixed input of
+ * upper and lowercase characters. It supports Unicode and thus not
+ * just plain ASCII making it suitable for foreign alphabets.
+ * Status: Works
+ *-----------------------------------------------------------------*/
+package ciphers
+
+import (
+	"fmt"
+	"lordofscripts/caesarx/app/mlog"
+	"lordofscripts/caesarx/cmn"
+	"slices"
+	"strings"
+	"unicode/utf8"
+)
+
+/* ----------------------------------------------------------------
+ *						I n t e r f a c e s
+ *-----------------------------------------------------------------*/
+
+var _ ITabulaRecta = (*BinaryTabulaRecta)(nil)
+var _ cmn.IRuneLocalizer = (*BinaryTabulaRecta)(nil)
+
+var ErrNotSimpleRune error = fmt.Errorf("rune is not single-byte rune")
+
+/* ----------------------------------------------------------------
+ *							T y p e s
+ *-----------------------------------------------------------------*/
+
+type BinaryTabulaRecta struct {
+	Name   string
+	tabula [][]rune
+}
+
+/* ----------------------------------------------------------------
+ *							C o n s t r u c t o r s
+ *-----------------------------------------------------------------*/
+
+func NewBinaryTabulaRecta() *BinaryTabulaRecta {
+	btr := &BinaryTabulaRecta{
+		Name: "Binary",
+	}
+	btr.generateTabulaRecta()
+	return btr
+}
+
+/* ----------------------------------------------------------------
+ *							M e t h o d s
+ *-----------------------------------------------------------------*/
+
+func (t *BinaryTabulaRecta) GetName() string {
+	return t.Name
+}
+
+func (t *BinaryTabulaRecta) HasRune(r rune) (bool, int) {
+	var exists bool = false
+	var where int = -1
+
+	rl := utf8.RuneLen(r)
+	if rl <= 2 { // ASCII 128..255 are a 2-byte rune
+		if slices.Contains(t.tabula[0], r) {
+			exists = true
+			where = slices.Index(t.tabula[0], r)
+		}
+	}
+
+	return exists, where
+}
+
+/**
+ * Encode a rune with the key using the current Tabula Recta.
+ * @param r (rune) character to encode
+ * @param key (rune) encoding key
+ * @returns (rune) encoded rune, or r if not found.
+ */
+func (t *BinaryTabulaRecta) EncodeRune(r, key rune) rune {
+	var result rune = r // pass-through if not found
+
+	rl := utf8.RuneLen(r)
+	rk := utf8.RuneLen(key)
+	// ensure it is an (extended) ASCII up to 0xff
+	if rl <= 2 && rk <= 2 {
+		if exists, atColumn := t.rowContains(0, r); exists {
+			keyIndex := byte(key)
+			result = rune(t.tabula[keyIndex][atColumn])
+		}
+	}
+
+	return result
+}
+
+func (t *BinaryTabulaRecta) EncodeRuneRaw(r rune, rowIdx, colIdx int) rune {
+	var result rune = r
+
+	// Pre
+	if rowIdx >= len(t.tabula) {
+		mlog.Error("out-of-range row", mlog.String("At", "DecodeRuneRaw"), mlog.Int("Value", rowIdx))
+		panic("Bad thing happened")
+	}
+	if colIdx >= len(t.tabula[0]) {
+		mlog.ErrorT("out-of-range column", mlog.String("At", "DecodeRuneRaw"), mlog.Int("Value", colIdx))
+		panic("Bad thing happened")
+	}
+
+	// Middle
+	result = rune(t.tabula[rowIdx][colIdx])
+
+	return result
+}
+
+func (t *BinaryTabulaRecta) DecodeRune(r, key rune) rune {
+	var result rune = r
+
+	if exists, keyIndex := t.HasRune(key); exists {
+		exists, column := t.rowContains(keyIndex, r)
+		if exists {
+			result = rune(t.tabula[0][column])
+		}
+	} else {
+		mlog.WarnT("Key absent in alphabet", mlog.String("Alpha", t.Name), mlog.Rune("Rune", key))
+	}
+
+	return result
+}
+
+func (t *BinaryTabulaRecta) DecodeRuneRaw(r rune, rowIdx int) rune {
+	var result rune = r
+
+	if rowIdx >= len(t.tabula[0]) { // the Tabula Recta is a square matrix NxN
+		mlog.ErrorT("out-of-range column", mlog.String("At", "DecodeRuneRaw"), mlog.Int("Value", rowIdx))
+		panic("Bad thing happened")
+	}
+
+	// Middle
+	if exists, colIdx := t.rowContains(rowIdx, r); exists {
+		result = rune(t.tabula[0][colIdx])
+	} else {
+		// This would never happen UNLESS someone edits TabulaCaesar(Commmand) and didn't
+		// check for rune's presence in the slave alphabet. But this check is here
+		// as a safeguard.
+		mlog.ErrorT("internal error: shouldn't be looking for that rune in this slave", mlog.Rune("Rune", r), mlog.String("Alpha", t.Name))
+		panic("Internal Error")
+	}
+
+	return result
+}
+
+/**
+ * (IRuneLocalizer) Find a rune in the object's alphabet catalog.
+ * Rune not found: error set, other return values nil or -1.
+ * Rune found: error nil, pointer to alphabet and position within.
+ */
+func (t *BinaryTabulaRecta) FindRune(r rune) (string, int, error) {
+	var alphaStr string = ""
+	var at int
+	var err error = nil
+
+	rl := utf8.RuneLen(r)
+	if rl <= 2 {
+		var exists bool
+		exists, at = t.rowContains(0, r)
+		if !exists || at == -1 {
+			err = fmt.Errorf("info: '%c' absent in %s", r, t.Name)
+		} else {
+			alphaStr = string(t.tabula[0])
+		}
+	} else {
+		err = ErrNotSimpleRune
+	}
+
+	return alphaStr, at, err
+}
+
+func (t *BinaryTabulaRecta) TransposeKey(k any) (int, rune) {
+	var transposed int = -1
+	var resultingKey rune = 0
+	switch cv := k.(type) {
+	case rune: // called within Master
+		if exists, at := t.rowContains(0, cv); exists {
+			transposed = at
+			resultingKey = cv
+		} else {
+			msg := "Cannot transpose key we don't have"
+			mlog.ErrorT(msg, mlog.Rune("Key", cv))
+		}
+
+	case byte:
+		if exists, at := t.rowContains(0, rune(cv)); exists {
+			transposed = at
+			resultingKey = rune(cv)
+		} else {
+			msg := "Cannot transpose key we don't have"
+			mlog.ErrorT(msg, mlog.Byte("Key", cv))
+		}
+
+	case int: // called within Slave
+		max := len(t.tabula[0])
+		transposed = cv % max // limit it to the length of OUR alphabet
+		resultingKey = rune(t.tabula[0][transposed])
+
+	default:
+		mlog.Error("Panicking with invalid type to transpose")
+		panic("not a valid transpose parameter")
+	}
+
+	return transposed, resultingKey
+}
+
+func (t *BinaryTabulaRecta) IsCaseInsensitive() bool {
+	return false
+}
+
+func (t *BinaryTabulaRecta) PrintTabulaRecta(center bool) {
+	fmt.Println(t.renderTabulaRecta(center, true))
+}
+
+func (t *BinaryTabulaRecta) PrintTape(key rune) {
+	if ok, pos := t.rowContains(0, key); ok {
+		fmt.Println(t.renderTape(pos, true))
+	}
+}
+
+func (t *BinaryTabulaRecta) String() string {
+	return t.renderTabulaRecta(false, false)
+}
+
+// GenerateTabulaRecta creates a Tabula Recta for the given rune alphabet.
+func (t *BinaryTabulaRecta) generateTabulaRecta() {
+	const size int = 0xFF
+	t.tabula = make([][]rune, size)
+	ASCII := make([]rune, size)
+	for i := range size {
+		ASCII[i] = rune(i) // 128..255 are 2-byte runes
+	}
+
+	for i := range size {
+		row := make([]rune, size)
+		for j := 0; j < size; j++ {
+			row[j] = ASCII[(i+j)%size]
+		}
+		t.tabula[i] = row
+	}
+}
+
+func (t *BinaryTabulaRecta) rowContains(rowNum int, target rune) (bool, int) {
+	exists := false
+	column := -1
+
+	if utf8.RuneLen(target) <= 2 {
+		for pos, r := range t.tabula[rowNum] {
+			if r == target {
+				exists = true
+				column = pos
+				break
+			}
+		}
+	}
+
+	return exists, column
+}
+
+func (t *BinaryTabulaRecta) renderTabulaRecta(center, boxDrawing bool) string {
+	var sb strings.Builder
+	// Prints a Row of Runes
+	rowPrinterFunc := func(row []rune) {
+		for _, char := range row {
+			sb.WriteString(fmt.Sprintf("%02x ", char))
+		}
+
+		sb.WriteRune('\n')
+	}
+
+	// Generates a Space Leader to Center a string
+	const MAX_WIDTH = 80
+	centerLeaderFunc := func(length int) string {
+		leaderLength := int((MAX_WIDTH - length) / 2)
+		return strings.Repeat(" ", leaderLength)
+	}
+
+	var leader string = ""
+	if center {
+		leader = centerLeaderFunc(len(t.tabula[0])*2 + 2)
+	}
+
+	// Print Heading
+	var bC, bH, bV rune
+	if boxDrawing {
+		bC = '\u250c' // ┌
+		bH = '\u2500' // ─
+		bV = '\u2502' // │
+	} else {
+		bC = '+'
+		bH = '-'
+		bV = '|'
+	}
+
+	title := fmt.Sprintf("%c %s %c\n", 0x00ab, t.Name, 0x00bb)
+	sb.WriteString(centerLeaderFunc(len(title)))
+	sb.WriteString(title)
+
+	sb.WriteString(leader)
+	sb.WriteString("  ")
+	rowPrinterFunc(t.tabula[0])
+	sb.WriteString(fmt.Sprintf("%s %c%s\n", leader, bC, strings.Repeat(string(bH), 2*len(t.tabula[0])-1)))
+
+	for _, row := range t.tabula {
+		sb.WriteString(fmt.Sprintf("%s%c%c", leader, row[0], bV))
+		rowPrinterFunc(row)
+	}
+
+	return sb.String()
+}
+
+func (t *BinaryTabulaRecta) renderTape(keyShift int, boxDrawing bool) string {
+	var sb strings.Builder
+	// Prints a Row of Runes
+	rowPrinterFunc := func(row []rune) {
+		for _, char := range row {
+			sb.WriteString(fmt.Sprintf("%02x ", char))
+		}
+
+		sb.WriteRune('\n')
+	}
+
+	// Print Heading
+	var bC, bH, bV rune
+	if boxDrawing {
+		bC = '\u250c' // ┌
+		bH = '\u2500' // ─
+		bV = '\u2502' // │
+	} else {
+		bC = '+'
+		bH = '-'
+		bV = '|'
+	}
+
+	title := fmt.Sprintf("%c %s %c\n", 0x00ab, t.Name, 0x00bb)
+	sb.WriteString(title)
+
+	sb.WriteString("  ")
+	rowPrinterFunc(t.tabula[0])
+	sb.WriteString(fmt.Sprintf("%c%s\n", bC, strings.Repeat(string(bH), 2*len(t.tabula[0])-1)))
+
+	sb.WriteString(fmt.Sprintf("%02x%c", t.tabula[keyShift][0], bV))
+	rowPrinterFunc(t.tabula[keyShift])
+
+	return sb.String()
+}

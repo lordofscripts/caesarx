@@ -15,9 +15,9 @@ else
 endif
 
 # Packagers only
-PKG_NAME=go-caesarx
-PKG_VERSION=1.0
-PKG_REVISION=1
+PKG_NAME=caesarx
+PKG_VERSION=1.1
+PKG_REVISION=0
 PKG_ARCH=amd64
 PKG_FULLNAME=${PKG_NAME}_${PKG_VERSION}-${PKG_REVISION}_${PKG_ARCH}
 PKG_BUILD_DIR=${HOME}/Develop/Distrib/Build/${PKG_NAME}
@@ -85,18 +85,28 @@ debian:
 	cp -R distrib/DEBIAN/* ${PKG_BUILD_DIR}/DEBIAN
 	mkdir -p ${PKG_BUILD_DIR}/usr/bin
 	mkdir -p ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}/assets
+	mkdir -p ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}/data
 	mkdir -p ${PKG_BUILD_DIR}/usr/share/man/man1
-	gzip -n -9 -c distrib/manpages/man1/$(EXEC_NAME).1 > ${PKG_BUILD_DIR}/usr/share/man/man1/$(EXEC_NAME).1.gz
-	gzip -n -9 -c distrib/manpages/man1/goUnixStyle.1 > ${PKG_BUILD_DIR}/usr/share/man/man1/goUnixStyle.1.gz
-	mkdir -p ${PKG_BUILD_DIR}/usr/share/man/man5
-	gzip -n -9 -c distrib/manpages/man5/$(EXEC_NAME).5 > ${PKG_BUILD_DIR}/usr/share/man/man1/$(EXEC_NAME).5.gz
-	strip --strip-unneeded ${BIN_OUT}
-	cp ${BIN_OUT} ${PKG_BUILD_DIR}/usr/bin
-	strip --strip-unneeded ${BIN_OUT_UTIL}
-	cp ${BIN_OUT_UTIL} ${PKG_BUILD_DIR}/usr/bin
+	gzip -n -9 -c distrib/manpages/man1/$(EXEC_CAESAR).1 > ${PKG_BUILD_DIR}/usr/share/man/man1/$(EXEC_CAESAR).1.gz
+	gzip -n -9 -c distrib/manpages/man1/$(EXEC_AFFINE).1 > ${PKG_BUILD_DIR}/usr/share/man/man1/$(EXEC_AFFINE).1.gz
+	strip --strip-unneeded ${BIN_OUT_1}
+	cp ${BIN_OUT_1} ${PKG_BUILD_DIR}/usr/bin
+	strip --strip-unneeded ${BIN_OUT_2}
+	cp ${BIN_OUT_2} ${PKG_BUILD_DIR}/usr/bin
+	strip --strip-unneeded ${BIN_OUT_3}
+	cp ${BIN_OUT_3} ${PKG_BUILD_DIR}/usr/bin	
 	cp distrib/DEBIAN/copyright ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
 	cp docs/README.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
+	cp docs/LICENSE.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
+	cp docs/LANGUAGES.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
+	cp docs/CIPHER_AFFINE.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
+	cp docs/CIPHER_BELLASO.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
+	cp docs/CIPHER_CAESAR.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
+	cp docs/CIPHER_DIDIMUS.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
+	cp docs/CIPHER_FIBONACCI.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
+	cp docs/CIPHER_VIGENERE.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
 	cp docs/assets/* ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}/assets
+	cp docs/data/* ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}/data
 	gzip -n -9 -c distrib/DEBIAN/changelog > ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}/changelog.gz
 	(cd ${PKG_BUILD_DIR} && dpkg-deb --root-owner-group -b ./ ${PKG_FULLNAME}.deb)
 	#(cd ${PKG_BUILD_DIR} && fakeroot /usr/bin/dpkg-buildpackage --build=binary -us -uc -b ./ ${PKG_FULLNAME})

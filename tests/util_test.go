@@ -8,6 +8,7 @@ package tests
 
 import (
 	"lordofscripts/caesarx/cmn"
+	"slices"
 	"testing"
 )
 
@@ -83,6 +84,27 @@ func Test_RotateStringLeft(t *testing.T) {
 		if rot := cmn.RotateStringLeft(vector.Input, vector.Key); rot != vector.Expect {
 			t.Errorf("#%d\n\texpected %q\n\tgot      %q\n", nr+1, vector.Expect, rot)
 		}
+	}
+}
+
+func Test_RotateSliceRight(t *testing.T) {
+	Y0 := []byte{0, 1, 2, 3}
+	Y1 := []byte{3, 0, 1, 2}
+	Y3 := []byte{1, 2, 3, 0}
+
+	y0 := cmn.RotateSliceRight(Y0, 0) // no rotation
+	if slices.Compare(y0, Y0) != 0 {
+		t.Errorf("zero rotation should return same slice")
+	}
+
+	y1 := cmn.RotateSliceRight(Y0, 1) // no rotation
+	if slices.Compare(y1, Y1) != 0 {
+		t.Errorf("rotate=1 exp:%v got:%v", Y1, y1)
+	}
+
+	y3 := cmn.RotateSliceRight(Y0, 3) // no rotation
+	if slices.Compare(y3, Y3) != 0 {
+		t.Errorf("rotate=3 exp:%v got:%v", Y3, y3)
 	}
 }
 

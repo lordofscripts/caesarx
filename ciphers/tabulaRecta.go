@@ -42,6 +42,7 @@ type ITabulaRecta interface {
 }
 
 var _ ITabulaRecta = (*TabulaRecta)(nil)
+var _ cmn.IRuneLocalizer = (*TabulaRecta)(nil)
 
 /* ----------------------------------------------------------------
  *							T y p e s
@@ -683,6 +684,9 @@ func TabulaRectaForLanguage(lname string) *TabulaRecta {
 
 	case cmn.ALPHA_NAME_NUMBERS_EASTERN:
 		alphabet = cmn.NUMBERS_EASTERN_DISK
+
+	case cmn.ALPHA_NAME_BINARY:
+		mlog.Error("Please use NewBinaryTabulaRecta() instead of this")
 
 	default:
 		mlog.ErrorT("TabulaRecta requested for unknown alphabet", mlog.String("Alpha", lname))

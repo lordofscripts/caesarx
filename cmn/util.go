@@ -219,6 +219,80 @@ func RotateStringRight(s string, shift int) string {
 	return result
 }
 
+func MakeSquareNumericTabula[T byte | int](size int) [][]T {
+	tabula := make([][]T, int(size))
+	ASCII := make([]T, int(size))
+	for i := 0; i < len(ASCII); i++ {
+		ASCII[i] = T(i) // 128..255 are 2-byte runes
+	}
+
+	//rows := len(tabula)
+	//columns := len(ASCII)
+	//fmt.Printf("is %02x total: %dx%d=%d\n", ASCII[len(ASCII)-1], rows, columns, rows*columns)
+	for i := range tabula {
+		tabula[i] = RotateSliceLeft[T](ASCII, i, false)
+	}
+	return tabula
+}
+
+func RotateSliceLeft[T any](arr []T, n int, inPlace bool) []T {
+	length := len(arr)
+	if length == 0 {
+		return arr
+	}
+
+	// Normalize the number of positions
+	n = n % length
+	if n == 0 {
+		return arr
+	}
+
+	if inPlace {
+		temp := make([]T, n)         // Create a temp slice
+		copy(temp, arr[:n])          // Copy the first part
+		copy(arr, arr[n:])           // Shift the rest
+		copy(arr[len(arr)-n:], temp) // Append the temp slice
+		return arr
+	} else { // Copy elements to the new slice
+		rotated := make([]T, length)
+		copy(rotated, arr[n:])            // Elements from positions to end
+		copy(rotated[length-n:], arr[:n]) // Elements from start to positions
+		return rotated
+	}
+}
+
+func RotateSliceRight[T any](arr []T, n int) []T {
+	length := len(arr)
+	if length == 0 {
+		return arr
+	}
+
+	// Normalize the number of positions
+	n = n % length
+	if n == 0 {
+		return arr
+	}
+
+	// Perform the rotation
+	return append(arr[length-n:], arr[:length-n]...)
+}
+
+func RotateByteSliceRight(arr []byte, n int) []byte {
+	length := len(arr)
+	if length == 0 {
+		return arr
+	}
+
+	// Normalize the number of positions
+	n = n % length
+	if n == 0 {
+		return arr
+	}
+
+	// Perform the rotation
+	return append(arr[length-n:], arr[:length-n]...)
+}
+
 // Utility function for the Vigenère auto-key functionality.
 // This only works with keys and messages composed entirely of
 // single-byte runes, i.e. English; therefore, it is not suitable
