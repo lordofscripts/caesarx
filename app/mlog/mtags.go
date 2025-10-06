@@ -18,6 +18,13 @@ type ILogKeyValuePair interface {
 	fmt.Stringer
 }
 
+var _ ILogKeyValuePair = (*kvString)(nil)
+var _ ILogKeyValuePair = (*kvRune)(nil)
+var _ ILogKeyValuePair = (*kvInt)(nil)
+var _ ILogKeyValuePair = (*kvBool)(nil)
+var _ ILogKeyValuePair = (*kvYesNo)(nil)
+var _ ILogKeyValuePair = (*kvByte)(nil)
+
 /* ----------------------------------------------------------------
  *							T y p e s
  *-----------------------------------------------------------------*/
@@ -45,6 +52,11 @@ type kvBool struct {
 type kvYesNo struct {
 	k string
 	v bool
+}
+
+type kvByte struct {
+	k string
+	v byte
 }
 
 /* ----------------------------------------------------------------
@@ -79,6 +91,10 @@ func (k *kvYesNo) String() string {
 	return fmt.Sprintf("%s=%s", k.k, s)
 }
 
+func (k *kvByte) String() string {
+	return fmt.Sprintf("%s=0x%02X", k.k, k.v)
+}
+
 /* ----------------------------------------------------------------
  *							F u n c t i o n s
  *-----------------------------------------------------------------*/
@@ -101,6 +117,10 @@ func Bool(key string, value bool) ILogKeyValuePair {
 
 func YesNo(key string, value bool) ILogKeyValuePair {
 	return &kvYesNo{key, value}
+}
+
+func Byte(key string, value byte) ILogKeyValuePair {
+	return &kvByte{key, value}
 }
 
 /* ----------------------------------------------------------------
