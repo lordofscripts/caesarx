@@ -38,6 +38,7 @@ const (
 type IAppOptions interface {
 	ShowUsage(string)
 	Validate() (int, error)
+	IsReady() bool
 }
 
 var _ IAppOptions = (*CommonOptions)(nil)
@@ -55,6 +56,7 @@ type CommonOptions struct {
 	encodeSpace   bool
 	alpha         string
 	numeric       RuneFlag
+	isReady       bool
 }
 
 /* ----------------------------------------------------------------
@@ -126,6 +128,9 @@ func (c *CommonOptions) Alphabet() *cmn.Alphabet {
 	case cmn.ALPHA_NAME_CYRILLIC:
 		alphabet = cmn.ALPHA_DISK_CYRILLIC
 		c.DefaultPhrase = "Я люблю криптографию"
+
+	case cmn.ALPHA_NAME_BINARY:
+		alphabet = cmn.BINARY_DISK
 
 	case "custom":
 		if flag.NArg() == 1 {
@@ -200,6 +205,12 @@ func (c *CommonOptions) ShowUsage(name string) {
 }
 
 func (c *CommonOptions) Validate() (int, error) {
+	// for these options no further validation is needed
+	if c.NeedsDemo() || c.NeedsHelp() || c.NeedsList() || c.NeedsVersion() {
+		c.isReady = true
+		return caesarx.EXIT_CODE_SUCCESS, nil
+	}
+
 	validNumberIDs := []rune{'N', 'A', 'H', 'E'}
 	c.numeric.Value = unicode.ToUpper(c.numeric.Value)
 
@@ -214,6 +225,10 @@ func (c *CommonOptions) Validate() (int, error) {
 	return caesarx.EXIT_CODE_SUCCESS, nil
 }
 
+func (c *CommonOptions) IsReady() bool {
+	return c.isReady
+}
+
 func (c *CommonOptions) initialize() {
 	flag.BoolVar(&c.help, "help", false, "Show help")
 	flag.BoolVar(&c.demo, "demo", false, "Demonstration mode")
@@ -221,6 +236,7 @@ func (c *CommonOptions) initialize() {
 	flag.BoolVar(&c.version, "version", false, "Show version number")
 	flag.StringVar(&c.alpha, "alpha", defaultLanguage, "Choose alphabet")
 	flag.Var(&c.numeric, "num", "Include Numbers disk: (N)one, (A)rabic, (H)indi (E)xtended")
+	c.isReady = false
 }
 
 /* ----------------------------------------------------------------

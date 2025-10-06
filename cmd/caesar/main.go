@@ -14,7 +14,10 @@ import (
 	"lordofscripts/caesarx/app"
 	"lordofscripts/caesarx/ciphers"
 	"lordofscripts/caesarx/ciphers/affine"
+	"lordofscripts/caesarx/ciphers/bellaso"
+	"lordofscripts/caesarx/ciphers/caesar"
 	"lordofscripts/caesarx/ciphers/commands"
+	"lordofscripts/caesarx/ciphers/vigenere"
 	"lordofscripts/caesarx/cmd"
 	"lordofscripts/caesarx/cmn"
 )
@@ -23,6 +26,7 @@ import (
  *							G l o b a l s
  *-----------------------------------------------------------------*/
 const (
+	APP_VERSION = "1.0"
 	// CLI application name and its alter-egos
 	APP_NAME      = "caesarx"
 	APP_NAME_ALT1 = "bellaso"
@@ -200,9 +204,11 @@ func main() {
 		app.DieWithError(err, exitCode)
 	}
 
-	exitCode, err = aopts.Validate()
-	if err != nil {
-		app.DieWithError(err, exitCode)
+	if !copts.IsReady() {
+		exitCode, err = aopts.Validate()
+		if err != nil {
+			app.DieWithError(err, exitCode)
+		}
 	}
 
 	// -------	EXECUTION ------
@@ -215,10 +221,21 @@ func main() {
 	case copts.NeedsList():
 		fmt.Println("List of available Caesar-cipher class variants:")
 		fmt.Println(ciphers.PrintAvailableCiphers())
+		exitCode = z.EXIT_CODE_SUCCESS
 
 	// -help
 	case copts.NeedsHelp():
 		Help(copts, aopts)
+		exitCode = z.EXIT_CODE_SUCCESS
+
+	// -version
+	case copts.NeedsVersion():
+		fmt.Printf("\tCaesarX cipher app. v%s\n", APP_VERSION)
+		fmt.Println("\t", caesar.Info)
+		fmt.Println("\t", caesar.InfoDidimus)
+		fmt.Println("\t", caesar.InfoFibonacci)
+		fmt.Println("\t", bellaso.Info)
+		fmt.Println("\t", vigenere.Info)
 		exitCode = z.EXIT_CODE_SUCCESS
 
 	// -d or encrypt

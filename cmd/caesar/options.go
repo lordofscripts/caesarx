@@ -62,6 +62,7 @@ type CaesarxOptions struct {
 	// derived values
 	ItNeeds   Needs
 	VariantID CaesarVariant
+	isReady   bool
 
 	Common *cmd.CommonOptions
 }
@@ -83,6 +84,7 @@ func NewCaesarxOptions(common *cmd.CommonOptions) *CaesarxOptions {
 		VariantID:      VariantCaesar,
 		VariantVersion: "",
 		Common:         common,
+		isReady:        false,
 	}
 	opts.initialize()
 	return opts
@@ -167,6 +169,10 @@ func (c *CaesarxOptions) ShowUsage(name string) {
 	fmt.Printf("\t%s -variant NAME -secret 'password' [other options] 'user text'", name)
 }
 
+func (c *CaesarxOptions) IsReady() bool {
+	return c.isReady
+}
+
 func (c *CaesarxOptions) Validate() (int, error) {
 	c.checkAlterEgo()
 
@@ -216,5 +222,6 @@ func (c *CaesarxOptions) Validate() (int, error) {
 		}
 	}
 
+	c.isReady = true
 	return exitCode, nil
 }

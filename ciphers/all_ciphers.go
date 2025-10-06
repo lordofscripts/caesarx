@@ -82,8 +82,8 @@ func RegisterCipher(descriptor *CipherInfo) {
 func PrintAvailableCiphers() string {
 	var sb strings.Builder
 
-	for k, v := range availableCiphers {
-		sb.WriteString(fmt.Sprintf("%15s - %s\n", k, v))
+	for _, v := range availableCiphers {
+		sb.WriteString(v.String() + "\n")
 	}
 
 	return sb.String()
