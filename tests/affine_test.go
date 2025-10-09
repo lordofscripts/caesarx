@@ -8,9 +8,14 @@ package tests
 
 import (
 	"fmt"
+	z "lordofscripts/caesarx"
 	"lordofscripts/caesarx/ciphers/affine"
 	"lordofscripts/caesarx/ciphers/commands"
 	"lordofscripts/caesarx/cmn"
+	"os"
+	"os/exec"
+	"path"
+	"runtime"
 	"slices"
 	"testing"
 )
@@ -458,4 +463,131 @@ func Test_AffineCommand_Chained(t *testing.T) {
 			t.Errorf("#%d %s decoder failed\n\tin :'%s'\n\texp:'%s'\n\tgot:'%s'", vnum+1, tc.Alpha.LangCodeISO(), cipherStr, tc.In, plain)
 		}
 	}
+}
+
+// Tests text file Affine encryption with round-trip
+// EncryptTextFile followed by DecryptTextFile
+func Test_AffineCommand_EncryptTextFile(t *testing.T) {
+	// Make test file
+	var fdIn *os.File
+	var err error
+	FILE_IN := "/tmp/test_affine.txt"
+	FILE_OUT := cmn.NewNameExtOnly(FILE_IN, commands.FILE_EXT_AFFINE, true)
+	FILE_RET := "/tmp/test_affine_rt.txt"
+	if fdIn, err = os.Create(FILE_IN); err != nil {
+		t.Error(err)
+	} else {
+		fdIn.WriteString("I love cryptography" + "\n")
+	}
+
+	ctr := commands.NewAffineCommand(cmn.ALPHA_DISK, 7, 23)
+	err = ctr.EncryptTextFile(FILE_IN)
+	if err != nil {
+		t.Errorf("failed EncryptTextFile: %v", err)
+	}
+
+	err = ctr.DecryptTextFile(FILE_OUT, FILE_RET)
+	if err != nil {
+		t.Errorf("failed DecryptTextFile: %v", err)
+	}
+
+	md5In, _ := cmn.CalculateFileMD5(FILE_IN)
+	md5Out, _ := cmn.CalculateFileMD5(FILE_RET)
+	if md5In != md5Out {
+		t.Errorf("rount-trip decrypted file not the same as input. %s vs %s", md5In, md5Out)
+	}
+
+	os.Remove(FILE_IN)
+	os.Remove(FILE_OUT)
+	os.Remove(FILE_RET)
+}
+
+// Test_Affine_Exit exercises the Affine executable with various CLI
+// parameter/argument combinations for both valid and invalid invocations
+// to check the return value. It helps ensuring the application complies
+// with the documentation.
+func Test_Affine_Exit(t *testing.T) {
+	const OUT_PLAIN_FILE = "test_data/text_EN.txt"          // part of the repository!
+	const OUT_CIPHER_FILE = "test_data/text_EN_txt.afi"     // generated
+	const OUT_DECODED_FILE = "test_data/text_EN_afi_rt.txt" // generated
+	// test cases for CLI execution
+	allCases := []struct {
+		Title    string
+		ExitCode int
+		Args     []string
+	}{
+		// common: terminal cases
+		{"Help", z.EXIT_CODE_SUCCESS, []string{"-help"}},
+		{"Demo", z.EXIT_CODE_SUCCESS, []string{"-demo"}},
+		{"Version", z.EXIT_CODE_SUCCESS, []string{"-version"}},
+		// application terminal cases
+		{"Print Tabula", z.EXIT_CODE_SUCCESS, []string{"-tabula", "-A", "7", "-B", "23"}},
+		{"List Coprimes", z.EXIT_CODE_SUCCESS, []string{"-coprime"}},
+		{"List Coprimes For N", z.EXIT_CODE_SUCCESS, []string{"-coprime", "-N", "20"}},
+		// common: chained alphabets
+		{"Chained None", z.EXIT_CODE_SUCCESS, []string{"-num", "N", "-A", "7", "-B", "20", "'plain text'"}},
+		{"Chained Arabic", z.EXIT_CODE_SUCCESS, []string{"-num", "A", "-A", "7", "-B", "20", "'plain text'"}},
+		{"Chained Hindi", z.EXIT_CODE_SUCCESS, []string{"-num", "H", "-A", "7", "-B", "20", "'plain text'"}},
+		{"Chained Extended", z.EXIT_CODE_SUCCESS, []string{"-num", "E", "-A", "7", "-B", "20", "'plain text'"}},
+		{"Chained invalid", z.ERR_CLI_OPTIONS, []string{"-num", "X", "-A", "7", "-B", "20", "'plain text'"}},
+		// common: NGrams
+		{"NGram 2", z.EXIT_CODE_SUCCESS, []string{"-ngram", "2", "-A", "7", "-B", "20", "'plain text'"}},
+		{"NGram 5", z.EXIT_CODE_SUCCESS, []string{"-ngram", "5", "-A", "7", "-B", "20", "'plain text'"}},
+		{"NGram invalid", z.ERR_PARAMETER, []string{"-ngram", "6", "-A", "7", "-B", "20", "'plain text'"}},
+		// application: encode cases
+		{"Encode message", z.EXIT_CODE_SUCCESS, []string{"-A", "7", "-B", "20", "'plain text'"}},
+		{"Encode message missing -B", z.ERR_PARAMETER, []string{"-A", "7", "'plain text'"}},
+		{"Encode message missing -A", z.ERR_PARAMETER, []string{"-B", "20", "'plain text'"}},
+		{"Encode message missing -A -B", z.ERR_PARAMETER, []string{"'plain text'"}},
+		{"Encode file", z.EXIT_CODE_SUCCESS, []string{"-A", "7", "-B", "20", "-F", OUT_PLAIN_FILE}},
+		// application: decode cases
+		{"Decode message", z.EXIT_CODE_SUCCESS, []string{"-A", "7", "-B", "20", "-d", "'cipher text'"}},
+		{"Decode message missing -B", z.ERR_PARAMETER, []string{"-A", "7", "-d", "'plain text'"}},
+		{"Decode message missing -A", z.ERR_PARAMETER, []string{"-B", "20", "-d", "'plain text'"}},
+		{"Decode message missing -A -B", z.ERR_PARAMETER, []string{"-d", "'plain text'"}},
+		{"Decode file missing output", z.ERR_PARAMETER, []string{"-A", "7", "-B", "20", "-d", "-F", OUT_CIPHER_FILE}},
+		{"Decode file", z.EXIT_CODE_SUCCESS, []string{"-A", "7", "-B", "20", "-d", "-F", OUT_CIPHER_FILE, OUT_DECODED_FILE}},
+	}
+
+	application := getAffineExecutable(t)
+	for i, tc := range allCases {
+		cmd := exec.Command(application, tc.Args...) // Adjust path if needed
+		err := cmd.Run()
+
+		// Check exit code
+		if err == nil && tc.ExitCode == z.EXIT_CODE_SUCCESS {
+			fmt.Printf("Affine %s OK\n", tc.Title)
+		} else {
+			if e, ok := err.(*exec.ExitError); !ok {
+				t.Errorf("general failure, that is not a CLI exit error")
+			} else {
+				if e.ExitCode() != tc.ExitCode {
+					t.Errorf("#%d [%15s] exp:%d got:%d\nError: %v", i+1, tc.Title, tc.ExitCode, e.ExitCode(), err)
+				}
+			}
+		}
+	}
+
+	os.Remove(OUT_CIPHER_FILE)
+	os.Remove(OUT_DECODED_FILE)
+}
+
+// Get the fully-qualified path to the Affine CLI executable.
+// It adjusts the name by adding ".exe" if we are on (God forbid!) Windows.
+func getAffineExecutable(t *testing.T) string {
+	t.Helper()
+
+	appName := "affine" // Linux & MacOS
+	if runtime.GOOS == "windows" {
+		appName = "affine.exe"
+	}
+
+	// get path of current test file
+	_, filename, _, _ := runtime.Caller(0)
+	testDir := path.Dir(filename)
+
+	// my projects have their own staging BIN directory
+	appExecutable := path.Join(cmn.Conjoin(testDir, "../bin"), appName)
+
+	return appExecutable
 }

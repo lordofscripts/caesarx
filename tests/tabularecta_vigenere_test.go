@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"lordofscripts/caesarx/ciphers/commands"
 	"lordofscripts/caesarx/cmn"
+	"os"
 	"testing"
 )
 
@@ -79,4 +80,42 @@ func Test_VigenereCmd_RoundTrip(t *testing.T) {
 			t.Errorf("#%d Decode %s fail\n\tIn : %s\n\texp: %s\n\tgot: %s", vnum+1, cipherStr, v.Alpha.Name, v.Input, decodedStr)
 		}
 	}
+}
+
+// Tests text file Vigenère encryption with round-trip
+// EncryptTextFile followed by DecryptTextFile
+func Test_VigenereCmd_EncryptTextFile(t *testing.T) {
+	// Make test file
+	var fdIn *os.File
+	var err error
+	FILE_IN := "/tmp/test_vigenere.txt"
+	FILE_OUT := cmn.NewNameExtOnly(FILE_IN, commands.FILE_EXT_VIGENERE, true)
+	FILE_RET := "/tmp/test_vigenere_rt.txt"
+	if fdIn, err = os.Create(FILE_IN); err != nil {
+		t.Error(err)
+	} else {
+		fdIn.WriteString("I love cryptography" + "\n")
+	}
+
+	const SECRET string = "ORALE"
+	ctr := commands.NewVigenereCommand(cmn.ALPHA_DISK, SECRET)
+	err = ctr.EncryptTextFile(FILE_IN)
+	if err != nil {
+		t.Errorf("failed EncryptTextFile: %v", err)
+	}
+
+	err = ctr.DecryptTextFile(FILE_OUT, FILE_RET)
+	if err != nil {
+		t.Errorf("failed DecryptTextFile: %v", err)
+	}
+
+	md5In, _ := cmn.CalculateFileMD5(FILE_IN)
+	md5Out, _ := cmn.CalculateFileMD5(FILE_RET)
+	if md5In != md5Out {
+		t.Errorf("rount-trip decrypted file not the same as input. %s vs %s", md5In, md5Out)
+	}
+
+	os.Remove(FILE_IN)
+	os.Remove(FILE_OUT)
+	os.Remove(FILE_RET)
 }

@@ -22,6 +22,11 @@ import (
  *							G l o b a l s
  *-----------------------------------------------------------------*/
 
+const (
+	// Filename extension for files encrypted with plain Caesar
+	FILE_EXT_CAESAR string = ".cae"
+)
+
 /* ----------------------------------------------------------------
  *				M o d u l e   I n i t i a l i z a t i o n
  *-----------------------------------------------------------------*/
@@ -39,7 +44,8 @@ var _ ciphers.ICipherCommand = (*CaesarCommand)(nil)
 
 type CaesarCommand struct {
 	ciphers.Pipe
-	core *caesar.CaesarTabulaRecta
+	//core *caesar.CaesarTabulaRecta
+	core ciphers.ICipher
 	opts *caesar.CaesarOptions
 }
 
@@ -122,6 +128,43 @@ func (c *CaesarCommand) Decode(ciphered string) (string, error) {
 		return plain, nil
 	}
 }
+
+// EncryptTextFile encrypts the filename src using the standard Caesar cipher.
+// The output file has the FILE_EXT_CAESAR file extension. Please note that
+// this method is only for text files.
+func (c *CaesarCommand) EncryptTextFile(src string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		fileOut := cmn.NewNameExtOnly(src, FILE_EXT_CAESAR, true)
+		err = c.core.EncryptTextFile(src, fileOut) // error already logged by core
+	}
+
+	return err
+}
+
+// DecryptTextFile decrypts the filename src using the standard Caesar cipher.
+// The output file target must be explicitely given. Please note that
+// this method is only for text files.
+func (c *CaesarCommand) DecryptTextFile(src, target string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		err = c.core.DecryptTextFile(src, target) // error already logged by core
+	}
+
+	return err
+}
+
+/*
+func (c *CaesarCommand) EncryptBinFile(src string) error {
+	if err := c.core.VerifyKey(); err != nil {
+		return err
+	}
+
+	outFilename := cmn.NewNameExtOnly(src, FILE_EXT_CAESAR, true)
+
+	return nil
+}
+*/
 
 func (c *CaesarCommand) Alphabet() string {
 	return c.core.GetAlphabet()

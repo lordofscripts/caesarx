@@ -170,10 +170,33 @@ decoded version.
 
 Due to a slightly different implementation, the `affine` command is not
 a command alias for `caesarx` but its own standalone application. Here
-are the various options:
+are the various options.
+
+For encoding/decoding short texts you can specify the message in the
+CLI as a free argument:
 
 >
-> `affine [options] {parameters} "user text"
+> `affine [options] {parameters} "user text to be processed"
+>
+
+However, if you have long data to be processed, it is better to encode/decode
+**files** instead by using the `-F` option. The number of free arguments
+depends on the operation.
+
+For encrypting the *text* `secret_file.txt` with Affine:
+
+>
+> `affine [options] {parameters} -F secret_file.txt
+>
+
+The output filename is automatically generated, and in this example it
+would be `secret_file_txt.afi`.
+
+For decrypting the *text* `secret_file.txt` with Affine you must also
+specify the output (plain text) file as the 2nd free argument:
+
+>
+> `affine [options] {parameters} -F secret_file_txt.afi plain_file.txt
 >
 
 In my implementation, by default the **Affine cipher** defaults to the English
@@ -193,6 +216,8 @@ from, but I suggest the *Extended* version.
 * `-demo` a demonstration of a round-trip encryption/decryption
 * `-ngram M` (**encryption only**) remove spaces from encrypted output and make groups
    of "M" characters separated by "·". "M" can be an integer between 2 and 5.
+* `-F` to indicate the free argument(s) is/are filenames (encrypt/decrypt FILES). Without
+	this option, the free argument is a string to be encrypted/decrypted.
 
 ### Operational parameters
 

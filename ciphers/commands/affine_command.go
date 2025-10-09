@@ -23,6 +23,11 @@ import (
  *							G l o b a l s
  *-----------------------------------------------------------------*/
 
+const (
+	// Filename extension for files encrypted with Affine
+	FILE_EXT_AFFINE string = ".afi"
+)
+
 /* ----------------------------------------------------------------
  *				M o d u l e   I n i t i a l i z a t i o n
  *-----------------------------------------------------------------*/
@@ -122,6 +127,25 @@ func (c *AffineCommand) Decode(ciphered string) (string, error) {
 	} else {
 		return plain, nil
 	}
+}
+
+// EncryptTextFile encrypts the filename src using the standard Caesar cipher.
+// The output file has the FILE_EXT_AFFINE file extension. Please note that
+// this method is only for text files.
+func (c *AffineCommand) EncryptTextFile(src string) error {
+	fileOut := cmn.NewNameExtOnly(src, FILE_EXT_AFFINE, true)
+	err := c.crypto.AffineEncoder.EncryptTextFile(src, fileOut)
+
+	return err
+}
+
+// DecryptTextFile decrypts the filename src using the standard Caesar cipher.
+// The output file target must be explicitely given. Please note that
+// this method is only for text files.
+func (c *AffineCommand) DecryptTextFile(src, target string) error {
+	err := c.crypto.AffineDecoder.DecryptTextFile(src, target)
+
+	return err
 }
 
 func (c *AffineCommand) Alphabet() string {

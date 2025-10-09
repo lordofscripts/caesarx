@@ -9,10 +9,12 @@
 package affine
 
 import (
+	"bufio"
 	"fmt"
 	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/cmn"
 	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"os"
 	"strings"
 )
 
@@ -167,14 +169,60 @@ func (a *AffineEncoder) Encode(plain string) (string, error) {
 		}
 
 		if err != nil {
+			mlog.ErrorE(err)
 			return "", err
 		}
 		if _, err = cipher.WriteRune(encR); err != nil {
+			mlog.ErrorE(err)
 			return "", err
 		}
 	}
 
 	return cipher.String(), nil
+}
+
+func (a *AffineEncoder) EncryptTextFile(input, output string) error {
+	fdIn, err := os.Open(input)
+	if err != nil {
+		mlog.ErrorE(err)
+	}
+	defer fdIn.Close()
+	reader := bufio.NewReader(fdIn)
+
+	fdOut, err := os.Create(output)
+	if err != nil {
+		mlog.ErrorE(err)
+	}
+	defer fdOut.Close()
+
+	destroyOpenFile := func(fd *os.File) {
+		fd.Close() // in Windows a file must be closed prior to Remove...
+		os.Remove(fd.Name())
+	}
+
+	var lineIn, lineOut string
+	err = nil
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		lineIn = scanner.Text()
+		lineOut, err = a.Encode(lineIn)
+		if err == nil {
+			_, err = fmt.Fprintln(fdOut, lineOut)
+		}
+
+		if err != nil {
+			mlog.ErrorE(err)
+			destroyOpenFile(fdOut)
+			return err
+		}
+	}
+
+	if err = scanner.Err(); err != nil {
+		mlog.ErrorE(err)
+		destroyOpenFile(fdOut)
+	}
+
+	return err
 }
 
 func (c *AffineCrypto) Alphabet() string {

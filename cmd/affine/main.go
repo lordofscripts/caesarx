@@ -20,7 +20,6 @@ import (
 	"lordofscripts/caesarx/cmd"
 	"lordofscripts/caesarx/cmn"
 	"os"
-	"strconv"
 )
 
 /* ----------------------------------------------------------------
@@ -28,7 +27,13 @@ import (
  *-----------------------------------------------------------------*/
 const (
 	APP_NAME    = "affine"
-	APP_VERSION = "1.0"
+	APP_VERSION = "1.1"
+)
+
+var (
+	nameMasterAlphabet   string
+	nameSlaveAlphabet    string
+	namePrimaryOperation string
 )
 
 /* ----------------------------------------------------------------
@@ -49,8 +54,17 @@ func init() {
  *							F u n c t i o n s
  *-----------------------------------------------------------------*/
 
-// List all coprimes. By default it uses N from the alphabet size,
-// i.e. the chosen alphabet. But if the "n" parameter is greater
+// Help shows help about using the Affine CLI application
+func Help(co *cmd.CommonOptions) int {
+	fmt.Println("Usage:")
+	co.ShowUsage(APP_NAME)
+
+	flag.Usage()
+	return z.EXIT_CODE_SUCCESS
+}
+
+// PrintCoprimes will list all coprimes. By default it uses N from the alphabet
+// size, i.e. the chosen alphabet. But if the "n" parameter is greater
 // than zero, it is assumed that the caller wants to experiment with
 // an arbitrary length other than the chosen alphabet.
 func PrintCoprimes(alpha *cmn.Alphabet, n int) int {
@@ -91,41 +105,19 @@ func PrintAffineTabula(alpha *cmn.Alphabet, a, b int) int {
 	return z.EXIT_CODE_SUCCESS
 }
 
-// Execute Affine encryption OR decryption.
-// @param alpha (*cmnt.Alphabet) Primary/Master Reference Alphabet (letters)
-// @param numbers (*cmnt.Alphabet) optional Secondary/Slave Reference Alphabet (numbers and/or symbols)
-// @param decode (bool) true for decryption, false for encryption
-// @param a (int) Affine A coefficient
-// @param b (int) Affine B coefficient
-// @param ngram (int) ignored if 0, else group CIPHERED output in 2/3/4/5 letters
-// @param input (string) Text to encrypt or decrypt
-// @returns (int) application exit code, 0 for success
-// @returns (error) nil on success, else error
-func Execute(alpha, numbers *cmn.Alphabet, decode bool, a, b, ngram int, input string) (int, error) {
-	// the main Affine cipher engine only has a language/letters alphabet and no slave/chain
-	cmdCipher := commands.NewAffineCommand(alpha, a, b) // is ciphers.ICipherCommand
-	// attach any optional alphabet if any
-	slaveName := "(None)"
-	if numbers != nil {
-		cmdCipher.WithChain(numbers)
-		slaveName = numbers.Name
-	}
-
-	if ngram > 0 && !decode {
-		cmdNGram := cmn.NewNgramFormatter(uint8(ngram), '·') // is cmn.ICommand
-		cmdCipher.WithPipe(cmdNGram)
-	}
-
+// ExecuteMessage performs encryption or decryption of a (single) text string
+// specified as a free CLI argument. The user has named the alpha Master alphabet,
+// and an optional numbers Slave alphabet.
+func ExecuteMessage(alpha, numbers *cmn.Alphabet, opts *AffineCliOptions, input string) (int, error) {
 	var err error
 	var exitCode int = z.EXIT_CODE_SUCCESS
 	var output string
-	var operation string
 
-	if decode {
-		operation = "Decrypt"
+	cmdCipher := setupAffineCrypto(alpha, numbers, opts)
+
+	if opts.ActIsDecode {
 		output, err = cmdCipher.Decode(input)
 	} else {
-		operation = "Encrypt"
 		output, err = cmdCipher.Encode(input)
 	}
 
@@ -136,13 +128,13 @@ func Execute(alpha, numbers *cmn.Alphabet, decode bool, a, b, ngram int, input s
 		//params, err = affine.NewAffineParams(a, b, int(alpha.Size()))
 		paramsM, paramsS := cmdCipher.GetParams()
 
-		fmt.Println("Operation: ", operation)
-		fmt.Printf("Alphabet : %s (Master/Primary)\n", alpha.Name)
-		fmt.Printf("Alphabet : %s (Slave/Secondary)\n", slaveName)
+		fmt.Println("Operation: ", namePrimaryOperation)
+		fmt.Printf("Alphabet : %s (Master/Primary)\n", nameMasterAlphabet)
+		fmt.Printf("Alphabet : %s (Slave/Secondary)\n", nameSlaveAlphabet)
 		fmt.Println("Params  M: ", paramsM)
 		fmt.Println("Params  S: ", paramsS)
 		fmt.Println("Algorithm: ", cmdCipher.String())
-		if decode {
+		if opts.ActIsDecode {
 			fmt.Println("Encoded  : ", input)
 			fmt.Println("Decoded  : ", output)
 		} else {
@@ -155,56 +147,93 @@ func Execute(alpha, numbers *cmn.Alphabet, decode bool, a, b, ngram int, input s
 	return exitCode, err
 }
 
-func Help(co *cmd.CommonOptions) int {
-	fmt.Println("Usage:")
-	co.ShowUsage(APP_NAME)
+// ExecuteFile performs encryption or decryption of a file. In this case for encryption
+// the user specifies the input filename and the output filename is derived by the
+// application (see documentation). For decryption the user must specify two free
+// arguments, the input and output filenames respectively.
+func ExecuteFile(alpha, numbers *cmn.Alphabet, opts *AffineCliOptions) (int, error) {
+	var err error
+	var exitCode int = z.EXIT_CODE_SUCCESS
 
-	flag.Usage()
-	return z.EXIT_CODE_SUCCESS
+	cmdCipher := setupAffineCrypto(alpha, numbers, opts)
+
+	if opts.ActIsDecode {
+		err = cmdCipher.DecryptTextFile(opts.Files.Input, opts.Files.Output)
+	} else {
+		err = cmdCipher.EncryptTextFile(opts.Files.Input)
+	}
+
+	if err != nil {
+		exitCode = z.ERR_CIPHER
+	} else {
+		//var params *affine.AffineParams
+		//params, err = affine.NewAffineParams(a, b, int(alpha.Size()))
+		paramsM, paramsS := cmdCipher.GetParams()
+
+		fmt.Println("Operation: ", namePrimaryOperation)
+		fmt.Printf("Alphabet : %s (Master/Primary)\n", nameMasterAlphabet)
+		fmt.Printf("Alphabet : %s (Slave/Secondary)\n", nameSlaveAlphabet)
+		fmt.Println("Params  M: ", paramsM)
+		fmt.Println("Params  S: ", paramsS)
+		fmt.Println("Algorithm: ", cmdCipher.String())
+		if opts.ActIsDecode {
+			fmt.Println("Encoded  : ", opts.Files.Input)
+			fmt.Println("Decoded  : ", opts.Files.Output)
+		} else {
+			fmt.Println("Plain    : ", opts.Files.Input)
+			fmt.Println("Encoded  : ", opts.Files.Output)
+		}
+		fmt.Println()
+	}
+
+	return exitCode, err
+}
+
+// setupAffineCrypto does the preliminary setup for the cryptographic operation.
+// and returns an Affine cryptographic command object capable of performing the
+// actual encryption/decryption.
+func setupAffineCrypto(alpha, numbers *cmn.Alphabet, opts *AffineCliOptions) *commands.AffineCommand {
+	// the main Affine cipher engine only has a language/letters alphabet and no slave/chain
+	// cmdCipher implements ciphers.ICipherCommand
+	cmdCipher := commands.NewAffineCommand(alpha, opts.CoefficientA, opts.CoefficientB)
+	// attach any optional alphabet if any
+	nameSlaveAlphabet = "(None)"
+	if numbers != nil {
+		cmdCipher.WithChain(numbers)
+		nameSlaveAlphabet = numbers.Name
+	}
+
+	if opts.OptNgramSize > 0 && !opts.ActIsDecode {
+		cmdNGram := cmn.NewNgramFormatter(uint8(opts.OptNgramSize), '·') // is cmn.ICommand
+		cmdCipher.WithPipe(cmdNGram)
+	}
+
+	if opts.ActIsDecode {
+		namePrimaryOperation = "Decrypt"
+	} else {
+		namePrimaryOperation = "Encrypt"
+	}
+
+	return cmdCipher
 }
 
 /* ----------------------------------------------------------------
  *						M A I N | E X A M P L E
  *-----------------------------------------------------------------*/
 func main() {
-	const (
-		FLAG_COEFF_A  = "A"
-		FLAG_NGRAM    = "ngram" // (optional) only if encrypting
-		FLAG_COEFF_B  = "B"
-		FLAG_DECODE   = "d"
-		FLAG_COPRIMES = "coprime"
-		FLAG_MODULO   = "N" // (optional) only if -coprime is given
-		FLAG_TABULA   = "tabula"
-	)
 	// -------	CLI FLAGS ------
 	copts := cmd.NewCommonOptions() // -help|-demo|-alpha ALPHA|-num N
-	var optNgram, optCoeffA, optCoeffB, optModulo int
-	var decode, listCoprimes, printTabula bool
-
-	flag.IntVar(&optCoeffA, FLAG_COEFF_A, 1, "Affine coefficient A")
-	flag.IntVar(&optCoeffB, FLAG_COEFF_B, 0, "Affine coefficient B")
-	flag.IntVar(&optModulo, FLAG_MODULO, 0, "Affine module N (only if -coprime is used), else derived from alpha")
-	flag.IntVar(&optNgram, FLAG_NGRAM, 0, "Format encoded output as NGram")
-	flag.BoolVar(&decode, FLAG_DECODE, false, "Decode text")
-	flag.BoolVar(&listCoprimes, FLAG_COPRIMES, false, "List coprimes for 'A' for the chosen alphabet")
-	flag.BoolVar(&printTabula, FLAG_TABULA, false, "Print Tabula for chosen parameters")
-	flag.Parse()
+	aopts := NewAffineOptions(copts)
 
 	// -------	CLI VALIDATION ------
-	if !(optNgram == 0 || (optNgram >= 2 && optNgram <= 5)) {
-		app.Die("Ngram size must be 2,3,4 or 5 not "+strconv.Itoa(optNgram), z.ERR_PARAMETER)
+	if exitCode, err := copts.Validate(); err != nil {
+		app.DieWithError(err, exitCode)
 	}
 
-	if optModulo != 0 && !listCoprimes {
-		app.Die("optional -N can only be used with -coprime but it defaults to alphabet length", z.ERR_PARAMETER)
-	}
-
-	if optModulo < 0 {
-		app.Die("-N should be positive integer", z.ERR_PARAMETER)
-	}
-
-	if !copts.NeedsDemo() && !copts.NeedsHelp() && !listCoprimes && !copts.NeedsVersion() && !printTabula && flag.NArg() != 1 {
-		app.Die("for encode/decode the free argument must be the text.", z.ERR_PARAMETER)
+	if !copts.IsReady() { // only if the common option is NOT terminal
+		if exitCode, err := aopts.Validate(); err != nil {
+			app.DieWithError(err, exitCode)
+		}
 	}
 
 	// -------	EXECUTION ------
@@ -212,6 +241,9 @@ func main() {
 	var err error = nil
 
 	switch {
+	/*
+	 * Common terminal arguments
+	 */
 	case copts.NeedsHelp():
 		exitCode = Help(copts)
 
@@ -225,14 +257,25 @@ func main() {
 		fmt.Printf("\tAffine cipher app. v%s\n", APP_VERSION)
 		fmt.Println("\t", affine.Info)
 
-	case listCoprimes:
-		exitCode = PrintCoprimes(copts.Alphabet(), optModulo)
+	/*
+	 * Affine-specific terminal arguments
+	 */
+	case aopts.ActListCoprimes:
+		exitCode = PrintCoprimes(copts.Alphabet(), aopts.OptModulo)
 
-	case printTabula:
-		exitCode = PrintAffineTabula(copts.Alphabet(), optCoeffA, optCoeffB)
+	case aopts.ActPrintTabula:
+		exitCode = PrintAffineTabula(copts.Alphabet(), aopts.CoefficientA, aopts.CoefficientB)
+
+	/*
+	 * Cryptographic operations
+	 */
+	case aopts.UseFiles():
+		// the input is a filename specified in the CLI arguments
+		exitCode, err = ExecuteFile(copts.Alphabet(), copts.Numbers(), aopts)
 
 	default:
-		exitCode, err = Execute(copts.Alphabet(), copts.Numbers(), decode, optCoeffA, optCoeffB, optNgram, flag.Arg(0))
+		// the input is a short message given as a CLI argument
+		exitCode, err = ExecuteMessage(copts.Alphabet(), copts.Numbers(), aopts, flag.Arg(0))
 	}
 
 	if err != nil {

@@ -26,6 +26,13 @@ that beyond the basic, may be worth noting:
 * Command Pattern with Piped commands (chained commands)
 * Custom application logging with `app/mlog.go` which is my improved
    version of `log/slog`
+* Test cases like `Test_Affine_Exit()` which exercise various CLI execution
+  parameter combinations to check the application return value. You no
+  longer need to run the CLI manually prior to every release.
+  
+More odd stuff:
+
+* `Makefile` get absolute path of current makefile to get project's BIN dir   
 
 ## Quirks
 

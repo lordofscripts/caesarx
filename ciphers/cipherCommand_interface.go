@@ -16,13 +16,28 @@ import (
  *-----------------------------------------------------------------*/
 
 type ICipherCommand interface {
+	// Pipe this command's output to the input of another command
 	IPipe
+	// Set the primary/master alphabet to substitute the one given in
+	// the constructor.
 	WithAlphabet(alphabet *cmn.Alphabet) ICipherCommand
+	// Set a secondary/slave alphabet to use in case target is not
+	// found in primary/master alphabet.
 	WithChain(*cmn.Alphabet) ICipherCommand
+
+	// Encodes/Encrypts a string
 	Encode(plain string) (string, error)
+	// Decodes/Decrypts a string
 	Decode(ciphered string) (string, error)
+
+	EncryptTextFile(filenameIn string) error
+	DecryptTextFile(filenameIn, filenameOut string) error
+	//EncryptBinFile(filename string) error
+
+	// Get the alphabet string (don't use it for binary alphabets)
 	Alphabet() string
-	//Rebuild(alphabet string, opts ...any)
+	// deprecated
 	Rebuild(alphabet *cmn.Alphabet, opts ...any)
+	// String representation of the command
 	fmt.Stringer
 }

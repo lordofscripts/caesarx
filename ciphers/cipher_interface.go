@@ -7,6 +7,7 @@
 package ciphers
 
 import (
+	"fmt"
 	"lordofscripts/caesarx/cmn"
 	iciphers "lordofscripts/caesarx/internal/ciphers"
 )
@@ -16,12 +17,23 @@ import (
  *-----------------------------------------------------------------*/
 
 type ICipher interface {
-	cmn.IRuneLocalizer
+	// Setup methods
 	WithChain(*TabulaRecta) ICipher
 	WithAlphabet(alphabet *cmn.Alphabet) ICipher
 	WithSequencer(iciphers.IKeySequencer) ICipher
-	VerifySecret(secret ...string) error
 
+	// Queries
+	cmn.IRuneLocalizer
+	VerifySecret(secret ...string) error
+	VerifyKey(keys ...rune) error
+	GetAlphabet() string
+	GetLanguage() string
+
+	// Execution methods
 	Encode(plain string) string
 	Decode(cipher string) string
+	EncryptTextFile(fileIn, fileOut string) error
+	DecryptTextFile(fileIn, fileOut string) error
+
+	fmt.Stringer
 }

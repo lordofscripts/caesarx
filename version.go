@@ -57,7 +57,7 @@ var (
 
 var (
 	// NOTE: Change these values accordingly
-	appVersion version = version{NAME, MANUAL_VERSION, statusReleased, 0}
+	appVersion version = version{NAME, MANUAL_VERSION, statusRC, 1}
 
 	// DO NOT CHANGE THESE!
 	Version      string = appVersion.String()

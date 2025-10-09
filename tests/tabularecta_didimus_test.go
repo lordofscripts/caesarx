@@ -5,6 +5,7 @@ import (
 	"lordofscripts/caesarx/ciphers/commands"
 	"lordofscripts/caesarx/cmn"
 	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"os"
 	"testing"
 )
 
@@ -73,4 +74,43 @@ func Test_DidimusCmd_RoundTrip(t *testing.T) {
 			t.Errorf("#%d Decode fail\n\tInp: %s\n\texp: %s\n\tgot: %s ", vnum+1, cipherStr, v.Input, decodedStr)
 		}
 	}
+}
+
+// Tests text file Didimus encryption with round-trip
+// EncryptTextFile followed by DecryptTextFile
+func Test_DidimusCommand_EncryptTextFile(t *testing.T) {
+	// Make test file
+	var fdIn *os.File
+	var err error
+	FILE_IN := "/tmp/test_didimus.txt"
+	FILE_OUT := cmn.NewNameExtOnly(FILE_IN, commands.FILE_EXT_DIDIMUS, true)
+	FILE_RET := "/tmp/test_didimus_rt.txt"
+	if fdIn, err = os.Create(FILE_IN); err != nil {
+		t.Error(err)
+	} else {
+		fdIn.WriteString("I love cryptography" + "\n")
+	}
+
+	const KEY rune = 'Z'
+	const OFFSET uint8 = 8
+	ctr := commands.NewDidimusCommand(cmn.ALPHA_DISK, KEY, OFFSET)
+	err = ctr.EncryptTextFile(FILE_IN)
+	if err != nil {
+		t.Errorf("failed EncryptTextFile: %v", err)
+	}
+
+	err = ctr.DecryptTextFile(FILE_OUT, FILE_RET)
+	if err != nil {
+		t.Errorf("failed DecryptTextFile: %v", err)
+	}
+
+	md5In, _ := cmn.CalculateFileMD5(FILE_IN)
+	md5Out, _ := cmn.CalculateFileMD5(FILE_RET)
+	if md5In != md5Out {
+		t.Errorf("rount-trip decrypted file not the same as input. %s vs %s", md5In, md5Out)
+	}
+
+	os.Remove(FILE_IN)
+	os.Remove(FILE_OUT)
+	os.Remove(FILE_RET)
 }

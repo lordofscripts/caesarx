@@ -28,7 +28,8 @@ This fun application and library is merely an educational experiment I did for f
 * Supports custom casing rules (more details in the technical document).
 * Supports symbols and chained alphabets.
 * The command-pattern based API allows piping results into other commands. For example double-algorithm encryption or output grouping.
-* Supports grouping encrypted output in groups of 2/3/4/5 characters.
+* Supports grouping encrypted output in groups of 2/3/4/5 characters for CLI text encryption (message-based).
+* Supports **text file encrytion** in all algorithm modalities! You are not limited to short messages anymore.
 * Lots of test cases included
 
 |     | Show your support   |
@@ -50,6 +51,13 @@ Or you can install the Debian package:
 
 `sudo apt-get install go-caesarx.deb`
 
+On **Linux** you have the `caesarx`, `tabulareta` and `affine` as main CLI apps, 
+with `didimus`, `fibonacci`, `bellaso` and `vigenere` probably appearing as
+*soft symbolic links* to `caesarx`.
+
+On **Windows** you have the `caesarx.exe`, `tabula.exe` and `affine.exe` 
+executable files.
+
 #### Usage
 
 Both the `tabularecta` and the `caesarx` are CLI (command-line interface) application with some common options to get you started exploring this exciting world of ancient ciphers. Additionally there are special aliases to `caesarx` called `affine`, `bellaso` and `vigenere` that are pre-configured for those algorithms; thus sparing you from having to specify the algorithm through the CLI.
@@ -58,17 +66,48 @@ The `-demo` CLI option executes a demonstration of what it can do. Likewise, the
 
 The `-alpha ALPHABET` CLI option lets you specify the target language/alphabet, that is very important for your text to be properly encrypted. Valid values are: `english, latin, german, greek, cyrillic` where `spanish` is the same as `latin`. It defaults to English which is the plain ASCII A-Z without accented character support. I prepared a [LANGUAGES](./LANGUAGES.md) page with more details.
 
-The `-list` option in CaesarX lists all supported cipher variants.
+The `-list` option in CaesarX lists all supported cipher variants (not present in the `affine` application).
+
+The `-F` parameter tells the application that the free argument at the end
+(by encryption and decryption actions) is a *filename*  rather than an
+explicit (plain/cipher) text string. (as of v1.1) This applies only to
+*encode* and *decode* operations of all applications except `tabularecta`.
+
+To encrypt a plain text file `secret.txt` use:
+
+>
+> program_name {parameters} [options] -F secret.txt
+>
+
+the output file would be `secret_txt.EXT` where EXT is any of `cae, did, fib, bel, vig`
+depending on the chosen algorithm/variant.
+
+Similarly, to decrypt `ciphered_txt.EXT` to a plain text `plain.txt`
+you would use two free arguments instead of one:
+
+>
+> program_name {parameters} [options] -F ciphered_txt.EXT plain.txt
+>
+
 
 ### The Ciphers Explained
 
-As I indicated, these are ancient ciphers. Even in the ancient era of Julius Caesar there was a need for encrypted communication. Ever since then the curious minds in the world have been fascinated by it, and brilliant minds have developed them over the centuries.
+As I indicated, these are *ancient* and XIX century ciphers. Even in the 
+ancient era of Julius Caesar there was a need for encrypted communication. 
+Ever since then the curious minds in the world have been fascinated by it, 
+and brilliant minds have developed them over the centuries.
 
-Do you remember the famous German Enigma machine that kept the allied forces on their toes until they cracked it? I also implemented a modern-day Enigma library in Go, but it isn't released yet.
+Do you remember the famous German Enigma machine that kept the allied forces 
+on their toes until they cracked it? I also implemented a modern-day Enigma 
+library in Go, but it isn't released yet.
 
-Now, before further ado, read more about the ciphers supported by this library and application. It is up to you to put them in practice. Me and my family use it, and soon I will get my friends too. Simple solutions for modern-day problems.
+Now, before further ado, read more about the ciphers supported by this library 
+and application. It is up to you to put them in practice. Me and my family use 
+it, and soon I will get my friends too. Simple solutions for modern-day problems.
 
-These are the ciphers supported by my application. Please read the appropriate document to know about their strengths, weaknesses and how they differ from other implementations.
+These are the ciphers supported by my application. Please read the appropriate 
+document to know about their strengths, weaknesses and how they differ from 
+other implementations.
 
 * Plain [Caesar](./CIPHER_CAESAR.md) cipher used by Julius Caesar, the Roman Emperor over 2000 years ago.
 * [Didimus](./CIPHER_DIDIMUS.md) cipher is a polysyllabic variation of Caesar

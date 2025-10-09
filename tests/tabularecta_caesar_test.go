@@ -1,8 +1,16 @@
 package tests
 
 import (
+	"fmt"
+	z "lordofscripts/caesarx"
 	"lordofscripts/caesarx/ciphers/caesar"
 	"lordofscripts/caesarx/ciphers/commands"
+	"lordofscripts/caesarx/cmn"
+	"os"
+	"os/exec"
+	"path"
+	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -128,6 +136,44 @@ func Test_Caesar_Encode_Decode_CommandPattern(t *testing.T) {
 	}
 }
 
+// Tests text file Caesar encryption with round-trip
+// EncryptTextFile followed by DecryptTextFile
+func Test_CaesarCommand_EncryptTextFile(t *testing.T) {
+	// Make test file
+	var fdIn *os.File
+	var err error
+	FILE_IN := "/tmp/test_caesar.txt"
+	FILE_OUT := cmn.NewNameExtOnly(FILE_IN, commands.FILE_EXT_CAESAR, true)
+	FILE_RET := "/tmp/test_caesar_rt.txt"
+	if fdIn, err = os.Create(FILE_IN); err != nil {
+		t.Error(err)
+	} else {
+		fdIn.WriteString("I love cryptography" + "\n")
+	}
+
+	const KEY rune = 'Z'
+	ctr := commands.NewCaesarCommand(cmn.ALPHA_DISK, KEY)
+	err = ctr.EncryptTextFile(FILE_IN)
+	if err != nil {
+		t.Errorf("failed EncryptTextFile: %v", err)
+	}
+
+	err = ctr.DecryptTextFile(FILE_OUT, FILE_RET)
+	if err != nil {
+		t.Errorf("failed DecryptTextFile: %v", err)
+	}
+
+	md5In, _ := cmn.CalculateFileMD5(FILE_IN)
+	md5Out, _ := cmn.CalculateFileMD5(FILE_RET)
+	if md5In != md5Out {
+		t.Errorf("rount-trip decrypted file not the same as input. %s vs %s", md5In, md5Out)
+	}
+
+	os.Remove(FILE_IN)
+	os.Remove(FILE_OUT)
+	os.Remove(FILE_RET)
+}
+
 /*
 func Test_WithAlphabet(t *testing.T) {
 	const KEY = 3
@@ -204,3 +250,119 @@ func Test_Caesar_RoundTrip(t *testing.T) {
 	}
 }
 */
+
+// Test_Affine_Exit exercises the Affine executable with various CLI
+// parameter/argument combinations for both valid and invalid invocations
+// to check the return value. It helps ensuring the application complies
+// with the documentation.
+// @note something odd happening with this, at times it reports the wrong
+// exitCode even though the constant is correct!
+func Test_Caesar_Exit(t *testing.T) {
+	const OUT_PLAIN_FILE = "test_data/text_EN.txt"              // part of the repository!
+	const OUT_CIPHER_FILE_CAE = "test_data/text_EN_txt.cae"     // generated
+	const OUT_DECODED_FILE_CAE = "test_data/text_EN_cae_rt.txt" // generated
+	const OUT_CIPHER_FILE_VIG = "test_data/text_EN_txt.vig"     // generated
+	const OUT_CIPHER_FILE_BEL = "test_data/text_EN_txt.bel"     // generated
+
+	// test cases for CLI execution
+	allCases := []struct {
+		Title    string
+		ExitCode int
+		Args     []string
+	}{
+		// common: terminal cases
+		{"Help", z.EXIT_CODE_SUCCESS, []string{"-help"}},
+		{"Demo", z.EXIT_CODE_SUCCESS, []string{"-demo"}},
+		{"Version", z.EXIT_CODE_SUCCESS, []string{"-version"}},
+		// application terminal cases
+		{"List ciphers", z.EXIT_CODE_SUCCESS, []string{"-list"}},
+		// common: chained alphabets
+		{"Chained None", z.EXIT_CODE_SUCCESS, []string{"-num", "N", "-key", "L", "'plain text'"}},
+		{"Chained Arabic", z.EXIT_CODE_SUCCESS, []string{"-num", "A", "-key", "L", "'plain text'"}},
+		{"Chained Hindi", z.EXIT_CODE_SUCCESS, []string{"-num", "H", "-key", "L", "'plain text'"}},
+		{"Chained Extended", z.EXIT_CODE_SUCCESS, []string{"-num", "E", "-key", "L", "'plain text'"}},
+		{"Chained invalid", z.ERR_CLI_OPTIONS, []string{"-num", "V", "-key", "L", "'plain text'"}},
+		// common: NGrams
+		{"NGram 2", z.EXIT_CODE_SUCCESS, []string{"-ngram", "2", "-key", "L", "'plain text'"}},
+		{"NGram 5", z.EXIT_CODE_SUCCESS, []string{"-ngram", "5", "-key", "L", "'plain text'"}},
+		{"NGram invalid", z.ERR_PARAMETER, []string{"-ngram", "6", "-key", "L", "'plain text'"}}, // @audit 1 got 2
+		// application: encode cases
+		{"Encode Caesar message", z.EXIT_CODE_SUCCESS, []string{"-key", "L", "'plain text'"}},
+		{"Encode Caesar message missing -key", z.ERR_CLI_OPTIONS, []string{"'plain text'"}},
+		{"Encode Caesar file", z.EXIT_CODE_SUCCESS, []string{"-key", "L", "-F", OUT_PLAIN_FILE}},
+		// application: decode cases
+		{"Decode Caesar message", z.EXIT_CODE_SUCCESS, []string{"-key", "L", "-d", "'cipher text'"}},
+		{"Decode Caesar message missing -key", z.ERR_CLI_OPTIONS, []string{"-d", "'plain text'"}},
+		{"Decode Caesar file missing output", z.ERR_PARAMETER, []string{"-key", "L", "-d", "-F", OUT_CIPHER_FILE_CAE}},
+		{"Decode Caesar file", z.EXIT_CODE_SUCCESS, []string{"-key", "L", "-d", "-F", OUT_CIPHER_FILE_CAE, OUT_DECODED_FILE_CAE}},
+		// application: other abnormal cases
+		{"Redirect -variant affine", z.ERR_CLI_OPTIONS, []string{"-variant", "affine", "'plain text'"}},
+		// other...
+		{"Didimus", z.EXIT_CODE_SUCCESS, []string{"-num", "E", "-variant", "didimus", "-key", "L", "-offset", "3", "'plain text'"}},
+		{"Didimus missing -offset", z.ERR_CLI_OPTIONS, []string{"-num", "E", "-variant", "didimus", "-key", "L", "'plain text'"}},
+		{"Fibonacci", z.EXIT_CODE_SUCCESS, []string{"-num", "E", "-variant", "fibonacci", "-key", "L", "'plain text'"}},
+		{"Bellaso Message", z.EXIT_CODE_SUCCESS, []string{"-num", "E", "-variant", "bellaso", "-secret", "PASSWD", "'plain text'"}},
+		{"Bellaso File", z.EXIT_CODE_SUCCESS, []string{"-num", "E", "-variant", "bellaso", "-secret", "PASSWD", "-F", OUT_PLAIN_FILE}},
+		{"Bellaso missing -secret", z.ERR_CLI_OPTIONS, []string{"-num", "E", "-variant", "bellaso", "-key", "P", "'plain text'"}},
+		{"Vigenere Message", z.EXIT_CODE_SUCCESS, []string{"-num", "E", "-variant", "vigenere", "-secret", "PASSWD", "'plain text'"}},
+		{"Vigenere missing -secret", z.ERR_CLI_OPTIONS, []string{"-num", "E", "-variant", "vigenere", "-key", "P", "'plain text'"}},
+		{"Vigenere File", z.EXIT_CODE_SUCCESS, []string{"-num", "E", "-variant", "vigenere", "-secret", "PASSWD", "-F", OUT_PLAIN_FILE}},
+	}
+
+	application := getCaesarExecutable(t, "caesarx")
+	for i, tc := range allCases {
+		cmd := exec.Command(application, tc.Args...) // Adjust path if needed
+		err := cmd.Run()
+
+		// Check exit code
+		if err == nil && tc.ExitCode == z.EXIT_CODE_SUCCESS {
+			fmt.Printf("Caesar %02d %12s OK\n", i+1, tc.Title)
+		} else {
+			if e, ok := err.(*exec.ExitError); !ok {
+				t.Errorf("general failure, that is not a CLI exit error. %v", err)
+			} else {
+				if e.ExitCode() != tc.ExitCode {
+					t.Errorf("#%d [%15s] exp:%d got:%d\nArgs: %v\nError: %v", i+1, tc.Title, tc.ExitCode, e.ExitCode(), tc.Args, err)
+				}
+			}
+		}
+	}
+
+	os.Remove(OUT_CIPHER_FILE_CAE)
+	os.Remove(OUT_DECODED_FILE_CAE)
+	os.Remove(OUT_CIPHER_FILE_VIG)
+	os.Remove(OUT_CIPHER_FILE_BEL)
+}
+
+// Get the fully-qualified path to the Caesar CLI executable.
+// It adjusts the name by adding ".exe" if we are on (God forbid!) Windows.
+// Keeping in mind that vigenere, bellaso, didimus and fibonacci are symlinks
+// to the base caesarx executable
+func getCaesarExecutable(t *testing.T, appName string) string {
+	t.Helper()
+
+	appName = strings.ToLower(appName)
+	switch appName {
+	case "caesarx":
+	case "didimus":
+	case "fibonacci":
+	case "bellaso":
+	case "vigenere":
+
+	default:
+		panic(appName + " is not a valid executable name")
+	}
+
+	if runtime.GOOS == "windows" {
+		appName = appName + ".exe"
+	}
+
+	// get path of current test file
+	_, filename, _, _ := runtime.Caller(0)
+	testDir := path.Dir(filename)
+
+	// my projects have their own staging BIN directory
+	appExecutable := path.Join(cmn.Conjoin(testDir, "../bin"), appName)
+
+	return appExecutable
+}

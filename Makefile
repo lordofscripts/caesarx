@@ -13,6 +13,11 @@ else
 	GOFLAGS = -v -buildmode=pie
 	EXE_EXT=
 endif
+# Makefile's directory (GNU Make >= v3.81)
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+mkfile_dir := $(dir $(mkfile_path))
+# GO Project's BIN directory
+GO_PROJ_BIN=${mkfile_dir}bin
 
 # Packagers only
 PKG_NAME=caesarx
@@ -25,13 +30,13 @@ PKG_PPA_DIR=${HOME}/Develop/Distrib/PPA
 # Application stanza
 EXEC_TABULA=tabularecta
 MAIN_TABULA=cmd/tabularecta/*go
-BIN_OUT_1=$(GOBIN)/$(EXEC_TABULA)$(EXE_EXT)
+BIN_OUT_1=$(GO_PROJ_BIN)/$(EXEC_TABULA)$(EXE_EXT)
 EXEC_CAESAR=caesarx
 MAIN_CAESAR=cmd/caesar/*.go
-BIN_OUT_2=$(GOBIN)/$(EXEC_CAESAR)$(EXE_EXT)
+BIN_OUT_2=$(GO_PROJ_BIN)/$(EXEC_CAESAR)$(EXE_EXT)
 EXEC_AFFINE=affine
 MAIN_AFFINE=cmd/affine/*go
-BIN_OUT_3=$(GOBIN)/$(EXEC_AFFINE)$(EXE_EXT)
+BIN_OUT_3=$(GO_PROJ_BIN)/$(EXEC_AFFINE)$(EXE_EXT)
 
 # Main Targets
 .PHONY: clean build
@@ -75,7 +80,7 @@ testall:
 
 update:
 	go get -u all
-	
+
 # Package Builders
 
 debian:

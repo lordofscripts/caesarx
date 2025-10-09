@@ -7,11 +7,13 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	z "lordofscripts/caesarx"
 	"lordofscripts/caesarx/ciphers/bellaso"
 	"lordofscripts/caesarx/ciphers/caesar"
+	"lordofscripts/caesarx/ciphers/commands"
 	"lordofscripts/caesarx/ciphers/vigenere"
 	"lordofscripts/caesarx/cmd"
 	"lordofscripts/caesarx/cmn"
@@ -25,12 +27,22 @@ import (
  *-----------------------------------------------------------------*/
 
 const (
-	FLAG_VARIANT = "variant"
-	FLAG_NGRAM   = "ngram"
-	FLAG_OFFSET  = "offset"
-	FLAG_DECODE  = "d"
-	FLAG_KEY     = "key"
-	FLAG_SECRET  = "secret"
+	FLAG_VARIANT = "variant" // select encoding algorithm
+	FLAG_NGRAM   = "ngram"   // (only for ENCODE) format output as NGram
+	FLAG_OFFSET  = "offset"  // (only for Didimus) numeric offset to main key
+	FLAG_DECODE  = "d"       // operation: DECODE, if not given operation is ENCODE
+	FLAG_KEY     = "key"     // (only for Caesar, Didimus & Fibonacci) main encoding key
+	FLAG_SECRET  = "secret"  // (only for Vigenère & Bellaso) secret password/phrase
+	FLAG_FILE    = "F"       // ENCODE or DECODE files, free argument(s) are filenames
+)
+
+const (
+	// CLI application name and its alter-egos
+	APP_NAME      = "caesarx"
+	APP_NAME_ALT1 = "bellaso"
+	APP_NAME_ALT2 = "vigenere"
+	APP_NAME_ALT3 = "didimus"
+	APP_NAME_ALT4 = "fibonacci"
 )
 
 const (
@@ -39,6 +51,12 @@ const (
 	NeedCompositeKey              // -key -offset
 	NeedsSecret                   // -secret
 	NeedOther
+)
+
+var (
+	ErrFreeTextRequired = errors.New("encode/decode the SINGLE free parameter must be a text string")
+	ErrFilesRequired    = errors.New("encode/decode the free parameter(s) must be filename(s)")
+	ErrNGramSize        = errors.New("size of NGram should be 2,3,4 or 5")
 )
 
 /* ----------------------------------------------------------------
@@ -59,9 +77,12 @@ type CaesarxOptions struct {
 	NGramSize      int
 	Offset         int
 	IsDecode       bool
+	UseFiles       bool
 	// derived values
 	ItNeeds   Needs
 	VariantID CaesarVariant
+	Files     *cmd.FileOptions
+	fileExt   string
 	isReady   bool
 
 	Common *cmd.CommonOptions
@@ -83,8 +104,11 @@ func NewCaesarxOptions(common *cmd.CommonOptions) *CaesarxOptions {
 		ItNeeds:        NeedNone,
 		VariantID:      VariantCaesar,
 		VariantVersion: "",
+		UseFiles:       false,
 		Common:         common,
 		isReady:        false,
+		Files:          nil,
+		fileExt:        "",
 	}
 	opts.initialize()
 	return opts
@@ -95,11 +119,12 @@ func NewCaesarxOptions(common *cmd.CommonOptions) *CaesarxOptions {
  *-----------------------------------------------------------------*/
 
 func (c *CaesarxOptions) initialize() {
-	flag.StringVar(&c.VariantTag, FLAG_VARIANT, iciphers.ALG_NAME_CAESAR, "Caesar variant (caesar|didimus)")
-	flag.IntVar(&c.NGramSize, FLAG_NGRAM, 0, "Format encoded output as NGram")
+	flag.StringVar(&c.VariantTag, FLAG_VARIANT, iciphers.ALG_NAME_CAESAR, "Algorithm (caesar|didimus|fibonacci|bellaso|vigenere)")
+	flag.IntVar(&c.NGramSize, FLAG_NGRAM, -1, "Format encoded output as NGram")
 	flag.IntVar(&c.Offset, FLAG_OFFSET, 0, "Alternate key offset (Didimus)")
 	flag.BoolVar(&c.IsDecode, FLAG_DECODE, false, "Decode text")
-	flag.Var(&c.MainKey, FLAG_KEY, "Prime key")
+	flag.BoolVar(&c.UseFiles, FLAG_FILE, false, "Free argument(s) are/is filename(s)")
+	flag.Var(&c.MainKey, FLAG_KEY, "Main key")
 	flag.StringVar(&c.Secret, "secret", "", "Secret word/phrase used in Bellaso & Vigenere variants")
 	flag.Parse()
 }
@@ -123,6 +148,11 @@ func (c *CaesarxOptions) checkAlterEgo() {
 		c.ItNeeds = NeedCompositeKey
 		c.VariantVersion = caesar.InfoDidimus.String()
 
+	case APP_NAME_ALT4:
+		c.VariantID = VariantFibonacci
+		c.ItNeeds = NeedKey
+		c.VariantVersion = caesar.InfoFibonacci.String()
+
 	case APP_NAME:
 		c.VariantID = VariantCaesar
 		c.ItNeeds = NeedKey
@@ -133,26 +163,32 @@ func (c *CaesarxOptions) checkAlterEgo() {
 		switch strings.ToLower(c.VariantTag) {
 		case strings.ToLower(iciphers.ALG_NAME_CAESAR):
 			c.VariantID = VariantCaesar
+			c.fileExt = commands.FILE_EXT_CAESAR
 			c.ItNeeds = NeedKey
 
 		case strings.ToLower(iciphers.ALG_NAME_DIDIMUS):
 			c.VariantID = VariantDidimus
+			c.fileExt = commands.FILE_EXT_DIDIMUS
 			c.ItNeeds = NeedCompositeKey
 
 		case strings.ToLower(iciphers.ALG_NAME_FIBONACCI):
 			c.VariantID = VariantFibonacci
+			c.fileExt = commands.FILE_EXT_FIBONACCI
 			c.ItNeeds = NeedKey
 
 		case strings.ToLower(iciphers.ALG_NAME_BELLASO):
 			c.VariantID = VariantBellaso
+			c.fileExt = commands.FILE_EXT_BELLASO
 			c.ItNeeds = NeedsSecret
 
 		case strings.ToLower(cmn.RemoveAccents(iciphers.ALG_NAME_VIGENERE)):
 			c.VariantID = VariantVigenere
+			c.fileExt = commands.FILE_EXT_VIGENERE
 			c.ItNeeds = NeedsSecret
 
 		case strings.ToLower(iciphers.ALG_NAME_AFFINE):
 			c.VariantID = VariantAffine
+			c.fileExt = commands.FILE_EXT_AFFINE
 			c.ItNeeds = NeedNone
 		}
 	}
@@ -160,7 +196,7 @@ func (c *CaesarxOptions) checkAlterEgo() {
 
 func (c *CaesarxOptions) ShowUsage(name string) {
 	fmt.Println("Options for ALL variants:")
-	fmt.Println("\t[-alpha ALPHABET] [-ngram SIZE] [-d]")
+	fmt.Println("\t[-alpha ALPHABET] [-ngram SIZE] [-F] [-d]")
 	fmt.Println("Caesar & Fibonacci variants")
 	fmt.Printf("\t%s -variant NAME -key LETTER [other options] 'user text'", name)
 	fmt.Println("Didimus variant")
@@ -173,6 +209,10 @@ func (c *CaesarxOptions) IsReady() bool {
 	return c.isReady
 }
 
+func (c *CaesarxOptions) FileExt() string {
+	return c.fileExt
+}
+
 func (c *CaesarxOptions) Validate() (int, error) {
 	c.checkAlterEgo()
 
@@ -183,10 +223,39 @@ func (c *CaesarxOptions) Validate() (int, error) {
 	if c.VariantID == VariantAffine {
 		// Affine not supported by caesarx executable but by its own affine program
 		return z.ERR_CLI_OPTIONS, fmt.Errorf("please use the 'affine' program instead")
+	} else {
+
 	}
 
 	// check basic needs. Except in DEMO mode
 	if !c.Common.NeedsDemo() {
+		// check nr. of free arguments
+		if !c.Common.IsReady() { // the common options are NOT terminal
+			if !c.UseFiles {
+				if flag.NArg() != 1 {
+					return z.ERR_PARAMETER, ErrFreeTextRequired
+				}
+			} else { // free arguments are filenames
+				numargs := 1
+				if c.IsDecode {
+					numargs = 2
+				}
+
+				if flag.NArg() != numargs {
+					return z.ERR_PARAMETER, ErrFilesRequired
+				} else {
+					// now we know we have sufficient free args
+					if c.IsDecode {
+						c.Files = cmd.NewFileOptions(flag.Arg(0), flag.Arg(1))
+					} else {
+						// @note in Ring 1 the encrypted filename is auto-generated, we use the same spec here
+						outputFilename := cmn.NewNameExtOnly(flag.Arg(0), c.fileExt, true)
+						c.Files = cmd.NewFileOptions(flag.Arg(0), outputFilename)
+					}
+				}
+			}
+		}
+
 		switch c.ItNeeds {
 		case NeedCompositeKey:
 			if c.Offset <= 0 {
@@ -217,6 +286,12 @@ func (c *CaesarxOptions) Validate() (int, error) {
 			exitCode = z.ERR_INTERNAL
 		}
 
+		// validate NGramSize
+		if !c.isValidNGram() {
+			err = ErrNGramSize
+			exitCode = z.ERR_PARAMETER
+		}
+
 		if err != nil {
 			return exitCode, err
 		}
@@ -224,4 +299,20 @@ func (c *CaesarxOptions) Validate() (int, error) {
 
 	c.isReady = true
 	return exitCode, nil
+}
+
+// isValidNGram verifies the NGram size validity. If it is
+// out of context it is ignored (returns true). It is only
+// checked for Encoding operations provided it has been set
+// via the CLI
+func (c *CaesarxOptions) isValidNGram() bool {
+	const NOT_SET = -1
+	valid := true
+	if !c.IsDecode && c.NGramSize != NOT_SET {
+		if c.NGramSize < 2 || c.NGramSize > 5 {
+			valid = false
+		}
+	}
+
+	return valid
 }

@@ -26,12 +26,7 @@ import (
  *							G l o b a l s
  *-----------------------------------------------------------------*/
 const (
-	APP_VERSION = "1.0"
-	// CLI application name and its alter-egos
-	APP_NAME      = "caesarx"
-	APP_NAME_ALT1 = "bellaso"
-	APP_NAME_ALT2 = "vigenere"
-	APP_NAME_ALT3 = "didimus"
+	APP_VERSION = "1.1"
 
 	VariantCaesar CaesarVariant = iota
 	VariantDidimus
@@ -47,7 +42,6 @@ type CaesarVariant uint8
  *				M o d u l e   I n i t i a l i z a t i o n
  *-----------------------------------------------------------------*/
 func init() {
-	//fmt.Println("GoCaesarPlus v1.0 (C)2025 Didimo Grimaldo \u2720 " + caesarx.RuneString("LordOfScripts"))
 	z.Copyright(z.CO1, true)
 	z.BuyMeCoffee()
 	fmt.Println("\t=========================================")
@@ -136,11 +130,19 @@ func DoCrypto(co *cmd.CommonOptions, ao *CaesarxOptions) (int, error) {
 	if ao.IsDecode {
 		operation = "Decrypt"
 		cipher = flag.Arg(0)
-		plain, err = cmdCipher.Decode(cipher)
+		if ao.UseFiles {
+			err = cmdCipher.DecryptTextFile(ao.Files.Input, ao.Files.Output)
+		} else {
+			plain, err = cmdCipher.Decode(cipher)
+		}
 	} else {
 		operation = "Encrypt"
 		plain = flag.Arg(0)
-		cipher, err = cmdCipher.Encode(plain)
+		if ao.UseFiles {
+			err = cmdCipher.EncryptTextFile(ao.Files.Input)
+		} else {
+			cipher, err = cmdCipher.Encode(plain)
+		}
 	}
 
 	if err != nil {
@@ -168,9 +170,17 @@ func DoCrypto(co *cmd.CommonOptions, ao *CaesarxOptions) (int, error) {
 		}
 		// input/output relations
 		if ao.IsDecode {
+			if ao.UseFiles {
+				cipher = ao.Files.Input
+				plain = ao.Files.Output
+			}
 			fmt.Println("Encoded  : ", cipher)
 			fmt.Println("Decoded  : ", plain)
 		} else {
+			if ao.UseFiles {
+				plain = ao.Files.Input
+				cipher = ao.Files.Output
+			}
 			fmt.Println("Plain    : ", plain)
 			fmt.Println("Encoded  : ", cipher)
 		}

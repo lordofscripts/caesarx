@@ -11,6 +11,14 @@ package cmn
 
 import (
 	"bytes"
+	"crypto/md5"
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
+	"lordofscripts/caesarx/app/mlog"
+	"os"
+	"path"
+	"path/filepath"
 	"sort"
 	"strings"
 	"unicode"
@@ -24,6 +32,47 @@ import (
 /* ----------------------------------------------------------------
  *							F u n c t i o n s
  *-----------------------------------------------------------------*/
+
+func CalculateFileMD5(filename string) (string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		mlog.ErrorE(err)
+		return "", err
+	}
+	defer file.Close()
+
+	hash := md5.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		mlog.ErrorE(err)
+		return "", err
+	}
+
+	// Compute the MD5 checksum
+	checksum := hash.Sum(nil)
+	return hex.EncodeToString(checksum), nil
+}
+
+func CalculateFileSHA256(filename string) (string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		mlog.ErrorE(err)
+		return "", err
+	}
+	defer file.Close()
+
+	// Create a new SHA256 hash
+	hash := sha256.New()
+
+	if _, err := io.Copy(hash, file); err != nil {
+		mlog.ErrorE(err)
+		return "", err
+	}
+
+	checksum := hash.Sum(nil)
+	hexString := hex.EncodeToString(checksum)
+
+	return hexString, nil
+}
 
 // Normalize a string by sanitizing the vocals removing the accents.
 func RemoveAccents(s string) string {
@@ -410,6 +459,63 @@ func IntersectInt(set1, set2 []int) []int {
 	}
 
 	return common
+}
+
+func ReplaceRuneAt(str string, at int, subst rune) string {
+	runes := []rune(str)
+	runes[at] = subst
+	return string(runes)
+}
+
+// Set a new filename using the original path
+func NewName(inPathname, outFilename string) string {
+	basePath := filepath.Dir(inPathname)
+	return filepath.Join(basePath, outFilename)
+}
+
+// Set a new filename by changing the extension only
+func NewNameExtOnly(inPathname, newExtension string, preserveOld bool) string {
+	basePath, filename := filepath.Split(inPathname)
+	extOld := filepath.Ext(filename)
+	if !strings.HasPrefix(newExtension, ".") && newExtension != "" {
+		newExtension = "." + newExtension
+	}
+	lidx := strings.LastIndex(filename, extOld)
+	switch {
+	case lidx == len(filename): // @note reported this as GO bug! empty is not part of the string!
+		if newExtension == "" {
+			filename = filename + ".new"
+		} else {
+			filename = filename + newExtension
+		}
+
+	case lidx == -1:
+		filename = filename + newExtension
+
+	case lidx != -1:
+		if preserveOld {
+			filename = ReplaceRuneAt(filename, lidx, '_') + newExtension
+		} else {
+			filename = filename[:lidx] + newExtension
+		}
+	}
+
+	return filepath.Join(basePath, filename)
+}
+
+func Conjoin(source, target string) string {
+	if path.IsAbs(target) {
+		return target
+	}
+	if !path.IsAbs(source) {
+		var err error
+		source, err = filepath.Abs(source)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	return path.Join(source, target)
 }
 
 // Removes all spaces and tabs from S, then after every Nth character

@@ -8,11 +8,13 @@
 package caesar
 
 import (
+	"bufio"
 	"fmt"
+	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers"
 	"lordofscripts/caesarx/cmn"
 	iciphers "lordofscripts/caesarx/internal/ciphers"
-	"strings"
+	"os"
 	"unicode/utf8"
 )
 
@@ -179,98 +181,6 @@ func (cx *CaesarTabulaRecta) Encode(plain string) string {
 	return iter.Result()
 }
 
-func (cx *CaesarTabulaRecta) EncodeOld2(plain string) string {
-	var master *ciphers.TabulaRecta = nil
-	var sb strings.Builder
-
-	// Plain Caesar uses ONE key; therefore, we only need one Tabula Recta
-	var cnv ciphers.ITabulaRecta
-	var masterRules bool
-	var columnIdx int
-
-	cmdletPassThrough := func(char rune, sx iciphers.IKeySequencer) {
-		sb.WriteRune(char)
-		sx.Skip()
-	}
-
-	master = ciphers.NewTabulaRecta(cx.alpha, cmn.CaseInsensitive)
-	plainR := []rune(plain)
-	// @note go through every RUNE in the input stream (not bytes!). In GO if
-	// you range through a string, the 'pos' will be a BYTE position and not
-	// a RUNE position. Else it would go wrong whenever 'plainR' has multi-byte runes.
-	for pos, char := range plainR {
-		var exists bool
-		// input rune exists on Master alphabet?
-		exists, columnIdx = master.HasRune(char)
-		if !exists {
-			if cx.slave != nil {
-				// perhaps the rune exists on the Slave alphabet?
-				exists, columnIdx = cx.slave.HasRune(char)
-				if !exists {
-					// nah! pass it through un-encoded
-					cmdletPassThrough(char, cx.sequencer)
-					continue
-				}
-
-				cnv = cx.slave // slave 'disk' will translate
-				masterRules = false
-			} else {
-				cmdletPassThrough(char, cx.sequencer)
-				continue
-			}
-		} else {
-			cnv = master // master 'disk' will translate
-			masterRules = true
-		}
-
-		var dummyFunc = func(c int) {
-
-		}
-		dummyFunc(columnIdx)
-
-		// let the cipher algorithm sequencer determine the current Key
-		// The sequencer determines whether either, both or none of the
-		// parameters are needed to derive the current Key.
-		/* @audit remove
-		fmt.Println("CaesarTabulaRecta.Encode() Pos#", pos)
-		if pos == 7 {
-			fmt.Println("Bad Thing will happen")
-		}
-		*/
-
-		// GetKey() is alphabet agnostic. Returns the key to use for encoding.
-		// But before using it a decision must be made as follows:
-		//	in Master : use EncodeRune() with key as-is
-		//	in Slave  :
-		//	in neither: pass-through unchanged
-		key := cx.sequencer.GetKey(pos, char)
-		var encR rune
-
-		if !masterRules {
-			/*
-				// we need to transpose the Master's key onto the Slave's alphabet
-				keyShift := master.TransposeKey(key) // get the numeric shift from the master
-				if keyShift == -1 {
-					keyShift = cx.slave.TransposeKey(key)
-					if keyShift == -1 {
-						cmdletPassThrough(char, cx.sequencer)
-						continue
-					}
-				}
-				rowIdx := cx.slave.TransposeKey(keyShift)
-				//fmt.Printf("Encode %c at %d\n", char, pos)
-				encR = cnv.EncodeRuneRaw(char, rowIdx, columnIdx)
-			*/
-			encR = cx.slave.EncodeRune(char, key)
-		} else {
-			encR = cnv.EncodeRune(char, key)
-		}
-		sb.WriteRune(encR)
-	}
-
-	return sb.String()
-}
-
 func (cx *CaesarTabulaRecta) Decode(plain string) string {
 	master := ciphers.NewTabulaRecta(cx.alpha, cmn.CaseInsensitive)
 	cx.sequencer.SetDecryptionMode(true) // only matters with Vigenere
@@ -286,97 +196,99 @@ func (cx *CaesarTabulaRecta) Decode(plain string) string {
 	return iter.Result()
 }
 
-func (cx *CaesarTabulaRecta) DecodeOld2(cipher string) string {
-	var sb strings.Builder
+func (cx *CaesarTabulaRecta) EncryptTextFile(input, output string) error {
+	fdIn, err := os.Open(input)
+	if err != nil {
+		mlog.ErrorE(err)
+	}
+	defer fdIn.Close()
+	reader := bufio.NewReader(fdIn)
 
-	var cnv ciphers.ITabulaRecta
-	var master *ciphers.TabulaRecta = nil
-	var masterRules bool
+	fdOut, err := os.Create(output)
+	if err != nil {
+		mlog.ErrorE(err)
+	}
+	defer fdOut.Close()
 
-	cmdletPassThrough := func(char rune, sx iciphers.IKeySequencer) {
-		sb.WriteRune(char)
-		sx.Skip()
+	destroyOpenFile := func(fd *os.File) {
+		fd.Close() // in Windows a file must be closed prior to Remove...
+		os.Remove(fd.Name())
 	}
 
-	master = ciphers.NewTabulaRecta(cx.alpha, cmn.CaseInsensitive)
-	cipherR := []rune(cipher)
+	master := ciphers.NewTabulaRecta(cx.alpha, cmn.CaseInsensitive)
+	cx.sequencer.SetDecryptionMode(false) // only matters with Vigenere
+	iter := NewTextIterator(cx.sequencer, master, cx.slave)
+	defer cx.sequencer.Reset()
 
-	for pos, char := range cipherR {
-		var exists bool
-		// does the encoded rune exist in the master alphabet?
-		exists, _ = master.HasRune(char)
-		if !exists {
-			if cx.slave != nil {
-				// perhaps the slave alphabet disk?
-				exists, _ = cx.slave.HasRune(char)
-				if !exists {
-					// nah, pass it undecoded
-					cmdletPassThrough(char, cx.sequencer)
-					continue
-				}
-
-				cnv = cx.slave
-				masterRules = false
-			} else {
-				cmdletPassThrough(char, cx.sequencer)
-				continue
-			}
-		} else {
-			cnv = master
-			masterRules = true
+	var lineIn string
+	err = nil
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		lineIn = scanner.Text()
+		iter.Start(lineIn)
+		for !iter.EncodeNext() {
 		}
-
-		var decR rune
-		key := cx.sequencer.GetKey(pos, char)
-
-		if !masterRules {
-			// we need to transpose the Master's key onto the Slave's alphabet
-			keyShift, _ := master.TransposeKey(key) // shifted amount on Master
-			if keyShift == -1 {
-				keyShift, _ = cx.slave.TransposeKey(key)
-				if keyShift == -1 {
-					cmdletPassThrough(char, cx.sequencer)
-					continue
-				}
-			}
-
-			rowIdx, _ := cx.slave.TransposeKey(keyShift) // transpose to Slave
-			decR = cnv.DecodeRuneRaw(char, rowIdx)
-		} else {
-			decR = cnv.DecodeRune(char, key)
+		if _, err = fmt.Fprintln(fdOut, iter.Result()); err != nil {
+			mlog.ErrorE(err)
+			destroyOpenFile(fdOut)
+			return err
 		}
-		sb.WriteRune(decR)
 	}
 
-	return sb.String()
+	if err = scanner.Err(); err != nil {
+		mlog.ErrorE(err)
+		destroyOpenFile(fdOut)
+	}
+
+	return err
 }
 
-/*
-func (cx *CaesarTabulaRecta) Decode(cipher string) string {
-	var cnv *ciphers.TabulaRecta = nil
-	var sb strings.Builder
+func (cx *CaesarTabulaRecta) DecryptTextFile(input, output string) error {
+	fdIn, err := os.Open(input)
+	if err != nil {
+		mlog.ErrorE(err)
+	}
+	defer fdIn.Close()
+	reader := bufio.NewReader(fdIn)
 
-	cnv = ciphers.NewTabulaRecta(cx.alpha, cmn.CaseInsensitive)
-	cipherR := []rune(cipher)
-	for pos, char := range cipherR {
-		if char == ' ' {
-			mlog.Error("Bad thing about to happen")
+	fdOut, err := os.Create(output)
+	if err != nil {
+		mlog.ErrorE(err)
+	}
+	defer fdOut.Close()
+
+	destroyOpenFile := func(fd *os.File) {
+		fd.Close() // in Windows a file must be closed prior to Remove...
+		os.Remove(fd.Name())
+	}
+
+	master := ciphers.NewTabulaRecta(cx.alpha, cmn.CaseInsensitive)
+	cx.sequencer.SetDecryptionMode(true) // only matters with Vigenere
+	iter := NewTextIterator(cx.sequencer, master, cx.slave)
+	defer cx.sequencer.Reset()
+
+	var lineIn string
+	err = nil
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		lineIn = scanner.Text()
+		iter.Start(lineIn)
+		for !iter.DecodeNext() {
 		}
-		if exists, _ := cnv.HasRune(char); !exists {
-			sb.WriteRune(char)
-			cx.sequencer.Skip()
-		} else {
-			//const DUMMY_POS = -1
-			//const DUMMY_RUNE = ' '
-			key := cx.sequencer.GetKey(pos, char)
-			decR := cnv.DecodeRune(char, key)
-			sb.WriteRune(decR)
+		if _, err = fmt.Fprintln(fdOut, iter.Result()); err != nil {
+			mlog.ErrorE(err)
+			destroyOpenFile(fdOut)
+			return err
 		}
 	}
 
-	return sb.String()
+	if err = scanner.Err(); err != nil {
+		mlog.ErrorE(err)
+		destroyOpenFile(fdOut)
+	}
+
+	return err
 }
-*/
 
 func (cx *CaesarTabulaRecta) GetAlphabet() string {
 	return cx.alpha.Chars

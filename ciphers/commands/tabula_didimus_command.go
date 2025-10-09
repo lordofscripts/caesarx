@@ -32,6 +32,11 @@ import (
  *							G l o b a l s
  *-----------------------------------------------------------------*/
 
+const (
+	// Filename extension for files encrypted with Didimus
+	FILE_EXT_DIDIMUS string = ".did"
+)
+
 /* ----------------------------------------------------------------
  *				M o d u l e   I n i t i a l i z a t i o n
  *-----------------------------------------------------------------*/
@@ -117,6 +122,31 @@ func (c *DidimusCommand) Decode(ciphered string) (string, error) {
 	} else {
 		return plain, nil
 	}
+}
+
+// EncryptTextFile encrypts the filename src using the standard Caesar cipher.
+// The output file has the FILE_EXT_DIDIMUS file extension. Please note that
+// this method is only for text files.
+func (c *DidimusCommand) EncryptTextFile(src string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		fileOut := cmn.NewNameExtOnly(src, FILE_EXT_DIDIMUS, true)
+		err = c.core.EncryptTextFile(src, fileOut) // error already logged by core
+	}
+
+	return err
+}
+
+// DecryptTextFile decrypts the filename src using the standard Caesar cipher.
+// The output file target must be explicitely given. Please note that
+// this method is only for text files.
+func (c *DidimusCommand) DecryptTextFile(src, target string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		err = c.core.DecryptTextFile(src, target) // error already logged by core
+	}
+
+	return err
 }
 
 func (c *DidimusCommand) Alphabet() string {

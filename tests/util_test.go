@@ -356,6 +356,49 @@ func Test_IntersectInt(t *testing.T) {
 	}
 }
 
+func Test_NewName(t *testing.T) {
+	allCases := []struct {
+		In     string
+		For    string
+		Expect string
+	}{
+		{"/Home/Smarty/shrimp.txt", "lobster.doc", "/Home/Smarty/lobster.doc"},
+		{"/Home/Smarty/shrimp", "lobster.txt", "/Home/Smarty/lobster.txt"},
+	}
+
+	for i, tc := range allCases {
+		got := cmn.NewName(tc.In, tc.For)
+		if got != tc.Expect {
+			t.Errorf("#%d Exp: '%s' Got: '%s'", i+1, tc.Expect, got)
+		}
+	}
+}
+
+func Test_NewNameExtOnly(t *testing.T) {
+	allCases := []struct {
+		In       string
+		NewExt   string
+		Preserve bool
+		Expect   string
+	}{
+		{"/Home/Smarty/shrimp.txt", ".doc", true, "/Home/Smarty/shrimp_txt.doc"},
+		{"/Home/Smarty/shrimp.txt", ".doc", false, "/Home/Smarty/shrimp.doc"},
+		{"/Home/Smarty/shrimp.txt", "doc", true, "/Home/Smarty/shrimp_txt.doc"},
+		{"/Home/Smarty/shrimp.txt", "doc", false, "/Home/Smarty/shrimp.doc"},
+		{"/Home/Smarty/shrimp.txt", "", false, "/Home/Smarty/shrimp"},
+		{"/Home/Smarty/shrimp", ".doc", true, "/Home/Smarty/shrimp.doc"},
+		{"/Home/Smarty/shrimp", ".doc", false, "/Home/Smarty/shrimp.doc"},
+		{"/Home/Smarty/shrimp", "", false, "/Home/Smarty/shrimp.new"},
+	}
+
+	for i, tc := range allCases {
+		got := cmn.NewNameExtOnly(tc.In, tc.NewExt, tc.Preserve)
+		if got != tc.Expect {
+			t.Errorf("#%d Exp: '%s' Got: '%s'", i+1, tc.Expect, got)
+		}
+	}
+}
+
 /* ----------------------------------------------------------------
  *					H e l p e r   F u n c t i o n s
  *-----------------------------------------------------------------*/

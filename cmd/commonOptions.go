@@ -39,6 +39,7 @@ type IAppOptions interface {
 	ShowUsage(string)
 	Validate() (int, error)
 	IsReady() bool
+	FileExt() string
 }
 
 var _ IAppOptions = (*CommonOptions)(nil)
@@ -59,6 +60,11 @@ type CommonOptions struct {
 	isReady       bool
 }
 
+type FileOptions struct {
+	Input  string
+	Output string
+}
+
 /* ----------------------------------------------------------------
  *							C o n s t r u c t o r s
  *-----------------------------------------------------------------*/
@@ -73,6 +79,10 @@ func NewCommonOptions() *CommonOptions {
 	copts.DefaultPhrase = "Let's encrypt!"
 	copts.initialize()
 	return copts
+}
+
+func NewFileOptions(inp, out string) *FileOptions {
+	return &FileOptions{inp, out}
 }
 
 /* ----------------------------------------------------------------
@@ -204,6 +214,11 @@ func (c *CommonOptions) ShowUsage(name string) {
 	fmt.Printf("\t%s -num {%s}\n", name, supportedNumbers)
 }
 
+// FileExt of CommonOptions returns an empty string
+func (c *CommonOptions) FileExt() string {
+	return ""
+}
+
 func (c *CommonOptions) Validate() (int, error) {
 	// for these options no further validation is needed
 	if c.NeedsDemo() || c.NeedsHelp() || c.NeedsList() || c.NeedsVersion() {
@@ -216,10 +231,6 @@ func (c *CommonOptions) Validate() (int, error) {
 
 	if c.numeric.IsSet && !slices.Contains(validNumberIDs, c.numeric.Value) {
 		return caesarx.ERR_CLI_OPTIONS, fmt.Errorf("-num requires any of A|H|E|N")
-	}
-
-	if !c.NeedsDemo() && !c.NeedsHelp() && !c.NeedsList() && flag.NArg() != 1 {
-		app.Die("for encode/decode the free argument must be the text.", caesarx.ERR_PARAMETER)
 	}
 
 	return caesarx.EXIT_CODE_SUCCESS, nil

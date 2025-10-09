@@ -27,7 +27,7 @@
 -[X] {util} IntersectInt
 -[ ] {util} IsNotBlank()
 -[ ] {cmn} Alphabet.Check, Alphabet.WithSpecialCase
--[ ] {ciphers} chained alphabets
+-[X] {ciphers} chained alphabets
 
 -[X] {affine} AffineHelper common coprimes, check if common
 -[X] {affine} AffineEncoder, AffineDecoder
@@ -38,4 +38,7 @@
 -[X] Re-Audit usage of string[from:to] because that refers to indices and does not
      work with multi-byte rune strings!. **Watch the source of a few bugs here**
 -[ ] Refactor using `internal` tree to export only what needs to be exported
+-[ ] Error code for exit value reorganization so that it helps pinpoint errors
+-[ ] Use predefined `ErrXXXXX` errors
+-[ ] Custom errors `TabulaError`, `CipherError`, `ErrorInvalidValue`, `ErrorCliBadParam`
 
