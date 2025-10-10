@@ -2,7 +2,10 @@
  *					L o r d  O f   S c r i p t s (tm)
  *				  Copyright (C)2025 Dídimo Grimaldo T.
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
+ * MLog is an enhanced version of the log/slog package with logging
+ * levels, extra log tags such as String, Bool, YesNo, Int, Byte,
+ * Rune and At. But MLog is not for structured logging (JSON, etc.)
+ * because I like traditional logging messages without clutter.
  *-----------------------------------------------------------------*/
 package mlog
 
@@ -108,6 +111,7 @@ func (clw *customLogWriter) Write(p []byte) (n int, err error) {
  *							F u n c t i o n s
  *-----------------------------------------------------------------*/
 
+// parse a string to convert it to a LogLevel value
 func parseLevel(s string) LogLevel {
 	var lvl LogLevel
 	s = strings.Trim(s, " \t")
@@ -140,6 +144,8 @@ func parseLevel(s string) LogLevel {
 	return lvl
 }
 
+// SetLevel sets the current logging level. Unlike log and slog
+// the mlog package supports logging levels.
 func SetLevel(newLevel LogLevel) LogLevel {
 	logMutex.Lock()
 	defer logMutex.Unlock()
@@ -149,6 +155,7 @@ func SetLevel(newLevel LogLevel) LogLevel {
 	return oldLevel
 }
 
+// SetPrefix sets the prefix to appear on all log entries
 func SetPrefix(prefix string) {
 	logMutex.Lock()
 	defer logMutex.Unlock()
@@ -156,6 +163,8 @@ func SetPrefix(prefix string) {
 	ilogger.SetPrefix(prefix)
 }
 
+// SetOutput sets the logging output writer instance. By
+// default mlog uses stderr.
 func SetOutput(w io.Writer) {
 	logMutex.Lock()
 	defer logMutex.Unlock()
@@ -163,6 +172,7 @@ func SetOutput(w io.Writer) {
 	ilogger.SetOutput(w)
 }
 
+// Trace level with variadic parameters
 func Trace(v ...any) {
 	if minLogLevel <= LevelTrace {
 		v1 := append([]any{tagTRACE}, v...)
@@ -170,12 +180,14 @@ func Trace(v ...any) {
 	}
 }
 
+// Trace level with format string
 func Tracef(format string, v ...any) {
 	if minLogLevel <= LevelTrace {
 		ilogger.Printf(tagTRACE+format, v...)
 	}
 }
 
+// Trace level with message and variadic MLog tags.
 func TraceT(message string, v ...ILogKeyValuePair) {
 	if minLogLevel <= LevelTrace {
 		var sb strings.Builder
@@ -188,6 +200,7 @@ func TraceT(message string, v ...ILogKeyValuePair) {
 	}
 }
 
+// Debug level with variadic parameters
 func Debug(v ...any) {
 	if minLogLevel <= LevelDebug {
 		v1 := append([]any{tagDEBUG}, v...)
@@ -195,15 +208,14 @@ func Debug(v ...any) {
 	}
 }
 
+// Debug level with format string
 func Debugf(format string, v ...any) {
 	if minLogLevel <= LevelDebug {
 		ilogger.Printf(tagDEBUG+format, v...)
 	}
 }
 
-// @note actually, since all the tags are ILogKeyValuePairs and that
-// interface includes the fmt.Stringer interface, we can also use the
-// String/Int/Rune/Bool/YesNo tags as variadic parameters :)
+// Debug level with message and variadic MLog tags.
 func DebugT(message string, v ...ILogKeyValuePair) {
 	if minLogLevel <= LevelDebug {
 		var sb strings.Builder
@@ -216,6 +228,7 @@ func DebugT(message string, v ...ILogKeyValuePair) {
 	}
 }
 
+// Information level with variadic parameters
 func Info(v ...any) {
 	if minLogLevel <= LevelInfo {
 		v1 := append([]any{tagINFO}, v...)
@@ -223,12 +236,14 @@ func Info(v ...any) {
 	}
 }
 
+// Information level with format string
 func Infof(format string, v ...any) {
 	if minLogLevel <= LevelInfo {
 		ilogger.Printf(tagINFO+format, v...)
 	}
 }
 
+// Information level with message and variadic MLog tags.
 func InfoT(message string, v ...ILogKeyValuePair) {
 	if minLogLevel <= LevelInfo {
 		var sb strings.Builder
@@ -241,6 +256,7 @@ func InfoT(message string, v ...ILogKeyValuePair) {
 	}
 }
 
+// Warning level with variadic parameters
 func Warn(v ...any) {
 	if minLogLevel <= LevelWarning {
 		v1 := append([]any{tagWARN}, v...)
@@ -248,12 +264,14 @@ func Warn(v ...any) {
 	}
 }
 
+// Warning level with format string
 func Warnf(format string, v ...any) {
 	if minLogLevel <= LevelWarning {
 		ilogger.Printf(tagWARN+format, v...)
 	}
 }
 
+// Warning level with message and variadic MLog tags.
 func WarnT(message string, v ...ILogKeyValuePair) {
 	if minLogLevel <= LevelWarning {
 		var sb strings.Builder
@@ -266,6 +284,7 @@ func WarnT(message string, v ...ILogKeyValuePair) {
 	}
 }
 
+// Error level with variadic parameters
 func Error(v ...any) {
 	if minLogLevel <= LevelError {
 		v1 := append([]any{tagERROR}, v...)
@@ -273,12 +292,14 @@ func Error(v ...any) {
 	}
 }
 
+// Error level with format string
 func Errorf(format string, v ...any) {
 	if minLogLevel <= LevelError {
 		ilogger.Printf(tagERROR+format, v...)
 	}
 }
 
+// Error level with message and variadic MLog tags.
 func ErrorT(message string, v ...ILogKeyValuePair) {
 	if minLogLevel <= LevelError {
 		var sb strings.Builder
@@ -291,12 +312,15 @@ func ErrorT(message string, v ...ILogKeyValuePair) {
 	}
 }
 
+// Error level limited to the error itself
 func ErrorE(err error) {
 	if minLogLevel <= LevelError {
 		ilogger.Println(tagERROR, err.Error())
 	}
 }
 
+// Fatal level with variadic parameters and exitCode
+// for terminating the application.
 func Fatal(exitCode int, v ...any) {
 	if minLogLevel <= LevelFatal {
 		v1 := append([]any{tagFATAL}, v...)
@@ -306,6 +330,8 @@ func Fatal(exitCode int, v ...any) {
 	os.Exit(exitCode)
 }
 
+// Trace level with format string and exitCode for terminating
+// the application.
 func Fatalf(exitCode int, format string, v ...any) {
 	if minLogLevel <= LevelFatal {
 		ilogger.Printf(tagFATAL+format, v...)
@@ -314,6 +340,8 @@ func Fatalf(exitCode int, format string, v ...any) {
 	os.Exit(exitCode)
 }
 
+// Fatal level with message and variadic MLog tags.
+// it terminates execution with exitCode.
 func FatalT(exitCode int, message string, v ...ILogKeyValuePair) {
 	if minLogLevel <= LevelFatal {
 		var sb strings.Builder

@@ -2,7 +2,8 @@
  *					L o r d  O f   S c r i p t s (tm)
  *				  Copyright (C)2025 Dídimo Grimaldo T.
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
+ * MLog variadic tags: String, Rune, Int, Bool, YesNo, Byte & At.
+ * Tags like the log/slog package but enhanced.
  *-----------------------------------------------------------------*/
 package mlog
 
@@ -14,6 +15,8 @@ import (
  *						I n t e r f a c e s
  *-----------------------------------------------------------------*/
 
+// ILogKeyValuePair defines the interface for mlog tags that can
+// appear as variadic parameters to the mlog logging functions.
 type ILogKeyValuePair interface {
 	fmt.Stringer
 }
@@ -24,6 +27,7 @@ var _ ILogKeyValuePair = (*kvInt)(nil)
 var _ ILogKeyValuePair = (*kvBool)(nil)
 var _ ILogKeyValuePair = (*kvYesNo)(nil)
 var _ ILogKeyValuePair = (*kvByte)(nil)
+var _ ILogKeyValuePair = (*kvAt)(nil)
 
 /* ----------------------------------------------------------------
  *							T y p e s
@@ -59,30 +63,35 @@ type kvByte struct {
 	v byte
 }
 
-/* ----------------------------------------------------------------
- *							C o n s t r u c t o r s
- *-----------------------------------------------------------------*/
+type kvAt struct {
+	v *CallerInfo
+}
 
 /* ----------------------------------------------------------------
  *							M e t h o d s
  *-----------------------------------------------------------------*/
 
+// implements fmt.Stringer for mlog.String()
 func (k *kvString) String() string {
 	return fmt.Sprintf("%s='%s'", k.k, k.v)
 }
 
+// implements fmt.Stringer for mlog.Rune()
 func (k *kvRune) String() string {
 	return fmt.Sprintf("%s='%c'", k.k, k.v)
 }
 
+// implements fmt.Stringer for mlog.Int()
 func (k *kvInt) String() string {
 	return fmt.Sprintf("%s=%d", k.k, k.v)
 }
 
+// implements fmt.Stringer for mlog.Bool()
 func (k *kvBool) String() string {
 	return fmt.Sprintf("%s=%t", k.k, k.v)
 }
 
+// implements fmt.Stringer for mlog.YesNo()
 func (k *kvYesNo) String() string {
 	s := "No"
 	if k.v {
@@ -91,36 +100,53 @@ func (k *kvYesNo) String() string {
 	return fmt.Sprintf("%s=%s", k.k, s)
 }
 
+// implements fmt.Stringer for mlog.Byte()
 func (k *kvByte) String() string {
 	return fmt.Sprintf("%s=0x%02X", k.k, k.v)
+}
+
+// implements fmt.Stringer for mlog.At()
+func (k *kvAt) String() string {
+	return fmt.Sprintf("At=%s", k.v)
 }
 
 /* ----------------------------------------------------------------
  *							F u n c t i o n s
  *-----------------------------------------------------------------*/
 
+// log the string key=value pair
 func String(key, value string) ILogKeyValuePair {
 	return &kvString{key, value}
 }
 
+// log the Rune=value
 func Rune(key string, value rune) ILogKeyValuePair {
 	return &kvRune{key, value}
 }
 
+// log the integer key=value pair
 func Int(key string, value int) ILogKeyValuePair {
 	return &kvInt{key, value}
 }
 
+// log the boolean key=value pair
 func Bool(key string, value bool) ILogKeyValuePair {
 	return &kvBool{key, value}
 }
 
+// log the boolean key=value pair as a Yes/No value
 func YesNo(key string, value bool) ILogKeyValuePair {
 	return &kvYesNo{key, value}
 }
 
+// log the byte as a key=value pair
 func Byte(key string, value byte) ILogKeyValuePair {
 	return &kvByte{key, value}
+}
+
+// log the current package/method/function/line location
+func At() ILogKeyValuePair {
+	return &kvAt{RetrieveCallerInfo(FRAMENR_THIS)}
 }
 
 /* ----------------------------------------------------------------
@@ -140,7 +166,8 @@ func DemoMLog() {
 					mlog.Int("Key", 5),
 					mlog.Rune("Rune", 'x'),
 					mlog.Bool("Key", true),
-					mlog.YesNo("Key", false))
+					mlog.YesNo("Key", false),
+					mlog.At())
 
 mlog.SetLevel(mlog.LevelDebug)
 	mlog.Info("DidimusCommand R/T")
