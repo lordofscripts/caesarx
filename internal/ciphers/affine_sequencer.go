@@ -23,7 +23,7 @@ const ALG_CODE_AFFINE = "AFIN"
  *						I n t e r f a c e s
  *-----------------------------------------------------------------*/
 
-var _ IKeySequencer = (*VigenereSequencer)(nil)
+var _ IKeySequencer = (*AffineSequencer)(nil)
 
 /* ----------------------------------------------------------------
  *							T y p e s
@@ -44,9 +44,9 @@ type AffineSequencer struct {
 /**
  * Instantiates an Affine Sequencer. Caller must ensure that the
  * parameters are valid using affine.AffineHelper()
- * @note circular dependency if we include AffineHelper here.
+ * @audit circular dependency if we include AffineHelper here.
  */
-func NewAffineeSequencer(a, ap, b int, alpha *cmn.Alphabet) *AffineSequencer {
+func NewAffineSequencer(a, ap, b int, alpha *cmn.Alphabet) *AffineSequencer {
 	return &AffineSequencer{
 		coefA:   a,
 		coefB:   b,
@@ -60,9 +60,7 @@ func NewAffineeSequencer(a, ap, b int, alpha *cmn.Alphabet) *AffineSequencer {
  *							M e t h o d s
  *-----------------------------------------------------------------*/
 
-/**
- * @returns The sequencer's friendly name.
- */
+// The sequencer's friendly name.
 func (cs *AffineSequencer) Name() string {
 	return ALG_NAME_AFFINE
 }
@@ -73,10 +71,9 @@ func (cs *AffineSequencer) Name() string {
 func (cs *AffineSequencer) SetDecryptionMode(isDecrypting bool) {
 }
 
-/**
- * N.A.
- */
-func (cs *AffineSequencer) Feedback(r rune) {
+// (N.A.) Affine does not need stream feedback.
+func (cs *AffineSequencer) Feedback(r rune) error {
+	return nil
 }
 
 /**
@@ -92,9 +89,7 @@ func (cs *AffineSequencer) Skip() int {
 	return cs.skipped
 }
 
-/**
- * N.A. Affine does not use a key, instead an encoding function is used.
- */
+// (N.A.) Affine does not use a "key" but coefficients to a formula.
 func (cs *AffineSequencer) GetKey(pos int, target rune) rune {
 	return target
 }
@@ -112,16 +107,12 @@ func (cs *AffineSequencer) Verify(callback func(rune) error) error {
 	return nil
 }
 
-/**
- * N.A.
- */
+// (N.A.) Affine does not use a "secret" but coefficients to a formula.
 func (cs *AffineSequencer) VerifySecret(s string, alpha *cmn.Alphabet) (string, error) {
 	return s, nil
 }
 
-/**
- * Resets the sequencer. It should be done after every Encode or Decode
- */
+// Resets the sequencer. It should be done after every Encode or Decode
 func (cs *AffineSequencer) Reset() {
 	cs.skipped = 0
 }

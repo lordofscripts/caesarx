@@ -60,7 +60,8 @@ func (cs *CaesarSequencer) SetDecryptionMode(isDecrypting bool) {
 /**
  * N.A.
  */
-func (cs *CaesarSequencer) Feedback(rune) {
+func (cs *CaesarSequencer) Feedback(rune) error {
+	return nil
 }
 
 /**

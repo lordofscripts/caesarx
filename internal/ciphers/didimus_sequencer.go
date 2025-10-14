@@ -74,7 +74,8 @@ func (cs *DidimusSequencer) SetDecryptionMode(isDecrypting bool) {
 /**
  * N.A.
  */
-func (cs *DidimusSequencer) Feedback(rune) {
+func (cs *DidimusSequencer) Feedback(rune) error {
+	return nil
 }
 
 /**

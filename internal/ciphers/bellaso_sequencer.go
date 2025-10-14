@@ -77,7 +77,8 @@ func (cs *BellasoSequencer) SetDecryptionMode(isDecrypting bool) {
 /**
  * N.A.
  */
-func (cs *BellasoSequencer) Feedback(rune) {
+func (cs *BellasoSequencer) Feedback(rune) error {
+	return nil
 }
 
 /**

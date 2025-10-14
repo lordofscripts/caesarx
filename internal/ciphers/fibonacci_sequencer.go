@@ -88,7 +88,8 @@ func (cs *FibonacciSequencer) SetDecryptionMode(isDecrypting bool) {
 /**
  * N.A.
  */
-func (cs *FibonacciSequencer) Feedback(rune) {
+func (cs *FibonacciSequencer) Feedback(rune) error {
+	return nil
 }
 
 /**

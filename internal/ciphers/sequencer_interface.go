@@ -77,5 +77,5 @@ type IKeySequencer interface {
 	 * Only for algorithms that need to feed the last decrypted rune
 	 * back into the sequencer (i.e. Vigenère), else does nothing.
 	 */
-	Feedback(rune)
+	Feedback(rune) error
 }

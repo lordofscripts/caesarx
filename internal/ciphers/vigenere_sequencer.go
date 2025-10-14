@@ -95,14 +95,19 @@ func (cs *VigenereSequencer) SetDecryptionMode(isDecrypting bool) {
  * Vigenère en/decryption feeds back the last en/decoded rune into the
  * sequencer to progressively rebuild the auto-key .
  */
-func (cs *VigenereSequencer) Feedback(r rune) {
+func (cs *VigenereSequencer) Feedback(r rune) error {
 	if size, err := cs.buffer.Push(r); err != nil {
-		mlog.FatalT(caesarx.ERR_SEQUENCER,
+		mlog.ErrorT(
 			"couldn't push decoded rune.",
-			mlog.String("At", "VigenereSequencer.Feedback"),
+			mlog.At(),
 			mlog.Int("Size", size),
-			mlog.Rune("Rune", r))
+			mlog.Int("Skipped", cs.skipped),
+			mlog.Rune("Rune", r),
+			mlog.Err(err))
+		return err
 	}
+
+	return nil
 }
 
 /**
@@ -147,7 +152,8 @@ func (cs *VigenereSequencer) GetKey(pos int, target rune) rune {
 		if err != nil {
 			mlog.Fatal(caesarx.ERR_SEQUENCER,
 				"couldn't pop key rune.",
-				mlog.String("At", "VigenereSequencer.GetKey"),
+				//mlog.String("At", "VigenereSequencer.GetKey"),
+				mlog.At(),
 				mlog.Int("Size", size),
 				mlog.Rune("Target", target),
 				mlog.Int("Pos", pos))
