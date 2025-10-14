@@ -507,9 +507,9 @@ func Test_AffineCommand_EncryptTextFile(t *testing.T) {
 // to check the return value. It helps ensuring the application complies
 // with the documentation.
 func Test_Affine_Exit(t *testing.T) {
-	const OUT_PLAIN_FILE = "test_data/text_EN.txt"          // part of the repository!
-	const OUT_CIPHER_FILE = "test_data/text_EN_txt.afi"     // generated
-	const OUT_DECODED_FILE = "test_data/text_EN_afi_rt.txt" // generated
+	const OUT_PLAIN_FILE = "testdata/text_EN.txt"          // part of the repository!
+	const OUT_CIPHER_FILE = "testdata/text_EN_txt.afi"     // generated
+	const OUT_DECODED_FILE = "testdata/text_EN_afi_rt.txt" // generated
 	// test cases for CLI execution
 	allCases := []struct {
 		Title    string
@@ -547,6 +547,11 @@ func Test_Affine_Exit(t *testing.T) {
 		{"Decode message missing -A -B", z.ERR_PARAMETER, []string{"-d", "'plain text'"}},
 		{"Decode file missing output", z.ERR_PARAMETER, []string{"-A", "7", "-B", "20", "-d", "-F", OUT_CIPHER_FILE}},
 		{"Decode file", z.EXIT_CODE_SUCCESS, []string{"-A", "7", "-B", "20", "-d", "-F", OUT_CIPHER_FILE, OUT_DECODED_FILE}},
+	}
+
+	// @note We set this on go.yml so that this test is SKIPPED on GitHub servers
+	if os.Getenv("GITHUBLOS") != "" {
+		t.Skip("Skipping working test due to missing executable")
 	}
 
 	application := getAffineExecutable(t)

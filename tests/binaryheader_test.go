@@ -25,7 +25,7 @@ import (
 // File Header test. It writes a valid header to a binary file, then
 // reads it back and checks they are the same and valid.
 func Test_FileHeader_ReadWrite(t *testing.T) {
-	const OUTPUT_BIN_FILE = "test_data/header.bin"
+	const OUTPUT_BIN_FILE = "testdata/header.bin"
 
 	// I. create the (temporary) target binary file
 	fileOut, err := os.OpenFile(OUTPUT_BIN_FILE, os.O_CREATE|os.O_WRONLY, 0644)

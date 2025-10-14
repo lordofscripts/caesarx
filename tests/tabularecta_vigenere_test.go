@@ -175,6 +175,10 @@ func Test_VigenereCmd_EncryptBinFile(t *testing.T) {
 	// this depends on the encryption algorithm
 	const ENC_FILE_EXT string = commands.FILE_EXT_VIGENERE
 
+	if os.Getenv("GITHUBLOS") != "" { // @audit GH-010 is pending
+		t.Skip("Skipping not finished test")
+	}
+
 	allCases := []struct {
 		Secret        string
 		InputFilename string // plain binary file to be encrypted

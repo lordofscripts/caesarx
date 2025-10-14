@@ -31,6 +31,10 @@ that beyond the basic, may be worth noting:
 * Test cases like `Test_Affine_Exit()` which exercise various CLI execution
   parameter combinations to check the application return value. You no
   longer need to run the CLI manually prior to every release.
+* Skipping tests conditionally. `GITHUBLOS=true go test ./...` because
+  the CLI application exit value test cannot be resolved on GitHub server
+  because I don't know where the executable is in that server build.
+  See `tabularecta_vigenere_test.go, tabularecta_caesar_test.go, go.yml
   
 More odd stuff:
 
@@ -40,6 +44,27 @@ More odd stuff:
 
 Set the `LOG_LEVEL` environment variable to any of trace, debug, info, warn,
 error or fatal. Log output will appear on `stderr`.
+
+### Skipping Tests
+
+Certain working tests will not be executed on GitHub servers because the
+location of the app binary is unknown. For this see Issue #11 on this 
+repository. I modified the `go.yaml` GitHub workflow file like this:
+
+>
+>    - name: Test
+>      run: GITHUBLOS=true go test -v -coverprofile=profile.cov ./...
+>
+
+Then on the susceptible tests (those using the built executable) I added
+code to skip them:
+
+>
+>	// @note We set this on go.yml so that this test is SKIPPED on GitHub servers
+>	if os.Getenv("GITHUBLOS") != "" {
+>		t.Skip("Skipping working test due to missing executable")
+>	}
+>
 
 ## Quirks
 

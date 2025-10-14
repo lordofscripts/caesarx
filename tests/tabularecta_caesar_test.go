@@ -19,13 +19,9 @@ import (
 
 const (
 	DOC_ASSETS          string = "../docs/assets"
-	TEST_ASSETS         string = "test_data"
+	TEST_ASSETS         string = "testdata"
 	ERR_FORMAT_VECTORED string = "#%02d (%s) Expected %q Got %q"
 )
-
-/*
-  TODO: Caesar WithAlphabet(), Encode(), Decode()
-*/
 
 /*
 CORE VERSIONS BASED DIRECTLY ON TabulaRecta
@@ -362,11 +358,11 @@ func Test_Caesar_RoundTrip(t *testing.T) {
 // @note something odd happening with this, at times it reports the wrong
 // exitCode even though the constant is correct!
 func Test_Caesar_Exit(t *testing.T) {
-	const OUT_PLAIN_FILE = "test_data/text_EN.txt"              // part of the repository!
-	const OUT_CIPHER_FILE_CAE = "test_data/text_EN_txt.cae"     // generated
-	const OUT_DECODED_FILE_CAE = "test_data/text_EN_cae_rt.txt" // generated
-	const OUT_CIPHER_FILE_VIG = "test_data/text_EN_txt.vig"     // generated
-	const OUT_CIPHER_FILE_BEL = "test_data/text_EN_txt.bel"     // generated
+	const OUT_PLAIN_FILE = "testdata/text_EN.txt"              // part of the repository!
+	const OUT_CIPHER_FILE_CAE = "testdata/text_EN_txt.cae"     // generated
+	const OUT_DECODED_FILE_CAE = "testdata/text_EN_cae_rt.txt" // generated
+	const OUT_CIPHER_FILE_VIG = "testdata/text_EN_txt.vig"     // generated
+	const OUT_CIPHER_FILE_BEL = "testdata/text_EN_txt.bel"     // generated
 
 	// test cases for CLI execution
 	allCases := []struct {
@@ -411,6 +407,11 @@ func Test_Caesar_Exit(t *testing.T) {
 		{"Vigenere Message", z.EXIT_CODE_SUCCESS, []string{"-num", "E", "-variant", "vigenere", "-secret", "PASSWD", "'plain text'"}},
 		{"Vigenere missing -secret", z.ERR_CLI_OPTIONS, []string{"-num", "E", "-variant", "vigenere", "-key", "P", "'plain text'"}},
 		{"Vigenere File", z.EXIT_CODE_SUCCESS, []string{"-num", "E", "-variant", "vigenere", "-secret", "PASSWD", "-F", OUT_PLAIN_FILE}},
+	}
+
+	// @note We set this on go.yml so that this test is SKIPPED on GitHub servers
+	if os.Getenv("GITHUBLOS") != "" {
+		t.Skip("Skipping working test due to missing executable")
 	}
 
 	application := getCaesarExecutable(t, "caesarx")
