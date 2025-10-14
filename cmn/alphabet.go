@@ -53,6 +53,7 @@ type IAlphabet interface {
 	From(string) *Alphabet
 	Rotate(rotateQty int) *Alphabet
 	Check() bool
+	IsBinary() bool
 	Clone() *Alphabet
 
 	LangCodeISO() string
@@ -73,6 +74,7 @@ type Alphabet struct {
 	Unicode     bool   // whether it contains Unicode characters (not just ASCII)
 	OnlySymbols bool   // whether it is purely symbols, punctuation, digits, etc.
 	specialCase *SpecialCaseHandler
+	isBinary    bool
 	langCode    string
 }
 
@@ -82,12 +84,12 @@ type Alphabet struct {
 
 // Alphabet constructor
 func NewAlphabet(name, letters string, isEnglish, isPureSymbols bool) *Alphabet {
-	return &Alphabet{name, letters, !isEnglish, !IsExtendedASCII(letters), false, nil, ""}
+	return &Alphabet{name, letters, !isEnglish, !IsExtendedASCII(letters), false, nil, false, ""}
 }
 
 // Alphabet constructor. Use exclusively for SYMBOLS (punctuation, digits, only)
 func NewSymbolAlphabet(name, symbols string) *Alphabet {
-	return &Alphabet{name, symbols, false, !IsExtendedASCII(symbols), true, nil, ""}
+	return &Alphabet{name, symbols, false, !IsExtendedASCII(symbols), true, nil, false, ""}
 }
 
 /* ----------------------------------------------------------------
@@ -97,6 +99,10 @@ func NewSymbolAlphabet(name, symbols string) *Alphabet {
 // Alphabet with its name
 func (a *Alphabet) String() string {
 	return fmt.Sprintf("%10s %s", a.Name, a.Chars)
+}
+
+func (a *Alphabet) IsBinary() bool {
+	return a.isBinary
 }
 
 /**

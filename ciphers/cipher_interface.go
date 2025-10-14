@@ -32,8 +32,13 @@ type ICipher interface {
 	// Execution methods
 	Encode(plain string) string
 	Decode(cipher string) string
+	EncodeBytes(plain []byte) []byte
+	DecodeBytes(ciphered []byte) []byte
+
 	EncryptTextFile(fileIn, fileOut string) error
 	DecryptTextFile(fileIn, fileOut string) error
+	EncryptBinaryFile(fileIn, fileOut string) error
+	DecryptBinaryFile(fileIn, fileOut string) error
 
 	fmt.Stringer
 }

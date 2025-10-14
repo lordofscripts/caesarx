@@ -25,5 +25,5 @@ const (
 )
 
 var (
-	ALPHA_DISK_CYRILLIC *Alphabet = &Alphabet{"Cyrillic", alpha_DISK_CYRILLIC, true, true, false, nil, "RU"}
+	ALPHA_DISK_CYRILLIC *Alphabet = &Alphabet{"Cyrillic", alpha_DISK_CYRILLIC, true, true, false, nil, false, "RU"}
 )

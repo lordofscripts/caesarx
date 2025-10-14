@@ -28,6 +28,7 @@ var _ ILogKeyValuePair = (*kvBool)(nil)
 var _ ILogKeyValuePair = (*kvYesNo)(nil)
 var _ ILogKeyValuePair = (*kvByte)(nil)
 var _ ILogKeyValuePair = (*kvAt)(nil)
+var _ ILogKeyValuePair = (*kvError)(nil)
 
 /* ----------------------------------------------------------------
  *							T y p e s
@@ -65,6 +66,10 @@ type kvByte struct {
 
 type kvAt struct {
 	v *CallerInfo
+}
+
+type kvError struct {
+	v error
 }
 
 /* ----------------------------------------------------------------
@@ -110,6 +115,11 @@ func (k *kvAt) String() string {
 	return fmt.Sprintf("At=%s", k.v)
 }
 
+// implements fmt.Stringer for mlog.At()
+func (k *kvError) String() string {
+	return fmt.Sprintf("Error=%T=>%s", k.v, k.v)
+}
+
 /* ----------------------------------------------------------------
  *							F u n c t i o n s
  *-----------------------------------------------------------------*/
@@ -146,7 +156,12 @@ func Byte(key string, value byte) ILogKeyValuePair {
 
 // log the current package/method/function/line location
 func At() ILogKeyValuePair {
-	return &kvAt{RetrieveCallerInfo(FRAMENR_THIS)}
+	return &kvAt{RetrieveCallerInfo(FRAMENR_THIS + 1)}
+}
+
+// log an error by its type and message
+func Err(err error) ILogKeyValuePair {
+	return &kvError{err}
 }
 
 /* ----------------------------------------------------------------
@@ -167,6 +182,7 @@ func DemoMLog() {
 					mlog.Rune("Rune", 'x'),
 					mlog.Bool("Key", true),
 					mlog.YesNo("Key", false),
+					mlog.Err(err),
 					mlog.At())
 
 mlog.SetLevel(mlog.LevelDebug)

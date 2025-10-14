@@ -28,7 +28,7 @@ const (
  *-----------------------------------------------------------------*/
 
 var (
-	NUMBERS_DISK         *Alphabet = &Alphabet{"Numbers (West)", numbers_DISK, false, false, true, nil, ""}
-	NUMBERS_EASTERN_DISK *Alphabet = &Alphabet{"Numbers (East)", numbers_DISK_EASTERN, false, false, true, nil, "#IN"}
-	NUMBERS_DISK_EXT     *Alphabet = &Alphabet{"Numbers (West) Ext", numbers_DISK_EXT, false, false, true, nil, ""}
+	NUMBERS_DISK         *Alphabet = &Alphabet{"Numbers (West)", numbers_DISK, false, false, true, nil, false, ""}
+	NUMBERS_EASTERN_DISK *Alphabet = &Alphabet{"Numbers (East)", numbers_DISK_EASTERN, false, false, true, nil, false, "#IN"}
+	NUMBERS_DISK_EXT     *Alphabet = &Alphabet{"Numbers (West) Ext", numbers_DISK_EXT, false, false, true, nil, false, ""}
 )

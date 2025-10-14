@@ -103,6 +103,7 @@ func (c *AffineCommand) WithChain(slave *cmn.Alphabet) ciphers.ICipherCommand {
 	return c
 }
 
+// Encode a text message using the Affine cipher
 func (c *AffineCommand) Encode(plain string) (string, error) {
 	ciphered, err := c.crypto.Encode(plain)
 	if err != nil {
@@ -116,6 +117,7 @@ func (c *AffineCommand) Encode(plain string) (string, error) {
 	}
 }
 
+// Decode a text message using the Affine cipher
 func (c *AffineCommand) Decode(ciphered string) (string, error) {
 	plain, err := c.crypto.Decode(ciphered)
 	if err != nil {
@@ -146,6 +148,28 @@ func (c *AffineCommand) DecryptTextFile(src, target string) error {
 	err := c.crypto.AffineDecoder.DecryptTextFile(src, target)
 
 	return err
+}
+
+// Encodes a binary file and produces a binary encoded file
+func (c *AffineCommand) EncryptBinFile(filenameIn string) error {
+	/*
+		fileOut := cmn.NewNameExtOnly(filenameIn, FILE_EXT_AFFINE, true)
+
+		err := c.crypto.AffineEncoder.EncryptBinaryFile(filenameIn, fileOut)
+
+		return err
+	*/
+	panic("not implemented")
+}
+
+// Decodes a binary file and produces a plain binary file
+func (c *AffineCommand) DecryptBinFile(filenameIn, filenameOut string) error {
+	/*
+		err := c.crypto.AffineDecoder.DecryptBinaryFile(filenameIn, filenameOut)
+
+		return err
+	*/
+	panic("not implemented")
 }
 
 func (c *AffineCommand) Alphabet() string {

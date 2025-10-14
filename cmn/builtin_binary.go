@@ -32,6 +32,7 @@ var (
 		Unicode:     true,
 		OnlySymbols: true,
 		specialCase: nil,
+		isBinary:    true,
 		langCode:    "BX", // does not conflict with any ISO-639 language code
 	}
 )

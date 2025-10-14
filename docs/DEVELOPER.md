@@ -2,6 +2,8 @@
 
 ## OS: Unix/Linux/Darwin
 
+Nothing to be reported, just disappointed to learn that MacOS is a
+case-insensitive OS.
 
 ## OS: Windows
 
@@ -33,6 +35,11 @@ that beyond the basic, may be worth noting:
 More odd stuff:
 
 * `Makefile` get absolute path of current makefile to get project's BIN dir   
+
+### Debugging
+
+Set the `LOG_LEVEL` environment variable to any of trace, debug, info, warn,
+error or fatal. Log output will appear on `stderr`.
 
 ## Quirks
 

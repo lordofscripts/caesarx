@@ -1,10 +1,12 @@
 package tests
 
 import (
+	"fmt"
 	"lordofscripts/caesarx/ciphers/commands"
 	"lordofscripts/caesarx/cmn"
 	"os"
 	"testing"
+	"time"
 )
 
 /**
@@ -94,4 +96,56 @@ func Test_FibonacciCommand_EncryptTextFile(t *testing.T) {
 	os.Remove(FILE_IN)
 	os.Remove(FILE_OUT)
 	os.Remove(FILE_RET)
+}
+
+// Tests Fibonacci round-trip encryption of a BINARY FILE.
+func Test_FibonacciCommand_EncryptBinFile(t *testing.T) {
+	// this depends on the encryption algorithm
+	const ENC_FILE_EXT string = commands.FILE_EXT_FIBONACCI
+
+	allCases := []struct {
+		Key           rune
+		InputFilename string // plain binary file to be encrypted
+		TwinFilename  string // plain binary file after round-trip encrypt-decrypt
+	}{
+		{'M', "input.bin", "output_F.bin"},
+		{'Z', "caesar-silver-coin.png", "caesar-silver-coin-F-ret.png"},
+	}
+
+	for i, tc := range allCases {
+		var err error
+		var start time.Time
+		var elapsed time.Duration
+
+		assetIn := getAssetFilename(t, TEST_ASSETS, tc.InputFilename)
+		assetOut := cmn.NewNameExtOnly(assetIn, ENC_FILE_EXT, true)
+		assetRet := getAssetFilename(t, TEST_ASSETS, tc.TwinFilename)
+
+		ctr := commands.NewFibonacciCommand(cmn.BINARY_DISK, tc.Key)
+		// generate encrypted binary named assetOut
+		// assetIn -> assetOut
+		start = time.Now()
+		if err = ctr.EncryptBinFile(assetIn); err != nil {
+			t.Errorf("#%d failed EncryptBinFile: %v", i+1, err)
+		}
+		elapsed = time.Since(start)
+		fmt.Printf("· EncryptBinFile took: %s\n", elapsed)
+
+		// assetOut -> assetRet where to succedd assetRet == assetIn
+		start = time.Now()
+		if err = ctr.DecryptBinFile(assetOut, assetRet); err != nil {
+			t.Errorf("#%d failed DecryptBinFile: %v", i+1, err)
+		}
+		elapsed = time.Since(start)
+		fmt.Printf("· DecryptBinFile took: %s\n", elapsed)
+
+		md5In, _ := cmn.CalculateFileMD5(assetIn)
+		md5Out, _ := cmn.CalculateFileMD5(assetRet)
+		if md5In != md5Out {
+			t.Errorf("round-trip decrypted file not the same as input. %s vs %s", md5In, md5Out)
+		}
+
+		os.Remove(assetOut)
+		os.Remove(assetRet)
+	}
 }

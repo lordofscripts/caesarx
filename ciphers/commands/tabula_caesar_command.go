@@ -154,17 +154,26 @@ func (c *CaesarCommand) DecryptTextFile(src, target string) error {
 	return err
 }
 
-/*
-func (c *CaesarCommand) EncryptBinFile(src string) error {
-	if err := c.core.VerifyKey(); err != nil {
-		return err
+// Encodes a binary file and produces a binary encoded file
+func (c *CaesarCommand) EncryptBinFile(filenameIn string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		fileOut := cmn.NewNameExtOnly(filenameIn, FILE_EXT_CAESAR, true)
+		err = c.core.EncryptBinaryFile(filenameIn, fileOut) // error already logged by core
 	}
 
-	outFilename := cmn.NewNameExtOnly(src, FILE_EXT_CAESAR, true)
-
-	return nil
+	return err
 }
-*/
+
+// Decodes a binary file and produces a plain binary file
+func (c *CaesarCommand) DecryptBinFile(filenameIn, filenameOut string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		err = c.core.DecryptBinaryFile(filenameIn, filenameOut) // error already logged by core
+	}
+
+	return err
+}
 
 func (c *CaesarCommand) Alphabet() string {
 	return c.core.GetAlphabet()

@@ -41,7 +41,7 @@ type ITabulaRecta interface {
 	TransposeKey(k any) (int, rune)
 }
 
-var _ ITabulaRecta = (*TabulaRecta)(nil)
+var _ IGTabulaRecta[rune] = (*TabulaRecta)(nil)
 var _ cmn.IRuneLocalizer = (*TabulaRecta)(nil)
 
 /* ----------------------------------------------------------------

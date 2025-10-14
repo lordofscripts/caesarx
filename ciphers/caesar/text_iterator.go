@@ -2,6 +2,7 @@ package caesar
 
 import (
 	"fmt"
+	"lordofscripts/caesarx"
 	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers"
 	iciphers "lordofscripts/caesarx/internal/ciphers"
@@ -90,7 +91,13 @@ func (t *TextIterator) EncodeNext() bool {
 	// Tabula index, Rune to en/decode, Current key, Shift within alphabet
 	// currTabula, targetChar, currKey, targetShift
 	if currTab, target, currKey := t.next(); currTab != -1 {
-		t.sequencer.Feedback(target.Rune)
+		if err := t.sequencer.Feedback(target.Rune); err != nil {
+			mlog.FatalT(caesarx.ERR_SEQUENCER,
+				"feedback panic",
+				mlog.Int("Pos", t.pos),
+				mlog.At(),
+			)
+		}
 
 		if currTab == 0 { // Primary alphabet
 			result = t.tabulas[0].EncodeRune(target.Rune, currKey.Rune)
@@ -130,7 +137,13 @@ func (t *TextIterator) DecodeNext() bool {
 			result = t.tabulas[currTab].DecodeRune(target.Rune, newKey)
 		}
 
-		t.sequencer.Feedback(result)
+		if err := t.sequencer.Feedback(result); err != nil {
+			mlog.FatalT(caesarx.ERR_SEQUENCER,
+				"feedback panic",
+				mlog.Int("Pos", t.pos),
+				mlog.At(),
+			)
+		}
 		t.sb.WriteRune(result)
 	} else {
 		t.sequencer.Skip()
@@ -166,9 +179,6 @@ func (t *TextIterator) next() (int, *alphaRune, *alphaRune) {
 	}
 
 	if targetChar, ok := t.getRuneAt(*t.dataPtr, t.pos); ok {
-		if targetChar == 'c' && t.pos == 3 {
-			fmt.Print()
-		}
 		key := t.sequencer.GetKey(t.pos, targetChar) // always from Primary alphabet
 		keyTabulaId, keyInfo := locatorFx(key)
 		if keyTabulaId != -1 {

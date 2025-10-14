@@ -144,6 +144,27 @@ func (c *BellasoCommand) DecryptTextFile(src, target string) error {
 	return err
 }
 
+// Encodes a binary file and produces a binary encoded file (v1.1+)
+func (c *BellasoCommand) EncryptBinFile(filenameIn string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		fileOut := cmn.NewNameExtOnly(filenameIn, FILE_EXT_BELLASO, true)
+		err = c.core.EncryptBinaryFile(filenameIn, fileOut) // error already logged by core
+	}
+
+	return err
+}
+
+// Decodes a binary file and produces a plain binary file (v1.1+)
+func (c *BellasoCommand) DecryptBinFile(filenameIn, filenameOut string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		err = c.core.DecryptBinaryFile(filenameIn, filenameOut) // error already logged by core
+	}
+
+	return err
+}
+
 func (c *BellasoCommand) Alphabet() string {
 	return c.core.GetAlphabet()
 }

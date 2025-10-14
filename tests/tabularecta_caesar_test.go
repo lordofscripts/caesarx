@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"encoding/binary"
 	"fmt"
 	z "lordofscripts/caesarx"
 	"lordofscripts/caesarx/ciphers/caesar"
@@ -10,11 +11,15 @@ import (
 	"os/exec"
 	"path"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
+	"time"
 )
 
 const (
+	DOC_ASSETS          string = "../docs/assets"
+	TEST_ASSETS         string = "test_data"
 	ERR_FORMAT_VECTORED string = "#%02d (%s) Expected %q Got %q"
 )
 
@@ -172,6 +177,105 @@ func Test_CaesarCommand_EncryptTextFile(t *testing.T) {
 	os.Remove(FILE_IN)
 	os.Remove(FILE_OUT)
 	os.Remove(FILE_RET)
+}
+
+// Plain Caesar encryption and decryption of a BINARY buffer.
+// It tests the underlying BinaryTabula EncodeBytes() & DecodeBytes()
+// which are the low-level functions for binary FILE encryption.
+func Test_EncodeDecodeBytes_Caesar(t *testing.T) {
+	allCases := []struct {
+		Key    rune
+		Plain  uint32
+		Cipher uint32
+	}{
+		{'M', 0x44332211, 0x91806f5e}, // BigEndian
+	}
+
+	var start time.Time
+	var elapsed time.Duration
+
+	for _, tc := range allCases {
+		ctr := caesar.NewCaesarTabulaRecta(cmn.BINARY_DISK, tc.Key)
+
+		fmt.Printf("DataIn  0x%08x\n", tc.Plain)
+		dataIn := make([]byte, 4)
+		binary.BigEndian.PutUint32(dataIn, tc.Plain)
+
+		start = time.Now()
+		dataOut := ctr.EncodeBytes(dataIn)
+		elapsed = time.Since(start)
+		value := binary.BigEndian.Uint32(dataOut)
+		fmt.Printf("DataOut 0x%08x Took: %s\n", value, elapsed)
+		if value != tc.Cipher {
+			t.Errorf("encodeBytes failed. Exp: %08xh Got: %08xh", tc.Cipher, value)
+		}
+
+		start = time.Now()
+		dataRet := ctr.DecodeBytes(dataOut)
+		elapsed = time.Since(start)
+		value = binary.BigEndian.Uint32(dataRet)
+		fmt.Printf("DataRet 0x%08x Took: %s\n", value, elapsed)
+		if value != tc.Plain {
+			t.Errorf("decodeBytes failed. Exp: %08xh Got: %08xh", tc.Plain, value)
+		}
+
+		if slices.Compare(dataIn, dataRet) != 0 {
+			t.Errorf("Decrypted data does not match plain binary input")
+		}
+	}
+}
+
+// Tests plain Caesar round-trip encryption of a BINARY FILE. If the
+// underlying EncodeBytes/DecodeBytes test do not work, then this won't either.
+func Test_CaesarCommand_EncryptBinFile(t *testing.T) {
+	// this depends on the encryption algorithm
+	const ENC_FILE_EXT string = commands.FILE_EXT_CAESAR
+
+	allCases := []struct {
+		Key           rune
+		InputFilename string // plain binary file to be encrypted
+		TwinFilename  string // plain binary file after round-trip encrypt-decrypt
+	}{
+		{'M', "input.bin", "output.bin"},
+		{'Z', "caesar-silver-coin.png", "caesar-silver-coin-ret.png"},
+	}
+
+	for i, tc := range allCases {
+		var err error
+		var start time.Time
+		var elapsed time.Duration
+
+		assetIn := getAssetFilename(t, TEST_ASSETS, tc.InputFilename)
+		assetOut := cmn.NewNameExtOnly(assetIn, ENC_FILE_EXT, true)
+		assetRet := getAssetFilename(t, TEST_ASSETS, tc.TwinFilename)
+
+		ctr := commands.NewCaesarCommand(cmn.BINARY_DISK, tc.Key)
+		// generate encrypted binary named assetOut
+		// assetIn -> assetOut
+		start = time.Now()
+		if err = ctr.EncryptBinFile(assetIn); err != nil {
+			t.Errorf("#%d failed EncryptBinFile: %v", i+1, err)
+		}
+		elapsed = time.Since(start)
+		fmt.Printf("· EncryptBinFile took: %s\n", elapsed)
+
+		// assetOut -> assetRet where to succedd assetRet == assetIn
+		start = time.Now()
+		if err = ctr.DecryptBinFile(assetOut, assetRet); err != nil {
+			t.Errorf("#%d failed DecryptBinFile: %v", i+1, err)
+		}
+		elapsed = time.Since(start)
+		fmt.Printf("· DecryptBinFile took: %s\n", elapsed)
+
+		md5In, _ := cmn.CalculateFileMD5(assetIn)
+		md5Out, _ := cmn.CalculateFileMD5(assetRet)
+		if md5In != md5Out {
+			t.Errorf("round-trip decrypted file not the same as input. %s vs %s", md5In, md5Out)
+		}
+
+		os.Remove(assetOut)
+		os.Remove(assetRet)
+	}
 }
 
 /*
@@ -332,6 +436,17 @@ func Test_Caesar_Exit(t *testing.T) {
 	os.Remove(OUT_DECODED_FILE_CAE)
 	os.Remove(OUT_CIPHER_FILE_VIG)
 	os.Remove(OUT_CIPHER_FILE_BEL)
+}
+
+func getAssetFilename(t *testing.T, where, asset string) string {
+	t.Helper()
+
+	_, filename, _, _ := runtime.Caller(0)
+	testDir := path.Dir(filename)
+
+	// my projects have their own staging BIN directory
+	filename = path.Join(cmn.Conjoin(testDir, where), asset)
+	return filename
 }
 
 // Get the fully-qualified path to the Caesar CLI executable.

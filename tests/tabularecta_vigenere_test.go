@@ -1,11 +1,15 @@
 package tests
 
 import (
+	"encoding/binary"
 	"fmt"
 	"lordofscripts/caesarx/ciphers/commands"
+	"lordofscripts/caesarx/ciphers/vigenere"
 	"lordofscripts/caesarx/cmn"
 	"os"
+	"slices"
 	"testing"
+	"time"
 )
 
 /**
@@ -118,4 +122,103 @@ func Test_VigenereCmd_EncryptTextFile(t *testing.T) {
 	os.Remove(FILE_IN)
 	os.Remove(FILE_OUT)
 	os.Remove(FILE_RET)
+}
+
+// Plain Caesar encryption and decryption of a BINARY buffer.
+// It tests the underlying BinaryTabula EncodeBytes() & DecodeBytes()
+// which are the low-level functions for binary FILE encryption.
+func Test_EncodeDecodeBytes_Vigenere(t *testing.T) {
+	allCases := []struct {
+		Secret string
+		Plain  uint32
+		Cipher uint32
+	}{
+		{"Amor", 0x44332211, 0x85807163}, // BigEndian
+	}
+
+	var start time.Time
+	var elapsed time.Duration
+
+	for _, tc := range allCases {
+		ctr := vigenere.NewVigenereTabulaRecta(cmn.BINARY_DISK, tc.Secret)
+
+		fmt.Printf("DataIn  0x%08x\n", tc.Plain)
+		dataIn := make([]byte, 4)
+		binary.BigEndian.PutUint32(dataIn, tc.Plain)
+
+		start = time.Now()
+		dataOut := ctr.EncodeBytes(dataIn)
+		elapsed = time.Since(start)
+		value := binary.BigEndian.Uint32(dataOut)
+		fmt.Printf("DataOut 0x%08x Took: %s\n", value, elapsed)
+		if value != tc.Cipher {
+			t.Errorf("encodeBytes failed. Exp: %08xh Got: %08xh", tc.Cipher, value)
+		}
+
+		start = time.Now()
+		dataRet := ctr.DecodeBytes(dataOut)
+		elapsed = time.Since(start)
+		value = binary.BigEndian.Uint32(dataRet)
+		fmt.Printf("DataRet 0x%08x Took: %s\n", value, elapsed)
+		if value != tc.Plain {
+			t.Errorf("decodeBytes failed. Exp: %08xh Got: %08xh", tc.Plain, value)
+		}
+
+		if slices.Compare(dataIn, dataRet) != 0 {
+			t.Errorf("Decrypted data does not match plain binary input")
+		}
+	}
+}
+
+// Tests Vigenere round-trip encryption of a BINARY FILE.
+func Test_VigenereCmd_EncryptBinFile(t *testing.T) {
+	// this depends on the encryption algorithm
+	const ENC_FILE_EXT string = commands.FILE_EXT_VIGENERE
+
+	allCases := []struct {
+		Secret        string
+		InputFilename string // plain binary file to be encrypted
+		TwinFilename  string // plain binary file after round-trip encrypt-decrypt
+	}{
+		{"Amor", "input.bin", "output_V.bin"}, // 0x11223344556677880a => 0x526f82966688aacc5f
+		{"Detox", "caesar-silver-coin.png", "caesar-silver-coin-V-ret.png"},
+	}
+
+	for i, tc := range allCases {
+		var err error
+		var start time.Time
+		var elapsed time.Duration
+
+		assetIn := getAssetFilename(t, TEST_ASSETS, tc.InputFilename)
+		assetOut := cmn.NewNameExtOnly(assetIn, ENC_FILE_EXT, true)
+		assetRet := getAssetFilename(t, TEST_ASSETS, tc.TwinFilename)
+		fmt.Printf("Binary file #%d - %s\n", i+1, assetIn)
+
+		ctr := commands.NewVigenereCommand(cmn.BINARY_DISK, tc.Secret)
+		// generate encrypted binary named assetOut
+		// assetIn -> assetOut
+		start = time.Now()
+		if err = ctr.EncryptBinFile(assetIn); err != nil {
+			t.Errorf("#%d failed EncryptBinFile: %v", i+1, err)
+		}
+		elapsed = time.Since(start)
+		fmt.Printf("· EncryptBinFile #%d took: %s\n", i+1, elapsed)
+
+		// assetOut -> assetRet where to succedd assetRet == assetIn
+		start = time.Now()
+		if err = ctr.DecryptBinFile(assetOut, assetRet); err != nil {
+			t.Errorf("#%d failed DecryptBinFile: %v", i+1, err)
+		}
+		elapsed = time.Since(start)
+		fmt.Printf("· DecryptBinFile #%d took: %s\n", i+1, elapsed)
+
+		md5In, _ := cmn.CalculateFileMD5(assetIn)
+		md5Out, _ := cmn.CalculateFileMD5(assetRet)
+		if md5In != md5Out {
+			t.Errorf("round-trip decrypted file not the same as input. %s vs %s", md5In, md5Out)
+		}
+
+		os.Remove(assetOut)
+		os.Remove(assetRet)
+	}
 }

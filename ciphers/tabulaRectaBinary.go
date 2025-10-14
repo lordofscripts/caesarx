@@ -23,7 +23,7 @@ import (
  *						I n t e r f a c e s
  *-----------------------------------------------------------------*/
 
-type IGTabulaRecta[E any] interface {
+type IGTabulaRecta[E rune | byte] interface {
 	fmt.Stringer
 	cmn.IRuneLocalizer
 	GetName() string
@@ -250,25 +250,9 @@ func (t *BinaryTabulaRecta) generateTabulaRecta(size int) [][]byte {
 	return cmn.MakeSquareNumericTabula[byte](size + 1) // 0xFF becomes 256x256
 }
 
-// GenerateTabulaRecta creates a Tabula Recta for the given rune alphabet.
-/*
-func (t *BinaryTabulaRecta) generateTabulaRecta() {
-	const size int = 0xFF
-	t.tabula = make([][]byte, size+1)
-	ASCII := make([]byte, size+1)
-	for i := 0; i <= size; i++ {
-		ASCII[i] = byte(i) // 128..255 are 2-byte runes
-	}
-
-	for i := 0; i <= size; i++ {
-		row := make([]byte, size+1)
-		for j := 0; j <= size; j++ {
-			row[j] = ASCII[(i+j)%size]
-		}
-		t.tabula[i] = row
-	}
-}
-*/
+/* ----------------------------------------------------------------
+ *				P r i v a t e	M e t h o d s
+ *-----------------------------------------------------------------*/
 
 func (t *BinaryTabulaRecta) rowContains(rowNum int, target byte) (bool, int) {
 	exists := false

@@ -30,9 +30,14 @@ type ICipherCommand interface {
 	// Decodes/Decrypts a string
 	Decode(ciphered string) (string, error)
 
+	// Encodes a text file and produces an output file.
 	EncryptTextFile(filenameIn string) error
+	// Decodes a text file to produce a plain-text file.
 	DecryptTextFile(filenameIn, filenameOut string) error
-	//EncryptBinFile(filename string) error
+	// Encodes a binary file and produces a binary encoded file
+	EncryptBinFile(filenameIn string) error
+	// Decodes a binary file and produces a plain binary file
+	DecryptBinFile(filenameIn, filenameOut string) error
 
 	// Get the alphabet string (don't use it for binary alphabets)
 	Alphabet() string

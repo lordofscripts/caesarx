@@ -19,5 +19,5 @@ const (
  *-----------------------------------------------------------------*/
 
 var (
-	PUNCTUATION_DISK *Alphabet = &Alphabet{"Punctuation", punctuation_DISK, false, false, true, nil, ""}
+	PUNCTUATION_DISK *Alphabet = &Alphabet{"Punctuation", punctuation_DISK, false, false, true, nil, false, ""}
 )

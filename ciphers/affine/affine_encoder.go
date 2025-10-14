@@ -225,6 +225,98 @@ func (a *AffineEncoder) EncryptTextFile(input, output string) error {
 	return err
 }
 
+// EncodeBytes achieves the same as Encode except it operates on a
+// binary buffer when a Binary alphabet is chosen. Added in v1.1
+// for binary file encryption.
+/*
+func (a *AffineEncoder) EncodeBytes(plain []byte) []byte {
+	master := ciphers.NewBinaryTabulaRecta()
+	a.sequencer.SetDecryptionMode(false) // only matters with Vigenere
+
+	iter := NewBinaryIterator(a.sequencer, master) // @note no slaves with Binary!
+	iter.Start(plain)
+	for !iter.EncodeNext() {
+	}
+
+	a.sequencer.Reset()
+	return iter.Result()
+}
+@TODO Binary for Affine */
+
+// Encrypts a binary file and reports any error. If there was an error of
+// any kind, the unfinished output file is deleted from the filesystem. (v1.1+)
+/*
+func (a *AffineEncoder) EncryptBinaryFile(input, output string) error {
+	// -- Preamble
+	fdIn, err := os.Open(input)
+	if err != nil {
+		mlog.ErrorE(err)
+	}
+	defer fdIn.Close()
+
+	fdOut, err := os.Create(output)
+	if err != nil {
+		mlog.ErrorE(err)
+	}
+	defer fdOut.Close()
+
+	destroyOpenFile := func(fd *os.File) {
+		fd.Close() // in Windows a file must be closed prior to Remove...
+		os.Remove(fd.Name())
+	}
+
+	// -- Setup Cryptostream
+	// @todo implement AffineSequencer
+	master := ciphers.NewBinaryTabulaRecta()
+	a.sequencer.SetDecryptionMode(false) // only matters with Vigenere
+	iter := NewBinaryIterator(a.sequencer, master)
+	defer a.sequencer.Reset()
+
+	// -- Process cryptostream
+	const BUFFER_SIZE int = 4096
+	buffer := make([]byte, BUFFER_SIZE)
+
+	for {
+		// (a) read bytes from input stream
+		n, errR := fdIn.Read(buffer)
+		if errR != nil {
+			if errR == io.EOF {
+				err = nil // successful termination of file
+				break
+			}
+
+			// bad yu-yu
+			err = fmt.Errorf("error reading binary file: %w", errR)
+			break
+		}
+
+		// (b) GH-002 encode byte(s)
+		iter.Start(buffer[:n])
+		for !iter.EncodeNext() {
+		}
+
+		// (c) GH-002 write byte(s) to binary output file
+		if writeCount, errW := fdOut.Write(iter.Result()); errW != nil {
+			// oops! something happened with the filesystem
+			err = errW
+			break
+		} else if writeCount != n {
+			// mismatch between data buffer content size and written count
+			err = fmt.Errorf("write count mismatch for binary file %d != %d", writeCount, n)
+			break
+		}
+	}
+
+	// -- Epilogue
+	if err != nil {
+		mlog.ErrorE(err)
+		destroyOpenFile(fdOut)
+	}
+
+	return err
+}
+@TODO Binary for Affine */
+
 func (c *AffineCrypto) Alphabet() string {
 	return c.AffineEncoder.master.GetSource()
 }

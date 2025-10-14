@@ -37,8 +37,15 @@
 
 -[X] Re-Audit usage of string[from:to] because that refers to indices and does not
      work with multi-byte rune strings!. **Watch the source of a few bugs here**
+-[ ] Use caesarx.CipherVariant enum instead of cmd/caesar/VariantID
 -[ ] Refactor using `internal` tree to export only what needs to be exported
 -[ ] Error code for exit value reorganization so that it helps pinpoint errors
 -[ ] Use predefined `ErrXXXXX` errors
 -[ ] Custom errors `TabulaError`, `CipherError`, `ErrorInvalidValue`, `ErrorCliBadParam`
+
+# Project Milestones
+
+- 27.Sep.2025 v1.0 String message encryption with Caesar,Didimus,Fibonacci,Bellaso,Vigenere & Affine.
+- 09.Oct.2025 v1.1-RC1 Text file encryption support for all ciphers
+- 14.Oct.2025 Binary file encryption support for all ciphers except Affine.
 

@@ -10,6 +10,7 @@ package caesar
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers"
 	"lordofscripts/caesarx/cmn"
@@ -77,7 +78,11 @@ func NewCaesarTabulaRecta(alphabet *cmn.Alphabet, key rune) *CaesarTabulaRecta {
  *-----------------------------------------------------------------*/
 
 func (cx *CaesarTabulaRecta) WithChain(extra *ciphers.TabulaRecta) ciphers.ICipher {
-	cx.slave = extra
+	if !cx.alpha.IsBinary() {
+		cx.slave = extra // v1.1 When primary is Binary no slaves are allowed
+	} else {
+		mlog.WarnT("ignored chained slave because primary alphabet is Binary", mlog.At())
+	}
 	return cx
 }
 
@@ -167,6 +172,8 @@ func (t *CaesarTabulaRecta) FindRune(r rune) (alpha string, at int, err error) {
 	return
 }
 
+// Encode uses the appropriate substitution sequencer to encode
+// a string using a modern version of the Caesar-class algorithms.
 func (cx *CaesarTabulaRecta) Encode(plain string) string {
 	master := ciphers.NewTabulaRecta(cx.alpha, cmn.CaseInsensitive)
 	cx.sequencer.SetDecryptionMode(false) // only matters with Vigenere
@@ -181,12 +188,30 @@ func (cx *CaesarTabulaRecta) Encode(plain string) string {
 	return iter.Result()
 }
 
-func (cx *CaesarTabulaRecta) Decode(plain string) string {
+// EncodeBytes achieves the same as Encode except it operates on a
+// binary buffer when a Binary alphabet is chosen. Added in v1.1
+// for binary file encryption.
+func (cx *CaesarTabulaRecta) EncodeBytes(plain []byte) []byte {
+	master := ciphers.NewBinaryTabulaRecta()
+	cx.sequencer.SetDecryptionMode(false) // only matters with Vigenere
+
+	iter := NewBinaryIterator(cx.sequencer, master) // @note no slaves with Binary!
+	iter.Start(plain)
+	for !iter.EncodeNext() {
+	}
+
+	cx.sequencer.Reset()
+	return iter.Result()
+}
+
+// Decode uses the appropriate substitution sequencer to decode
+// a string using a modern version of the Caesar-class algorithms.
+func (cx *CaesarTabulaRecta) Decode(ciphered string) string {
 	master := ciphers.NewTabulaRecta(cx.alpha, cmn.CaseInsensitive)
 	cx.sequencer.SetDecryptionMode(true) // only matters with Vigenere
 
 	iter := NewTextIterator(cx.sequencer, master, cx.slave)
-	iter.Start(plain)
+	iter.Start(ciphered)
 	for !iter.DecodeNext() {
 		//fmt.Print("D")
 	}
@@ -196,6 +221,24 @@ func (cx *CaesarTabulaRecta) Decode(plain string) string {
 	return iter.Result()
 }
 
+// DecodeBytes achieves the same as Decode except it operates on a
+// binary buffer when a Binary alphabet is chosen. Added in v1.1
+// for binary file decryption.
+func (cx *CaesarTabulaRecta) DecodeBytes(ciphered []byte) []byte {
+	master := ciphers.NewBinaryTabulaRecta()
+	cx.sequencer.SetDecryptionMode(true) // only matters with Vigenere
+
+	iter := NewBinaryIterator(cx.sequencer, master) // @note no slaves with Binary!
+	iter.Start(ciphered)
+	for !iter.DecodeNext() {
+	}
+
+	cx.sequencer.Reset()
+	return iter.Result()
+}
+
+// Encrypts the input TEXT file using the selected Caesar variant and
+// produces the output filename with the encrypted contents.
 func (cx *CaesarTabulaRecta) EncryptTextFile(input, output string) error {
 	fdIn, err := os.Open(input)
 	if err != nil {
@@ -243,6 +286,8 @@ func (cx *CaesarTabulaRecta) EncryptTextFile(input, output string) error {
 	return err
 }
 
+// Decrypts the input TEXT file using the selected Caesar variant and
+// produces the output filename with the decrypted contents.
 func (cx *CaesarTabulaRecta) DecryptTextFile(input, output string) error {
 	fdIn, err := os.Open(input)
 	if err != nil {
@@ -290,14 +335,161 @@ func (cx *CaesarTabulaRecta) DecryptTextFile(input, output string) error {
 	return err
 }
 
+// Encrypts a binary file and reports any error. If there was an error of
+// any kind, the unfinished output file is deleted from the filesystem. (v1.1+)
+func (cx *CaesarTabulaRecta) EncryptBinaryFile(input, output string) error {
+	// -- Preamble
+	fdIn, err := os.Open(input)
+	if err != nil {
+		mlog.ErrorE(err)
+	}
+	defer fdIn.Close()
+
+	fdOut, err := os.Create(output)
+	if err != nil {
+		mlog.ErrorE(err)
+	}
+	defer fdOut.Close()
+
+	destroyOpenFile := func(fd *os.File) {
+		fd.Close() // in Windows a file must be closed prior to Remove...
+		os.Remove(fd.Name())
+	}
+
+	// -- Setup Cryptostream
+	master := ciphers.NewBinaryTabulaRecta()
+	cx.sequencer.SetDecryptionMode(false) // only matters with Vigenere
+	iter := NewBinaryIterator(cx.sequencer, master)
+	defer cx.sequencer.Reset()
+
+	// -- Process cryptostream
+	const BUFFER_SIZE int = 4096
+	buffer := make([]byte, BUFFER_SIZE)
+
+	for {
+		// (a) read bytes from input stream
+		n, errR := fdIn.Read(buffer)
+		if errR != nil {
+			if errR == io.EOF {
+				err = nil // successful termination of file
+				break
+			}
+
+			// bad yu-yu
+			err = fmt.Errorf("error reading binary file: %w", errR)
+			break
+		}
+
+		// (b) GH-002 encode byte(s)
+		iter.Start(buffer[:n])
+		for !iter.EncodeNext() {
+		}
+
+		// (c) GH-002 write byte(s) to binary output file
+		if writeCount, errW := fdOut.Write(iter.Result()); errW != nil {
+			// oops! something happened with the filesystem
+			err = errW
+			break
+		} else if writeCount != n {
+			// mismatch between data buffer content size and written count
+			err = fmt.Errorf("write count mismatch for binary file %d != %d", writeCount, n)
+			break
+		}
+	}
+
+	// -- Epilogue
+	if err != nil {
+		mlog.ErrorE(err)
+		destroyOpenFile(fdOut)
+	}
+
+	return err
+}
+
+// Decrypts a binary file and reports any error. If there was an error of
+// any kind, the unfinished output file is deleted from the filesystem. (v1.1+)
+func (cx *CaesarTabulaRecta) DecryptBinaryFile(input, output string) error {
+	// -- Preamble
+	fdIn, err := os.Open(input)
+	if err != nil {
+		mlog.ErrorE(err)
+	}
+	defer fdIn.Close()
+
+	fdOut, err := os.Create(output)
+	if err != nil {
+		mlog.ErrorE(err)
+	}
+	defer fdOut.Close()
+
+	destroyOpenFile := func(fd *os.File) {
+		fd.Close() // in Windows a file must be closed prior to Remove...
+		os.Remove(fd.Name())
+	}
+
+	// -- Setup Cryptostream
+	master := ciphers.NewBinaryTabulaRecta()
+	cx.sequencer.SetDecryptionMode(true) // only matters with Vigenere
+	iter := NewBinaryIterator(cx.sequencer, master)
+	defer cx.sequencer.Reset()
+
+	// -- Process cryptostream
+	const BUFFER_SIZE int = 4096
+	buffer := make([]byte, BUFFER_SIZE)
+
+	for {
+		// (a) read bytes from input stream
+		n, errR := fdIn.Read(buffer)
+		if errR != nil {
+			if errR == io.EOF {
+				err = nil // successful termination of file
+				break
+			}
+
+			// bad yu-yu
+			err = fmt.Errorf("error reading binary file: %w", errR)
+			break
+		}
+
+		// (b) GH-002 encode byte(s)
+		iter.Start(buffer[:n])
+		for !iter.DecodeNext() {
+		}
+
+		// (c) GH-002 write byte(s) to binary output file
+		if writeCount, errW := fdOut.Write(iter.Result()); errW != nil {
+			// oops! something happened with the filesystem
+			err = errW
+			break
+		} else if writeCount != n {
+			// mismatch between data buffer content size and written count
+			err = fmt.Errorf("write count mismatch for binary file %d != %d", writeCount, n)
+			break
+		}
+	}
+
+	// -- Epilogue
+	if err != nil {
+		mlog.ErrorE(err)
+		destroyOpenFile(fdOut)
+	}
+
+	return err
+}
+
+// GetAlphabet returns the contents of the alphabet.
 func (cx *CaesarTabulaRecta) GetAlphabet() string {
 	return cx.alpha.Chars
 }
 
+// GetLanguage returns the two-letter ISO code of the
+// current alphabet's language. CaesarX supports several built-in
+// language sets such as English, Spanish, German, Greek & Cyrillic.
 func (cx *CaesarTabulaRecta) GetLanguage() string {
 	return cx.alpha.Name
 }
 
+// implements fmt.Stringer
 func (cx *CaesarTabulaRecta) String() string {
 	return cx.sequencer.GetKeyInfo()
 }

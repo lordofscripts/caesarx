@@ -52,7 +52,7 @@ var (
 		IsUpperRune:   unicode.IsUpper,
 		IsLowerRune:   unicode.IsLower,
 	}
-	ALPHA_DISK_GERMAN *Alphabet = &Alphabet{"German", alpha_DISK_GERMAN, true, false, false, GermanSpecialCase, "DE"}
+	ALPHA_DISK_GERMAN *Alphabet = &Alphabet{"German", alpha_DISK_GERMAN, true, false, false, GermanSpecialCase, false, "DE"}
 )
 
 /* ----------------------------------------------------------------
