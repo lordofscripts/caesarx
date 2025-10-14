@@ -1,0 +1,32 @@
+go-carousel (1.1.0-RC2) UNRELEASED; urgency=low
+
+## Improvements
+  * GH-003 Debian package build support (Makefile)
+  * GH-005 Core improvements to support binary encryption.
+  * GH-006 Support for Text File round-trip Encryption for all variants
+  * Test cases for Text File Encryption and new core library functions
+  * Test cases for Command-Line Applications to ensure advertised parameter
+    and option combinations work as intended by checking exit code.
+  * Documented MLog (app/mlog) package and added mlog.At() variadic tag.
+  * `IKeySequencer.Feedback()` now returns `error` rather than panicking
+    so that the algorithm driver can pinpoint the message location.
+  * GH-008 Binary file encryption supported for Caesar, Didimus, Fibonacci,
+    and Bellaso.
+
+## Fixed Bugs
+  * GH-001 CLI applications not working for -list, -version and -help CLI options
+  * GH-009 VigenereSequencer panics. It now returns errors and lets the upper layer
+    turn into fatality but with more forensic info available.
+
+## Known Bugs
+
+  * GH-007 A minor refactoring needed to fully support binary encryption on all.
+  * GH-010 Sporadic Vigenère binary file encryption failure
+
+ -- Lord of Scripts <lordofscripts@users.noreply.github.com>  Sat, 09 Oct 2025 18:35:00 -0500
+
+go-carousel (1.0.0) UNRELEASED; urgency=low
+
+  * Initial release.
+
+ -- Lord of Scripts <lordofscripts@users.noreply.github.com>  Sat, 27 Sep 2025 12:28:00 -0500

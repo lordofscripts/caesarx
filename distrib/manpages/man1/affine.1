@@ -1,0 +1,83 @@
+.\" Manpage for Affine
+.TH affine 1 "September 27, 2025" "1.0" "Modern variations of Caesar cipher"
+.SH NAME
+affine \- The Affine mono-alphabetic cipher.
+.SH SYNOPSIS
+affine [OPTIONS] "text to encrypt/decrypt"
+.SH DESCRIPTION
+Affine is a monoalphabetic cipher that uses a single letter key based on a
+simple linear formula f(x) = Ax + B. 
+   It is by no means a replacement for today's secure ciphers, but it is
+good enough for  
+.B some
+day-to-day uses and against the casual thief or document peeper. In particular,
+this software does not rely on ASCII alphabets like most out there, it uses
+UTF8 Unicode and works perfectly with multi-byte characters used in foreign
+alphabets.
+  Additionally, it is possible to enhance the security by adding a secondary
+or slave alphabet that supplements the letters with space, symbols and some
+punctuation.
+.SH OPTIONS
+.TP
+-demo
+Run a demonstration of round trip encryption and decryption with the
+chosen alphabet and optionally a chosen secondary alphabet.
+.TP
+-version
+Outputs program and selected algorithm versions.
+.TP
+-help
+Show help information.
+.TP
+-alpha alphabet_name
+Character set for letters: english (default), spanish/latin, german, greek, cyrillic.
+.TP
+-num
+.I N|A|H|E
+Select a secondary/slave alphabet to use: 
+.B N 
+for none (default), 
+.B A 
+for Arabic, 
+.B H 
+for Hindi or
+.B E 
+for extended which contains digits, space and some symbols.
+.TP
+-A value
+The A coefficient is an integer coprime of the alphabet length.
+.TP
+-B value
+The B coefficient which can be freely chosen. However, its effective
+range of values is limited by the length of the alphabet.
+.TP
+-coprime
+For the chosen alphabet's length, list the valid coprimes.
+.TP
+-N value
+Set the alphabet length for listing coprimes, only used with -coprime option.
+.TP
+-tabula
+For the chosen encryption parameters and alphabet, print the substitution table.
+.TP
+-ngram 2|3|4|5
+Use NGram format for the encryption output. Ignored for decryption.
+.TP
+-d
+Sets execution mode to
+.I decryption
+instead of the default which is encryption.
+
+.SH EXIT status
+.TP
+0
+Successful execution.
+.TP
+1+ 
+Error code.
+
+.SH SEE ALSO
+bellaso, vigenere, caesarx and tabula.
+
+.SH AUTHOR
+Lord of Scripts <lordofscripts@users.noreply.github.com>

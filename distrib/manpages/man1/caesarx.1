@@ -1,0 +1,95 @@
+.\" Manpage for caesarx
+.TH caesarx 1 "September 27, 2025" "1.0" "Modern variations of Caesar cipher"
+.SH NAME
+caesarx \- Modern variations of Caesar, Bellaso & Vigenère ciphers.
+.SH SYNOPSIS
+caesarx [OPTIONS] "text to encrypt/decrypt"
+.SH DESCRIPTION
+Revisiting ancient ciphers like Caesar as well as XIX century variations
+like Bellaso and Vigenère but making them stronger and more suitable for
+modern-day use. This application is a modernized version that is stronger
+against attacks; However, keep in mind that none of these Caesar and variants
+thereof are suitable for modern-day security. 
+   At the same time, they are good enough for 
+.B some
+day-to-day uses and against the casual thief or document peeper. In particular,
+this software does not rely on ASCII alphabets like most out there, it uses
+UTF8 Unicode and works perfectly with multi-byte characters used in foreign
+alphabets.
+  Additionally, it is possible to enhance the security by adding a secondary
+or slave alphabet that supplements the letters with space, symbols and some
+punctuation.
+.SH OPTIONS
+.TP
+-demo
+Run a demonstration of round trip encryption and decryption with the
+chosen alphabet and optionally a chosen secondary alphabet.
+.TP
+-list
+Lists the cipher variants supported by the program.
+.TP
+-version
+Outputs program and selected algorithm versions.
+.TP
+-help
+Show help information.
+.TP
+-variant cipher_variant
+Sets the cipher type: caesar (default), didimus, fibonacci, bellaso or vigenere.
+.TP
+-alpha alphabet_name
+Character set for letters: english (default), spanish/latin, german, greek, cyrillic.
+.TP
+-num
+.I N|A|H|E
+Select a secondary/slave alphabet to use: 
+.B N 
+for none (default), 
+.B A 
+for Arabic, 
+.B H 
+for Hindi or
+.B E 
+for extended which contains digits, space and some symbols.
+.TP
+-key letter
+A one character encryption key used in caesar, didimus and fibonacci. Known as Main key.
+.TP
+-offset value
+Numeric offset value with respect to Main Key. Only applies to 
+.B didimus
+cipher.
+.TP
+-secret  'secret'
+A password or phrase used as secret. This applies only to 
+.B Bellaso
+and
+.B Vigenère
+ciphers.
+.TP
+-ngram 2|3|4|5
+Use NGram format for the encryption output. Ignored for decryption.
+.TP
+-d
+Sets execution mode to
+.I decryption
+instead of the default which is encryption.
+
+.SH EXIT status
+.TP
+0
+Successful execution.
+.TP
+1+ 
+Error code.
+
+.SH SEE ALSO
+bellaso, vigenere, affine and tabula.
+The first two are aliases for caesarx, but 
+.B affine
+and
+.B tabula
+are separate standalone programs.
+
+.SH AUTHOR
+Lord of Scripts <lordofscripts@users.noreply.github.com>

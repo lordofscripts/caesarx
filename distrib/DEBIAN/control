@@ -1,0 +1,17 @@
+Package: caesarx
+Version: 1.0.0
+Architecture: amd64
+Depends: 
+Section: utils
+Priority: optional
+Maintainer: Lord of Scripts <lordofscripts@users.noreply.github.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 3.9.6
+Homepage: https:/github.com/lordofscripts/go-carousel
+Description: Modern version of ancient mono/polyalphabetic ciphers
+ Do you like cryptography and want to get back to basics? Or perhaps
+ you are curious or a newbie that wants to see how it all began?.
+ It started back in the times of Julius Caesar. But this package
+ contains modern versions capable of working with modern-day
+ unicode alphabets and more. It includes Caesar, Didimus, Fibonacci,
+ Bellaso, Vigenère and Affine ciphers.
