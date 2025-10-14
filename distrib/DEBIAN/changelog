@@ -1,4 +1,4 @@
-go-carousel (1.1.0-RC2) UNRELEASED; urgency=low
+go-carousel (1.1.0-RC3) UNRELEASED; urgency=low
 
 ## Improvements
   * GH-003 Debian package build support (Makefile)
@@ -17,13 +17,14 @@ go-carousel (1.1.0-RC2) UNRELEASED; urgency=low
   * GH-001 CLI applications not working for -list, -version and -help CLI options
   * GH-009 VigenereSequencer panics. It now returns errors and lets the upper layer
     turn into fatality but with more forensic info available.
+  * GH-011 GitHub workflow fix (v1.1.0-RC3)
 
 ## Known Bugs
 
   * GH-007 A minor refactoring needed to fully support binary encryption on all.
   * GH-010 Sporadic Vigenère binary file encryption failure
 
- -- Lord of Scripts <lordofscripts@users.noreply.github.com>  Sat, 09 Oct 2025 18:35:00 -0500
+ -- Lord of Scripts <lordofscripts@users.noreply.github.com>  Sat, 14 Oct 2025 18:35:00 -0500
 
 go-carousel (1.0.0) UNRELEASED; urgency=low
 
