@@ -18,6 +18,7 @@ import (
 	"runtime"
 	"slices"
 	"testing"
+	"time"
 )
 
 /* ----------------------------------------------------------------
@@ -30,19 +31,21 @@ var (
 	//   German N=30 [1 7 11 13 17 19 23 29]
 	//    Greek N=24 [1 5 7 11 13 17 19 23]
 	// Cyrillic N=33 [1 2 4 5 7 8 10 13 14 16 17 19 20 23 25 26 28 29 31 32]
-	validAffineParamsEN = &affine.AffineParams{A: 5, B: 3, Ap: 21, N: 26}
-	validAffineParamsES = &affine.AffineParams{A: 7, B: 3, Ap: 19, N: 33}
-	validAffineParamsDE = &affine.AffineParams{A: 7, B: 3, Ap: 13, N: 30}
-	validAffineParamsGR = &affine.AffineParams{A: 7, B: 3, Ap: 7, N: 24}
-	validAffineParamsRU = &affine.AffineParams{A: 7, B: 3, Ap: 19, N: 33}
+	validAffineParamsEN  = &affine.AffineParams{A: 5, B: 3, Ap: 21, N: 26}
+	validAffineParamsES  = &affine.AffineParams{A: 7, B: 3, Ap: 19, N: 33}
+	validAffineParamsDE  = &affine.AffineParams{A: 7, B: 3, Ap: 13, N: 30}
+	validAffineParamsGR  = &affine.AffineParams{A: 7, B: 3, Ap: 7, N: 24}
+	validAffineParamsRU  = &affine.AffineParams{A: 7, B: 3, Ap: 19, N: 33}
+	validAffineParamsBIN = &affine.AffineParams{A: 7, B: 3, Ap: 19, N: 256}
 )
 
 /* ----------------------------------------------------------------
  *					T e s t s :: AffineHelper
  *-----------------------------------------------------------------*/
 
-// Affine Parameter A should be Coprime of alphabet length N
-func Test_AreCoprime(t *testing.T) {
+// Subject: affine.AffineHelper.AreCoprime()
+// Coefficient A should be Coprime of alphabet length N
+func Test_Helper_AreCoprime(t *testing.T) {
 	allCases := []struct {
 		A          int
 		N          int
@@ -65,7 +68,9 @@ func Test_AreCoprime(t *testing.T) {
 	}
 }
 
-func Test_ValidCoprimesUpTo(t *testing.T) {
+// Subject: affine.AffineHelper.ValidCoprimesUpTo
+// Compare against a known list of valid coprimes for N=26
+func Test_Helper_ValidCoprimesUpTo(t *testing.T) {
 	coprimes26 := []int{1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25}
 
 	h := affine.NewAffineHelper()
@@ -74,7 +79,9 @@ func Test_ValidCoprimesUpTo(t *testing.T) {
 	}
 }
 
-func Test_ModularInverse(t *testing.T) {
+// Subject: affine.AffineHelper.ModularInverse()
+// Try several A coefficients with their known A' for N=26
+func Test_Helper_ModularInverse(t *testing.T) {
 	const N int = 26
 	allCases := []struct {
 		A  int
@@ -100,52 +107,8 @@ func Test_ModularInverse(t *testing.T) {
 	}
 }
 
-func Test_SetParams(t *testing.T) {
-	const N1 int = 26
-	allCases := []struct {
-		A, B, N int
-		valid   bool
-	}{
-		{3, 5, N1, true},
-		{19, 18, N1, true},
-		{2, 5, N1, false},   // 2 is not a coprime of 26
-		{-1, 5, N1, false},  // A cannot be zero
-		{11, -1, N1, false}, // B should not be negative
-		{19, 8, 0, false},   // N should be positive
-	}
-
-	h := affine.NewAffineHelper()
-	for vnum, tc := range allCases {
-		if err := h.SetParameters(tc.A, tc.B, tc.N); (err == nil) != tc.valid {
-			t.Errorf("#%d SetParameters should be valid: %t but got opposite", vnum+1, tc.valid)
-		}
-	}
-}
-
-func Test_GetParams(t *testing.T) {
-	h := affine.NewAffineHelper()
-	err := h.SetParameters(validAffineParamsEN.A, validAffineParamsEN.B, validAffineParamsEN.N)
-	if err != nil {
-		t.Errorf("SetParameters should have been error-free:\n\tgot: %v", err)
-	}
-
-	pars := h.GetParams()
-	if pars.A != validAffineParamsEN.A {
-		t.Errorf("retrived param A not the same exp:%d got:%d", validAffineParamsEN.A, pars.A)
-	}
-	if pars.B != validAffineParamsEN.B {
-		t.Errorf("retrived param B not the same exp:%d got:%d", validAffineParamsEN.B, pars.B)
-	}
-	if pars.Ap != validAffineParamsEN.Ap {
-		t.Errorf("retrived param A' not the same exp:%d got:%d", validAffineParamsEN.Ap, pars.Ap)
-	}
-	if pars.N != validAffineParamsEN.N {
-		t.Errorf("retrived param N not the same exp:%d got:%d", validAffineParamsEN.N, pars.N)
-	}
-}
-
-func Test_VerifyParams(t *testing.T) {
-	t.Skip()
+// Subject: affine.AffineHelper.VerifyParams() && affine.AffineHelper.GetParams()
+func Test_Helper_VerifyParams(t *testing.T) {
 	h := affine.NewAffineHelper()
 	p1 := &affine.AffineParams{ // let's have Ap be fixed/recalculated
 		A:  5,
@@ -154,23 +117,24 @@ func Test_VerifyParams(t *testing.T) {
 		N:  26,
 	}
 
-	fmt.Printf("Before call, address of params: %p\n", p1)
-	err := h.VerifyParams(p1)
-	fmt.Printf("After call, address of params: %p\n", p1)
+	// we set them as well so that GetParams does not fail
+	// after this p1.Ap contains a corrected value.
+	err := h.VerifyParams(p1, true)
 	if err != nil {
 		t.Error("should not have returned error")
 	}
-	if _, ap, _, _ := h.GetParameters(); ap != validAffineParamsEN.Ap {
-		t.Errorf("calculated parameter A' did not get fixed. exp:%d got:%d", validAffineParamsEN.Ap, ap)
+	if p2 := h.GetParams(); p2.Ap != validAffineParamsEN.Ap {
+		t.Errorf("calculated parameter A' did not get fixed. exp:%d got:%d", validAffineParamsEN.Ap, p2.Ap)
 	}
 
-	err = h.VerifyParams(validAffineParamsEN)
+	err = h.VerifyParams(validAffineParamsEN, false)
 	if err != nil {
 		t.Error("unexpected error for perfect parameters")
 	}
 }
 
-func Test_Encode_Helper(t *testing.T) {
+// Subject: affine.AffineHelper.Encode() && affine.AffileHelper.SetParams()
+func Test_Helper_Encode(t *testing.T) {
 	allCases := []struct {
 		In, Out int
 	}{
@@ -192,7 +156,8 @@ func Test_Encode_Helper(t *testing.T) {
 	}
 }
 
-func Test_Decode_Helper(t *testing.T) {
+// Subject: affine.AffineHelper.Decode()
+func Test_Helper_Decode(t *testing.T) {
 	allCases := []struct {
 		In, Out int
 	}{
@@ -214,7 +179,8 @@ func Test_Decode_Helper(t *testing.T) {
 	}
 }
 
-func Test_EncodeRuneFrom(t *testing.T) {
+// Subject: affine.AffineHelper.EncodeRuneFrom()
+func Test_Helper_EncodeRuneFrom(t *testing.T) {
 	allCases := []struct {
 		In, Out rune
 		Alpha   *cmn.Alphabet
@@ -240,7 +206,8 @@ func Test_EncodeRuneFrom(t *testing.T) {
 	}
 }
 
-func Test_DecodeRuneFrom(t *testing.T) {
+// Subject: affine.AffineHelper.DecodeRuneFrom()
+func Test_Helper_DecodeRuneFrom(t *testing.T) {
 	allCases := []struct {
 		In, Out rune
 		Alpha   *cmn.Alphabet
@@ -267,7 +234,7 @@ func Test_DecodeRuneFrom(t *testing.T) {
 }
 
 // Not a test, simply a helper to list the Coprime list
-func Test_Coprimes(t *testing.T) {
+func Test_Helper_Coprimes(t *testing.T) {
 	t.Helper()
 	alphas := []*cmn.Alphabet{
 		cmn.ALPHA_DISK,          //  English N=26 [1 3 5 7 9 11 15 17 19 21 23 25]
@@ -289,12 +256,63 @@ func Test_Coprimes(t *testing.T) {
  *					T e s t s :: AffineParams
  *-----------------------------------------------------------------*/
 
+// Subject: affine.AffineParams{} ctor.
+// Try several good & bad combinations of Affine coefficients and
+// check whether the constructor returns an error or not.
+func Test_AffineParams_Ctor(t *testing.T) {
+	const N1 int = 26
+	allCases := []struct {
+		A, B, N int
+		valid   bool
+	}{
+		{3, 5, N1, true},
+		{19, 18, N1, true},
+		{2, 5, N1, false},   // 2 is not a coprime of 26
+		{-1, 5, N1, false},  // A cannot be zero
+		{11, -1, N1, false}, // B should not be negative
+		{19, 8, 0, false},   // N should be positive
+	}
+
+	var err error
+	var pars *affine.AffineParams
+	for vnum, tc := range allCases {
+		pars, err = affine.NewAffineParams(tc.A, tc.B, tc.N)
+		if err != nil && tc.valid {
+			t.Errorf("#%d the parameter combination should be valid. %v\n\t%s", vnum+1, err, pars)
+		} else if err == nil && !tc.valid {
+			t.Errorf("#%d the parameter combination should be invalid.\n\t%s", vnum+1, pars)
+		}
+	}
+}
+
+func Test_AffineParams_Get(t *testing.T) {
+	params, err := affine.NewAffineParams(validAffineParamsEN.A,
+		validAffineParamsEN.B,
+		validAffineParamsEN.N)
+	if err != nil {
+		t.Errorf("These Affine coefficients should have been error-free:\n\tgot: %v", err)
+	}
+
+	if params.A != validAffineParamsEN.A {
+		t.Errorf("retrived param A not the same exp:%d got:%d", validAffineParamsEN.A, params.A)
+	}
+	if params.B != validAffineParamsEN.B {
+		t.Errorf("retrived param B not the same exp:%d got:%d", validAffineParamsEN.B, params.B)
+	}
+	if params.Ap != validAffineParamsEN.Ap {
+		t.Errorf("retrived param A' not the same exp:%d got:%d", validAffineParamsEN.Ap, params.Ap)
+	}
+	if params.N != validAffineParamsEN.N {
+		t.Errorf("retrived param N not the same exp:%d got:%d", validAffineParamsEN.N, params.N)
+	}
+}
+
 /* ----------------------------------------------------------------
- *					T e s t s :: AffineEncoder
+ *					T e s t s :: AffineCrypto
  *-----------------------------------------------------------------*/
 
-// Subject: affine.AffineEncoder.Encode()
-func Test_Encoder(t *testing.T) {
+// Subject: affine.AffineCrypto.Encode()
+func Test_AffineCrypto_Encoder(t *testing.T) {
 	allCases := []struct {
 		Alpha  *cmn.Alphabet
 		Params *affine.AffineParams
@@ -319,7 +337,7 @@ func Test_Encoder(t *testing.T) {
 	}
 
 	for vnum, tc := range allCases {
-		enc := affine.NewAffineEncoder(tc.Alpha, tc.Params)
+		enc := affine.NewAffineCrypto(tc.Alpha, tc.Params)
 		if out, err := enc.Encode(tc.In); err != nil {
 			t.Errorf("#%d %s encoder error: %v", vnum+1, tc.Alpha.LangCodeISO(), err)
 		} else if out != tc.Out {
@@ -328,12 +346,8 @@ func Test_Encoder(t *testing.T) {
 	}
 }
 
-/* ----------------------------------------------------------------
- *					T e s t s :: AffineDecoder
- *-----------------------------------------------------------------*/
-
-// Subject: affine.AffineDecoder.Decode()
-func Test_Decoder(t *testing.T) {
+// Subject: affine.AffineCrypto.Decode()
+func Test_AffineCrypto_Decoder(t *testing.T) {
 	allCases := []struct {
 		Alpha  *cmn.Alphabet
 		Params *affine.AffineParams
@@ -358,7 +372,7 @@ func Test_Decoder(t *testing.T) {
 	}
 
 	for vnum, tc := range allCases {
-		enc := affine.NewAffineDecoder(tc.Alpha, tc.Params)
+		enc := affine.NewAffineCrypto(tc.Alpha, tc.Params)
 		if out, err := enc.Decode(tc.In); err != nil {
 			t.Errorf("#%d %s decoder error: %v", vnum+1, tc.Alpha.LangCodeISO(), err)
 		} else if out != tc.Out {
@@ -367,13 +381,9 @@ func Test_Decoder(t *testing.T) {
 	}
 }
 
-/* ----------------------------------------------------------------
- *					T e s t s :: AffineCommand
- *-----------------------------------------------------------------*/
-
 // Tests AffineCrypto Encode & Decode with only the master (letters)
 // alphabet.
-func Test_AffineCrypto(t *testing.T) {
+func Test_AffineCrypto_Master(t *testing.T) {
 	allCases := []struct {
 		Alpha  *cmn.Alphabet
 		Params *affine.AffineParams
@@ -416,6 +426,10 @@ func Test_AffineCrypto(t *testing.T) {
 		}
 	}
 }
+
+/* ----------------------------------------------------------------
+ *					T e s t s :: AffineCommand
+ *-----------------------------------------------------------------*/
 
 // Tests the AffineCommand Encode & Decode using the Master alphabet (letters)
 // and a chained Slave alphabet (digits, space, some symbols)
@@ -502,6 +516,67 @@ func Test_AffineCommand_EncryptTextFile(t *testing.T) {
 	os.Remove(FILE_RET)
 }
 
+// Tests plain Caesar round-trip encryption of a BINARY FILE. If the
+// underlying EncodeBytes/DecodeBytes test do not work, then this won't either.
+func Test_AffineCommand_EncryptBinFile(t *testing.T) {
+	// this depends on the encryption algorithm
+	const ENC_FILE_EXT string = commands.FILE_EXT_AFFINE
+
+	allCases := []struct {
+		Key           rune
+		InputFilename string // plain binary file to be encrypted
+		TwinFilename  string // plain binary file after round-trip encrypt-decrypt
+	}{
+		{'M', "input.bin", "output.bin"},
+		{'Z', "caesar-silver-coin.png", "caesar-silver-coin-ret.png"},
+	}
+
+	for i, tc := range allCases {
+		var err error
+		var start time.Time
+		var elapsed time.Duration
+
+		assetIn := getAssetFilename(t, TEST_ASSETS, tc.InputFilename)
+		assetOut := cmn.NewNameExtOnly(assetIn, ENC_FILE_EXT, true)
+		assetRet := getAssetFilename(t, TEST_ASSETS, tc.TwinFilename)
+
+		ctr := commands.NewAffineCommand(cmn.BINARY_DISK, validAffineParamsBIN.A, validAffineParamsBIN.B)
+		fmt.Println("Binary File #", i+1, assetIn)
+		// generate encrypted binary named assetOut
+		// assetIn -> assetOut
+		start = time.Now()
+		if err = ctr.EncryptBinFile(assetIn); err != nil {
+			t.Errorf("#%d failed EncryptBinFile: %v", i+1, err)
+		}
+		elapsed = time.Since(start)
+		fmt.Printf("· EncryptBinFile took: %s\n", elapsed)
+
+		// assetOut -> assetRet where to succedd assetRet == assetIn
+		start = time.Now()
+		if err = ctr.DecryptBinFile(assetOut, assetRet); err != nil {
+			t.Errorf("#%d failed DecryptBinFile: %v", i+1, err)
+		}
+		elapsed = time.Since(start)
+		fmt.Printf("· DecryptBinFile took: %s\n", elapsed)
+
+		md5In, _ := cmn.CalculateFileMD5(assetIn)
+		md5Out, _ := cmn.CalculateFileMD5(assetRet)
+		passed := md5In == md5Out
+		if passed {
+			fmt.Println("· Round-trip Binary OK")
+		} else {
+			t.Errorf("#%d round-trip decrypted file not the same as input. %s vs %s", i+1, md5In, md5Out)
+		}
+
+		os.Remove(assetOut)
+		os.Remove(assetRet)
+	}
+}
+
+/* ----------------------------------------------------------------
+ *				T e s t s :: Affine CLI Application
+ *-----------------------------------------------------------------*/
+
 // Test_Affine_Exit exercises the Affine executable with various CLI
 // parameter/argument combinations for both valid and invalid invocations
 // to check the return value. It helps ensuring the application complies
@@ -576,6 +651,10 @@ func Test_Affine_Exit(t *testing.T) {
 	os.Remove(OUT_CIPHER_FILE)
 	os.Remove(OUT_DECODED_FILE)
 }
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *						H e l p e r s
+ * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
 // Get the fully-qualified path to the Affine CLI executable.
 // It adjusts the name by adding ".exe" if we are on (God forbid!) Windows.

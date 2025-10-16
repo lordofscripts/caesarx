@@ -9,6 +9,7 @@ package ciphers
 
 import (
 	"fmt"
+	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/cmn"
 )
 
@@ -42,17 +43,25 @@ type AffineSequencer struct {
  *-----------------------------------------------------------------*/
 
 /**
- * Instantiates an Affine Sequencer. Caller must ensure that the
- * parameters are valid using affine.AffineHelper()
- * @audit circular dependency if we include AffineHelper here.
+ * Instantiates an Affine Sequencer if the validation of the
+ * parameters is successful. Else it returns nil. It logs an
+ * error if something happens.
  */
-func NewAffineSequencer(a, ap, b int, alpha *cmn.Alphabet) *AffineSequencer {
-	return &AffineSequencer{
-		coefA:   a,
-		coefB:   b,
-		coefAp:  ap,
-		modulo:  int(alpha.Size()),
-		skipped: 0,
+func NewAffineSequencer(a, b int, alpha *cmn.Alphabet) *AffineSequencer {
+	ahlp := NewAffineHelper()
+	if aP, err := ahlp.VerifySettings(a, b, int(alpha.Size())); err != nil {
+		mlog.ErrorT("couldn't instantiate AffineHelper",
+			mlog.At(),
+			mlog.Err(err))
+		return nil
+	} else {
+		return &AffineSequencer{
+			coefA:   a,
+			coefB:   b,
+			coefAp:  aP,
+			modulo:  int(alpha.Size()),
+			skipped: 0,
+		}
 	}
 }
 
@@ -90,6 +99,7 @@ func (cs *AffineSequencer) Skip() int {
 }
 
 // (N.A.) Affine does not use a "key" but coefficients to a formula.
+// therefore it returns the target rune as-is.
 func (cs *AffineSequencer) GetKey(pos int, target rune) rune {
 	return target
 }
@@ -102,13 +112,14 @@ func (cs *AffineSequencer) GetKeyInfo() string {
 	return fmt.Sprintf("%cƒ𝓍 (A:%d,B:%d,N:%d)", UC_MATH_BOLD_A, cs.coefA, cs.coefB, cs.modulo)
 }
 
-// N.A.
+// Verify via the callback that the given rune can be used as Coefficient A?
 func (cs *AffineSequencer) Verify(callback func(rune) error) error {
 	return nil
 }
 
 // (N.A.) Affine does not use a "secret" but coefficients to a formula.
 func (cs *AffineSequencer) VerifySecret(s string, alpha *cmn.Alphabet) (string, error) {
+	mlog.WarnT("ignored non-applicable request", mlog.At())
 	return s, nil
 }
 

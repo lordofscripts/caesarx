@@ -54,13 +54,23 @@ type AffineParams struct {
 // that A and N are coprimes and only then returns a non-nil instance
 // of verified parameters suitable for both encription and decription.
 func NewAffineParams(a, b, n int) (*AffineParams, error) {
-	helper := NewAffineHelper()
-	if err := helper.SetParameters(a, b, n); err != nil {
-		mlog.ErrorE(err)
+	helper := iciphers.NewAffineHelper()
+	if ap, err := helper.VerifySettings(a, b, n); err != nil {
+		mlog.ErrorT("invalid Affine parameter set",
+			mlog.Int("A", a),
+			mlog.Int("B", b),
+			mlog.Int("N", n),
+			mlog.Err(err),
+		)
 		return nil, err
+	} else {
+		return &AffineParams{
+			A:  a,
+			B:  b,
+			Ap: ap,
+			N:  n,
+		}, nil
 	}
-
-	return helper.GetParams(), nil
 }
 
 /* ----------------------------------------------------------------

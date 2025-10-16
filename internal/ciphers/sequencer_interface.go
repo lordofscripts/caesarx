@@ -58,6 +58,10 @@ type IKeySequencer interface {
 
 	GetKeyInfo() string
 
+	/**
+	 * The callback is used to verify that the rune can be used
+	 * as a key.
+	 */
 	Verify(func(rune) error) error
 
 	/**

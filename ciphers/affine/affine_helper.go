@@ -21,11 +21,9 @@ import (
 	"fmt"
 	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/cmn"
-	"math"
-	"math/big"
-	"slices"
+	iciphers "lordofscripts/caesarx/internal/ciphers"
 	"strings"
-	"unsafe"
+	"unicode/utf8"
 )
 
 /* ----------------------------------------------------------------
@@ -41,10 +39,8 @@ import (
  *-----------------------------------------------------------------*/
 
 type AffineHelper struct {
-	cA   int
-	cB   int
-	cAp  int
-	modN int
+	helper *iciphers.AffineHelper
+	param  *AffineParams
 }
 
 /* ----------------------------------------------------------------
@@ -60,106 +56,82 @@ type AffineHelper struct {
  *-----------------------------------------------------------------*/
 
 func NewAffineHelper() *AffineHelper {
-	return &AffineHelper{}
+	return &AffineHelper{iciphers.NewAffineHelper(), nil}
 }
 
 /* ----------------------------------------------------------------
- *				P u b l i c		M e t h o d s
+ *				P u b l i c		M e t h o d s ( Inherited )
  *-----------------------------------------------------------------*/
 
-/**
- * Checks if the two integers are coprime. That is, their Greatest
- * Common Divisor is 1.
- */
+// Checks if the two integers are coprime. That is, their Greatest
+// Common Divisor is 1. (inmutable)
 func (h *AffineHelper) AreCoprime(a, b int) bool {
-	A := big.NewInt(int64(a))
-	B := big.NewInt(int64(b))
-	gcd := new(big.Int).GCD(nil, nil, A, B)
-	// Check that their GCD is 1
-	return gcd.Cmp(big.NewInt(1)) == 0
+	return h.helper.AreCoprime(a, b)
 }
 
-/**
- * For a given alphabet length N, get the slice of
- * coprimes of N between (0..N]
- */
+// For a given alphabet length N, get the slice of
+// coprimes of N between (0..N] (inmutable)
 func (h *AffineHelper) ValidCoprimesUpTo(n uint) []int {
-	coprimes := make([]int, 0)
-	for v := range n {
-		if v == 0 {
-			continue
-		}
-
-		if h.AreCoprime(int(v), int(n)) {
-			coprimes = append(coprimes, int(v))
-		}
-	}
-
-	return coprimes
+	return h.helper.ValidCoprimesUpTo(n)
 }
 
-/**
- * Calculate the modular inverse A' of A
- */
+// Calculate the modular inverse A' of A. (inmutable)
 func (h *AffineHelper) ModularInverse(a, m int) (int, error) {
-	A := big.NewInt(int64(a))
-	M := big.NewInt(int64(m))
-
-	if !h.AreCoprime(a, m) {
-		return -1, fmt.Errorf("values a=%d and n=%d are not coprime", a, m)
-	}
-
-	inverse := new(big.Int).ModInverse(A, M)
-	inverse64 := inverse.Int64()
-	if inverse64 > int64(maxIntValue()) {
-		return -1, fmt.Errorf("this overflow shouldn't ocurr in this application")
-	}
-
-	return int(inverse64), nil
+	return h.helper.ModularInverse(a, m)
 }
 
+// When using a Slave Reference Alphabet with the Affine cipher,
+// we cannot (and must not) use the same parameters because most
+// certainly the Slave's length N isn't the same as the Master's.
+// we resort to some (see documents) trickery to use the Master's
+// A coefficient modulo the Slave's N to choose from the Slave's
+// VALID list of coprimes.
+// NOTE: From the master we use A & N, from the slave B & N and
+// calculate the slave's A coefficient.
+func (h *AffineHelper) CalculateSlaveCoprime(master *AffineParams, slaveB, slaveN int) int {
+	return h.helper.CalculateSlaveCoprime(master.A, master.N, slaveB, slaveN)
+}
+
+// Check that A is a common coprime for alphabets of lengths N1 & N2
+func (h *AffineHelper) IsCommonCoprime(a, n1, n2 int) bool {
+	return h.helper.IsCommonCoprime(a, n1, n2)
+}
+
+// Get the list of all (if any) common coprimes for alphabets
+// of length N1 & N2
+func (h *AffineHelper) GetCommonCoprimes(n1, n2 int) (bool, []int) {
+	return h.helper.GetCommonCoprimes(n1, n2)
+}
+
+/* ----------------------------------------------------------------
+ *				P u b l i c		M e t h o d s ( Extra )
+ *-----------------------------------------------------------------*/
+
+// Sets the Affine parameters and calculates the A' for
+// the given parameters. A' is used for decoding instead of A.
 func (h *AffineHelper) SetParams(p *AffineParams) error {
-	var err error
+	var err error = nil
 	var inverse int
-	if inverse, err = h.VerifySettings(p.A, p.B, p.N); err == nil {
-		h.cA = p.A
-		h.cB = p.B
-		h.cAp = inverse
-		h.modN = p.N
+	if inverse, err = h.helper.VerifySettings(p.A, p.B, p.N); err == nil {
+		h.param = &AffineParams{
+			A:  p.A,
+			B:  p.B,
+			Ap: inverse,
+			N:  p.N,
+		}
 	}
 
 	return err
 }
 
-func (h *AffineHelper) SetParameters(a, b, n int) error {
-	if inverse, err := h.VerifySettings(a, b, n); err != nil {
-		return err
-	} else {
-		h.cAp = inverse
-		h.cA = a
-		h.cB = b
-		h.modN = n
-	}
-
-	return nil
-}
-
+// GetParams retrieves the current Affine parameters of this instance
 func (h *AffineHelper) GetParams() *AffineParams {
-	if h.modN == 0 {
-		mlog.Error("AffineHelper.GetParams but there are none")
+	if h.param == nil || h.param.N <= 0 {
+		mlog.Error("no Affine parameters have been set!", mlog.At())
 		return nil
 	}
 
-	return &AffineParams{
-		A:  h.cA,
-		B:  h.cB,
-		Ap: h.cAp,
-		N:  h.modN,
-	}
-}
-
-func (h *AffineHelper) GetParameters() (a, ap, b, n int) {
-	return h.cA, h.cAp, h.cB, h.modN
+	return h.param.Clone()
 }
 
 // A multi-line string block with the Tabula Recta for the current
@@ -177,9 +149,9 @@ func (h *AffineHelper) GetTabulaString(alphabet string, leader ...string) (strin
 		pre = leader[0]
 	}
 
-	sb.WriteString(pre + HEAD_1[:h.modN] + "\n")
-	sb.WriteString(pre + HEAD_2[:h.modN] + "\n")
-	sb.WriteString(pre + strings.Repeat("-", h.modN) + "\n")
+	sb.WriteString(pre + HEAD_1[:h.param.N] + "\n")
+	sb.WriteString(pre + HEAD_2[:h.param.N] + "\n")
+	sb.WriteString(pre + strings.Repeat("-", h.param.N) + "\n")
 	sb.WriteString(pre + alphabet + "\n") // plain alphabet
 
 	// now the conversion duplet
@@ -195,46 +167,6 @@ func (h *AffineHelper) GetTabulaString(alphabet string, leader ...string) (strin
 	return sb.String(), nil
 }
 
-// When using a Slave Reference Alphabet with the Affine cipher,
-// we cannot (and must not) use the same parameters because most
-// certainly the Slave's length N isn't the same as the Master's.
-// we resort to some (see documents) trickery to use the Master's
-// A coefficient modulo the Slave's N to choose from the Slave's
-// VALID list of coprimes.
-func (h *AffineHelper) CalculateSlaveCoprime(slaveB, slaveN int) int {
-	// get the list of allowable A coefficients of the slave
-	slaveCoprimes := h.ValidCoprimesUpTo(uint(slaveN))
-	// calculate a modulo index for that using the current (master's)
-	// A coefficient
-	selected := h.cA % len(slaveCoprimes)
-	M := slaveCoprimes[selected]
-	// pick an adjusted, and thus valid, A coefficient for the slave
-	mlog.DebugT("adjusted A coefficient", mlog.Int("Master-A", h.cA),
-		mlog.Int("Master-N", h.modN),
-		mlog.Int("Slave-A", M),
-		mlog.Int("Slave-N", slaveN))
-	return M
-}
-
-// Check that A is a common coprime for alphabets of lengths N1 & N2
-func (h *AffineHelper) IsCommonCoprime(a, n1, n2 int) bool {
-	set1 := h.ValidCoprimesUpTo(uint(n1))
-	set2 := h.ValidCoprimesUpTo(uint(n2))
-
-	return slices.Contains(set1, a) && slices.Contains(set2, a)
-}
-
-// Get the list of all (if any) common coprimes for alphabets
-// of length N1 & N2
-func (h *AffineHelper) GetCommonCoprimes(n1, n2 int) (bool, []int) {
-	set1 := h.ValidCoprimesUpTo(uint(n1))
-	set2 := h.ValidCoprimesUpTo(uint(n2))
-
-	common := cmn.IntersectInt(set1, set2)
-
-	return len(common) > 0, common
-}
-
 func (h *AffineHelper) EncodeRuneFrom(r rune, alphabet string) (rune, error) {
 	x := cmn.RuneIndex(alphabet, r)
 	y, err := h.Encode(x)
@@ -243,11 +175,11 @@ func (h *AffineHelper) EncodeRuneFrom(r rune, alphabet string) (rune, error) {
 }
 
 func (h *AffineHelper) Encode(x int) (int, error) {
-	if h.modN <= 0 {
+	if h.param == nil || h.param.N <= 0 {
 		return -1, fmt.Errorf("not initialiazed, call SetParameters")
 	}
 
-	y := (h.cA*x + h.cB) % h.modN
+	y := (h.param.A*x + h.param.B) % h.param.N
 	return y, nil
 }
 
@@ -259,25 +191,37 @@ func (h *AffineHelper) DecodeRuneFrom(r rune, alphabet string) (rune, error) {
 }
 
 func (h *AffineHelper) Decode(y int) (int, error) {
-	if h.modN <= 0 {
+	if h.param == nil || h.param.N <= 0 {
 		return -1, fmt.Errorf("not initialiazed, call SetParameters")
 	}
 
 	// (A' * ( y - B)) % N
-	x := (h.cAp * (y - h.cB)) % h.modN
+	x := (h.param.Ap * (y - h.param.B)) % h.param.N
 	return x, nil
 }
 
 func (h *AffineHelper) String() string {
-	return fmt.Sprintf("Affine{A:%d,B:%d,A':%d,N:%d}", h.cA, h.cB, h.cAp, h.modN)
+	return h.param.String()
 }
 
 /* ----------------------------------------------------------------
  *				P r i v a t e	M e t h o d s
  *-----------------------------------------------------------------*/
 
-func (h *AffineHelper) VerifyParams(params *AffineParams) error {
-	aP, err := h.VerifySettings(params.A, params.B, params.N)
+// VerifyParams checks the correctness of the provided Affine
+// coefficients and returns an error if they are incorrect beyond repair.
+//
+//	If on the other hand they are almost correct but the A'
+//
+// (used for decoding) needs adjustment, then A' is corrected/calculated
+// but no error is returned, only a log Warning entry is produced.
+//
+//	If the parameters are correct and the set parameter is true,
+//
+// the provided (and possibly corrected) parameters are stored in
+// this instance (by reference, not by value!).
+func (h *AffineHelper) VerifyParams(params *AffineParams, set bool) error {
+	aP, err := h.helper.VerifySettings(params.A, params.B, params.N)
 	if err != nil {
 		return err
 	}
@@ -286,64 +230,27 @@ func (h *AffineHelper) VerifyParams(params *AffineParams) error {
 		mlog.Warn("repaired Affine.A' after verification",
 			mlog.Int("Was", params.Ap),
 			mlog.Int("Becomes", aP))
-		params.Ap = aP // @audit WTF this is not reflected upon return
-		panic("unexplained... not reflected on caller despite pointers")
+		params.Ap = aP
+	}
+
+	// set the reference in this instance
+	if set {
+		h.param = params
 	}
 
 	return nil
-}
-
-func (h *AffineHelper) VerifySettings(a, b, n int) (int, error) {
-	const INVALID int = -1
-	var inverse int
-	var err error = nil
-
-	if a < 0 || b < 0 || n <= 0 {
-		return INVALID, fmt.Errorf("a, b, n should be positive")
-	}
-
-	if inverse, err = h.ModularInverse(a, n); err != nil {
-		return INVALID, err
-	}
-
-	contains := func(slice []int, value int) bool {
-		for _, v := range slice {
-			if v == value {
-				return true
-			}
-		}
-		return false
-	}
-
-	validCoprimes := h.ValidCoprimesUpTo(uint(n))
-	if !contains(validCoprimes, a) {
-		return INVALID, fmt.Errorf("coeficcient A=%d is not a valid coprime of N=%d", a, n)
-	}
-
-	return inverse, nil
 }
 
 /* ----------------------------------------------------------------
  *					F u n c t i o n s
  *-----------------------------------------------------------------*/
 
-/**
- * The maximum value of an 'int' type depends on the architecture.
- * I.e. whether we are executing on a 32 or 64-bit CPU.
- */
-func maxIntValue() int {
-	if unsafe.Sizeof(int(0)) == 8 {
-		return math.MaxInt64
-	}
-
-	return math.MaxInt32
-}
-
 /* ----------------------------------------------------------------
  *					M A I N    |     D E M O
  *-----------------------------------------------------------------*/
 
 func DemoAffine() bool {
+	// these combinations MUST BE VALID
 	const A int = 15
 	const B int = 7
 	const ALPHABET string = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -353,10 +260,19 @@ func DemoAffine() bool {
 	//	return rune(offset + 65) // A is ASCII 65
 	//}
 
+	var aparams *AffineParams
+	var err error
+
+	// to ensure it works with multi-byte characters, we use the utf8
+	// sizer instead of the standard len()
+	aparams, _ = NewAffineParams(A, B, utf8.RuneCountInString(ALPHABET))
+	fmt.Println("\t", aparams)
+
 	cipher := NewAffineHelper()
-	// if Alphabet contains multi-byte chars use utf8.RuneCountInString()
-	cipher.SetParameters(A, B, len(ALPHABET))
-	fmt.Println("\t", cipher)
+	if err = cipher.SetParams(aparams); err != nil {
+		fmt.Println(err)
+		return false
+	}
 
 	y, err := cipher.EncodeRuneFrom(SAMPLE, ALPHABET)
 	if err != nil {
