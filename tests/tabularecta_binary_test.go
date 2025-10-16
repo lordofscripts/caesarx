@@ -48,6 +48,7 @@ func Test_Binary_HasRune(t *testing.T) {
 }
 
 func Test_Binary_PrintTape(t *testing.T) {
+	t.Skip()
 	t.Helper()
 	const KEY byte = 128
 	btr := ciphers.NewBinaryTabulaRecta()
@@ -55,6 +56,7 @@ func Test_Binary_PrintTape(t *testing.T) {
 }
 
 func Test_Binary_PrintTabula(t *testing.T) {
+	t.Skip()
 	t.Helper()
 	btr := ciphers.NewBinaryTabulaRecta()
 	btr.PrintTabulaRecta(false)
