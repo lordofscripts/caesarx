@@ -14,6 +14,7 @@ import (
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/hex"
+	"hash/crc64"
 	"io"
 	"lordofscripts/caesarx/app/mlog"
 	"os"
@@ -72,6 +73,32 @@ func CalculateFileSHA256(filename string) (string, error) {
 	hexString := hex.EncodeToString(checksum)
 
 	return hexString, nil
+}
+
+// Calculate the CRC64 which has less collisions than CRC32
+func CalculateCRC64(data []byte) uint64 {
+	table := crc64.MakeTable(crc64.ECMA)
+	checksum := crc64.Checksum(data, table)
+	return checksum
+}
+
+func CalculateFileCRC64(filename string) (uint64, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+
+	// Create a new CRC-64 hash
+	hash := crc64.New(crc64.MakeTable(crc64.ECMA))
+
+	// Copy the file data to the hash object
+	if _, err := io.Copy(hash, file); err != nil {
+		return 0, err
+	}
+
+	// Return the computed checksum
+	return hash.Sum64(), nil
 }
 
 // Normalize a string by sanitizing the vocals removing the accents.
