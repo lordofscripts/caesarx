@@ -16,7 +16,7 @@ To build on windows CLI:
  * `go build -buildmode=exe -o bin/gocaesar.exe -gcflags all=-N ./cmd/cli/main.go`
  * Without `-gcflags all=-N` it will produce a non-executable output!
 
-### Showcase Concepts
+## Showcase Concepts
 
 For Go newbies there are a few interesting things done in this module,
 that beyond the basic, may be worth noting:
@@ -39,6 +39,22 @@ that beyond the basic, may be worth noting:
 More odd stuff:
 
 * `Makefile` get absolute path of current makefile to get project's BIN dir   
+
+### Languages/Alphabets and dealing with Files
+
+As of `v1.0` CaesarX supports file encryption for both *text* files (v1.1.0-RC1)
+and *binary* files (v1.1.0-RC4). This implies using the `-F` CLI argument **and**
+using the `-alpha {ID}` argument to select the alphabet/language. If the `{ID}`
+is set to `binary` the it will assume the files are binary files.
+
+For developers, keep in mind that instantiating any of the *ciphers* can be done
+with any language. But when calling the `EncryptBinFile` or `DecryptBinFile`
+methods, the command instance will *ignore* the current human language and
+use its own *Binary Tabula* instead of the language chosen for the instance.
+This means, you don't have to create a specific instance to deal with binary
+files.
+
+## Other 
 
 ### Debugging
 

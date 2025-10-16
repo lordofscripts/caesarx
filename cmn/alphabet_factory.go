@@ -35,7 +35,7 @@ func AlphabetFactory(language string) IAlphabet {
 
 	case ALPHA_NAME_CYRILLIC:
 		fallthrough
-	case ALPHA_NAME_UKRANIAN:
+	case ALPHA_NAME_UKRAINIAN:
 		fallthrough
 	case ALPHA_NAME_RUSSIAN:
 		na = ALPHA_DISK_CYRILLIC.Clone().WithSpecialCase(ALPHA_DISK_CYRILLIC.specialCase)

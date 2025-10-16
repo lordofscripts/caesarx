@@ -33,3 +33,4 @@ go.work.sum
 bin/
 docs/CIPHERS.md
 docs/README-old.md
+tests/testdata/input_bin.*

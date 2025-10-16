@@ -89,15 +89,11 @@ func (c *AffineCommand) WithAlphabet(alphabet *cmn.Alphabet) ciphers.ICipherComm
  */
 func (c *AffineCommand) WithChain(slave *cmn.Alphabet) ciphers.ICipherCommand {
 	if slave != nil {
-		if err := c.crypto.AffineEncoder.WithChain(slave); err != nil {
-			mlog.Fatal(caesarx.ERR_INTERNAL, err)
-		}
-		if err := c.crypto.AffineDecoder.WithChain(slave); err != nil {
+		if err := c.crypto.WithChain(slave); err != nil {
 			mlog.Fatal(caesarx.ERR_INTERNAL, err)
 		}
 	} else {
-		c.crypto.AffineEncoder.WithChain(nil)
-		c.crypto.AffineDecoder.WithChain(nil)
+		c.crypto.WithChain(nil)
 	}
 
 	return c
@@ -136,7 +132,7 @@ func (c *AffineCommand) Decode(ciphered string) (string, error) {
 // this method is only for text files.
 func (c *AffineCommand) EncryptTextFile(src string) error {
 	fileOut := cmn.NewNameExtOnly(src, FILE_EXT_AFFINE, true)
-	err := c.crypto.AffineEncoder.EncryptTextFile(src, fileOut)
+	err := c.crypto.EncryptTextFile(src, fileOut)
 
 	return err
 }
@@ -145,35 +141,30 @@ func (c *AffineCommand) EncryptTextFile(src string) error {
 // The output file target must be explicitely given. Please note that
 // this method is only for text files.
 func (c *AffineCommand) DecryptTextFile(src, target string) error {
-	err := c.crypto.AffineDecoder.DecryptTextFile(src, target)
+	err := c.crypto.DecryptTextFile(src, target)
 
 	return err
 }
 
 // Encodes a binary file and produces a binary encoded file
 func (c *AffineCommand) EncryptBinFile(filenameIn string) error {
-	/*
-		fileOut := cmn.NewNameExtOnly(filenameIn, FILE_EXT_AFFINE, true)
+	// generate the output filename
+	fileOut := cmn.NewNameExtOnly(filenameIn, FILE_EXT_AFFINE, true)
 
-		err := c.crypto.AffineEncoder.EncryptBinaryFile(filenameIn, fileOut)
+	err := c.crypto.EncryptBinaryFile(filenameIn, fileOut) // error already logged by core
 
-		return err
-	*/
-	panic("not implemented")
+	return err
 }
 
 // Decodes a binary file and produces a plain binary file
 func (c *AffineCommand) DecryptBinFile(filenameIn, filenameOut string) error {
-	/*
-		err := c.crypto.AffineDecoder.DecryptBinaryFile(filenameIn, filenameOut)
+	err := c.crypto.DecryptBinaryFile(filenameIn, filenameOut) // error already logged by core
 
-		return err
-	*/
-	panic("not implemented")
+	return err
 }
 
 func (c *AffineCommand) Alphabet() string {
-	return c.crypto.Alphabet()
+	return c.crypto.GetAlphabet()
 }
 
 func (c *AffineCommand) GetParams() (masterP *affine.AffineParams, slaveP *affine.AffineParams) {

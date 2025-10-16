@@ -1,3 +1,14 @@
+go-carousel (1.1.0-RC4) UNRELEASED; urgency=low
+
+ * GH-007 Refactored AffineHelper, IKeySequencer and AffineSequencer in order to
+   add binary file encryption support for Affine cipher.
+ * Added CRC64 to cmn for future use in binary header and tests
+ * GH-002 Binary File Encryption support for ALL ciphers now (Affine included).
+   While it supports it (CLI, commands, ciphers), the Affine & Vigenere appear
+   to have some problems.
+
+-- Lord of Scripts <lordofscripts@users.noreply.github.com>  Sat, 16 Oct 2025 10:47:00 -0500
+
 go-carousel (1.1.0-RC3) UNRELEASED; urgency=low
 
 ## Improvements

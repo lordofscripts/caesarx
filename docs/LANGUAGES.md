@@ -34,6 +34,9 @@ parameter:
 * `german` (UTF8)
 * `greek` (UTF8)
 * `cyrillic` is an alias for `ukranian` and `russian` (UTF8)
+* `binary` a universal alphabet that serves primarily to work with non-text files
+  (images, PDF documents, binary files in general, etc.) that uses an *alphabet*
+  composed of bytes `0x00` to `0xFF`.
 
 All the ciphers in this module other than the *plain standard Caesar* use one of
 the above named alphabets as **primary** *reference alphabet* and the Extended Numeric
@@ -132,6 +135,19 @@ letter alphabets introduced above (English, Spanish, etc.)
 * Symbols/Punctuation disk `¡!\"#$%&'()*+,-./0123456789:;<=>¿?@[]` contains most symbols for common languages. It may be a useful slave disk.
 
  Here is the corresponding [Tabula Recta](./data/numeric_tabula.txt).
- 
+
+### Binary
+
+**Alphabet:** ASCII codes 0..255
+**Number of items:** 256 bytes
+**Type:** Binary
+**Special casing rules:** None.
+
+A special alphabet that treats input as mere 8-bit bytes. It is useful for 
+any binary files such as images, executables, etc. When you are going to
+encrypt/decrypt binary files with `affine` or `caesarx` and its aliases,
+use the CLI options `-alpha binary -F` and it will treat the filename
+arguments as *binary* files rather than text.
+
 ***
 Copyright &copy;2025 Lord of Scripts

@@ -31,6 +31,7 @@ This fun application and library is merely an educational experiment I did for f
 * The command-pattern based API allows piping results into other commands. For example double-algorithm encryption or output grouping.
 * Supports grouping encrypted output in groups of 2/3/4/5 characters for CLI text encryption (message-based).
 * Supports **text file encrytion** in all algorithm modalities! You are not limited to short messages anymore.
+* Supports **binary file encryption** for all algorithms. Now you can encrypt images and other binary data.
 * Lots of test cases included
 
 |     | Show your support   |
@@ -40,26 +41,32 @@ This fun application and library is merely an educational experiment I did for f
 
 #### License
 
-You are **not** granted permission to use this library, application or derivative works for profit or commercial purposes. Just to let you know...
+You are **not** granted permission to use this library, application or derivative works for profit or commercial purposes. Just to let you know... Read the [LICENSE](LICENSE.md) for more details.
 
 ### Installation
 
-To install the `tabularecta` and `caesarx` executables in your system:
+These instructions depend whether you are going to use this fine module as an
+end-user application or integrate the functionality in your **free** software.
+Respect the license please...
+
+#### For End-Users
+
+To install the `tabularecta`, `caesarx` and `affine` executables in your system:
 
 `go get github.com/lordofscripts/caesarx@latest`
 
-Or you can install the Debian package:
+Or you can install the Debian package (recommended):
 
-`sudo apt-get install go-caesarx.deb`
+`sudo apt-get install go-caesarx******.deb` 
 
-On **Linux** you have the `caesarx`, `tabulareta` and `affine` as main CLI apps, 
+On **Linux** you have the `caesarx`, `tabularecta` and `affine` as main CLI apps, 
 with `didimus`, `fibonacci`, `bellaso` and `vigenere` probably appearing as
 *soft symbolic links* to `caesarx`.
 
 On **Windows** you have the `caesarx.exe`, `tabula.exe` and `affine.exe` 
 executable files.
 
-#### Usage
+##### Usage
 
 Both the `tabularecta` and the `caesarx` are CLI (command-line interface) application with some common options to get you started exploring this exciting world of ancient ciphers. Additionally there are special aliases to `caesarx` called `affine`, `bellaso` and `vigenere` that are pre-configured for those algorithms; thus sparing you from having to specify the algorithm through the CLI.
 
@@ -90,6 +97,14 @@ you would use two free arguments instead of one:
 > program_name {parameters} [options] -F ciphered_txt.EXT plain.txt
 >
 
+#### For Integrating in your own FREE software
+
+The usual:
+
+`go get github.com/lordofscripts/caesarx`
+
+And then RTFM :) plenty of info here and the source code is documented in the 
+[Pkg Info](https://pkg.go.dev/github.com/lordofscripts/caesarx).
 
 ### The Ciphers Explained
 

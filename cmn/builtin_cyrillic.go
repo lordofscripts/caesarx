@@ -19,9 +19,9 @@ const (
  *-----------------------------------------------------------------*/
 
 const (
-	ALPHA_NAME_CYRILLIC = "cyrillic"
-	ALPHA_NAME_UKRANIAN = "ukranian"
-	ALPHA_NAME_RUSSIAN  = "russian"
+	ALPHA_NAME_CYRILLIC  = "cyrillic"
+	ALPHA_NAME_UKRAINIAN = "ukranian"
+	ALPHA_NAME_RUSSIAN   = "russian"
 )
 
 var (

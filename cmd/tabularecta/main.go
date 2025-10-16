@@ -88,7 +88,7 @@ func main() {
 		demoMsg1 = "ABCD0123äöüß"
 		demoMsg2 = "Daß liebe hübschen Mädchen"
 
-	case cmn.ALPHA_NAME_UKRANIAN:
+	case cmn.ALPHA_NAME_UKRAINIAN:
 		fallthrough
 	case cmn.ALPHA_NAME_RUSSIAN:
 		fallthrough

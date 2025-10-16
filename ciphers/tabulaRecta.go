@@ -515,7 +515,7 @@ func (t *TabulaRecta) DecodeRuneRaw(r rune, rowIdx int) rune {
 	if exists, colIdx := t.rowContains(rowIdx, r); exists {
 		result = t.tabula[0][colIdx]
 	} else {
-		// This would never happen UNLESS someone edits TabulaCaesar(Commmand) and didn't
+		// This would never happen UNLESS someone edits TabulaCaesar(Command) and didn't
 		// check for rune's presence in the slave alphabet. But this check is here
 		// as a safeguard.
 		mlog.ErrorT("internal error: shouldn't be looking for that rune in this slave", mlog.Rune("Rune", r), mlog.String("Alpha", t.Name))
@@ -669,7 +669,7 @@ func TabulaRectaForLanguage(lname string) *TabulaRecta {
 	case cmn.ALPHA_NAME_GERMAN:
 		alphabet = cmn.ALPHA_DISK_GERMAN
 
-	case cmn.ALPHA_NAME_UKRANIAN:
+	case cmn.ALPHA_NAME_UKRAINIAN:
 		fallthrough
 	case cmn.ALPHA_NAME_RUSSIAN:
 		fallthrough

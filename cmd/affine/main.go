@@ -87,16 +87,22 @@ func PrintCoprimes(alpha *cmn.Alphabet, n int) int {
 }
 
 func PrintAffineTabula(alpha *cmn.Alphabet, a, b int) int {
-	helper := affine.NewAffineHelper()
-	if err := helper.SetParameters(a, b, int(alpha.Size())); err != nil {
+	aparams, err := affine.NewAffineParams(a, b, int(alpha.Size()))
+	if err != nil {
 		app.DieWithError(err, z.ERR_INTERNAL)
 	}
 
 	// print Affine cipher (given & calculated) parameters
-	aparams := helper.GetParams()
 	fmt.Printf("\t%s\n", aparams)
 
-	if tabula, err := helper.GetTabulaString(alpha.Chars, "\t"); err != nil {
+	helper := affine.NewAffineHelper()
+	err = helper.SetParams(aparams)
+	if err != nil {
+		app.DieWithError(err, z.ERR_INTERNAL)
+	}
+
+	var tabula string
+	if tabula, err = helper.GetTabulaString(alpha.Chars, "\t"); err != nil {
 		app.DieWithError(err, z.ERR_INTERNAL)
 	} else {
 		fmt.Println(tabula)
@@ -158,9 +164,17 @@ func ExecuteFile(alpha, numbers *cmn.Alphabet, opts *AffineCliOptions) (int, err
 	cmdCipher := setupAffineCrypto(alpha, numbers, opts)
 
 	if opts.ActIsDecode {
-		err = cmdCipher.DecryptTextFile(opts.Files.Input, opts.Files.Output)
+		if !opts.Common.IsBinary() {
+			err = cmdCipher.DecryptTextFile(opts.Files.Input, opts.Files.Output)
+		} else {
+			err = cmdCipher.DecryptBinFile(opts.Files.Input, opts.Files.Output)
+		}
 	} else {
-		err = cmdCipher.EncryptTextFile(opts.Files.Input)
+		if !opts.Common.IsBinary() {
+			err = cmdCipher.EncryptTextFile(opts.Files.Input)
+		} else {
+			err = cmdCipher.EncryptBinFile(opts.Files.Input)
+		}
 	}
 
 	if err != nil {

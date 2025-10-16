@@ -108,6 +108,8 @@ func DoCrypto(co *cmd.CommonOptions, ao *CaesarxOptions) (int, error) {
 		cmdCipher = commands.NewVigenereCommand(co.Alphabet(), ao.Secret)
 
 	case VariantAffine:
+		fmt.Println("Please use the affine (affine.exe) application.")
+		fallthrough
 
 	default:
 		return z.ERR_PARAMETER, fmt.Errorf("unknown algorithm") // @audit other error code please
@@ -131,15 +133,23 @@ func DoCrypto(co *cmd.CommonOptions, ao *CaesarxOptions) (int, error) {
 		operation = "Decrypt"
 		cipher = flag.Arg(0)
 		if ao.UseFiles {
-			err = cmdCipher.DecryptTextFile(ao.Files.Input, ao.Files.Output)
-		} else {
+			if co.IsBinary() {
+				err = cmdCipher.DecryptBinFile(ao.Files.Input, ao.Files.Output)
+			} else {
+				err = cmdCipher.DecryptTextFile(ao.Files.Input, ao.Files.Output)
+			}
+		} else { // short messages that can be given on the CLI
 			plain, err = cmdCipher.Decode(cipher)
 		}
 	} else {
 		operation = "Encrypt"
 		plain = flag.Arg(0)
 		if ao.UseFiles {
-			err = cmdCipher.EncryptTextFile(ao.Files.Input)
+			if co.IsBinary() {
+				err = cmdCipher.EncryptBinFile(ao.Files.Input)
+			} else {
+				err = cmdCipher.EncryptTextFile(ao.Files.Input)
+			}
 		} else {
 			cipher, err = cmdCipher.Encode(plain)
 		}

@@ -23,7 +23,7 @@ import (
 
 const (
 	defaultLanguage    string = "english"
-	supportedAlphabets string = "english|latin|spanish|german|greek|cyrillic|custom"
+	supportedAlphabets string = "english|latin|spanish|german|greek|cyrillic|custom|binary"
 	supportedNumbers   string = "(N)one (A)rabic (E)xtended (H)indi"
 )
 
@@ -131,7 +131,7 @@ func (c *CommonOptions) Alphabet() *cmn.Alphabet {
 		alphabet = cmn.ALPHA_DISK_GERMAN
 		c.DefaultPhrase = "Daß liebe hübschen Mädchen"
 
-	case cmn.ALPHA_NAME_UKRANIAN:
+	case cmn.ALPHA_NAME_UKRAINIAN:
 		fallthrough
 	case cmn.ALPHA_NAME_RUSSIAN:
 		fallthrough
@@ -141,6 +141,7 @@ func (c *CommonOptions) Alphabet() *cmn.Alphabet {
 
 	case cmn.ALPHA_NAME_BINARY:
 		alphabet = cmn.BINARY_DISK
+		c.DefaultPhrase = "love ántaño Λατρ Daß люблю"
 
 	case "custom":
 		if flag.NArg() == 1 {
@@ -155,6 +156,11 @@ func (c *CommonOptions) Alphabet() *cmn.Alphabet {
 	}
 
 	return alphabet
+}
+
+// the selected alphabet is Binary
+func (c *CommonOptions) IsBinary() bool {
+	return strings.ToLower(c.alpha) == cmn.ALPHA_NAME_BINARY
 }
 
 func (c *CommonOptions) WantsSlave() (string, bool) {

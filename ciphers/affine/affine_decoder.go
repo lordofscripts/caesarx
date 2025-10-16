@@ -1,10 +1,13 @@
+//go:build exclude
+
 /* -----------------------------------------------------------------
  *					L o r d  O f   S c r i p t s (tm)
  *				  Copyright (C)2025 Dídimo Grimaldo T.
  *							   CaesarX
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- * Affine support added on 2025W39 out of that programmer's syndrome
- * of always wanting to add new features...
+ * The AffineDecoder object was deprecated in v1.1.0-RC4 and its
+ * functionality moved to a totally refactored AffineCrypto which
+ * now better aligns to the other cipher implementations in CaesarX.
  *-----------------------------------------------------------------*/
 package affine
 
@@ -54,7 +57,7 @@ func NewAffineDecoder(alpha *cmn.Alphabet, params *AffineParams) *AffineDecoder 
 	}
 
 	helper := NewAffineHelper()
-	if err := helper.SetParameters(params.A, params.B, params.N); err != nil {
+	if err := helper.SetParams(params); err != nil {
 		//if err := helper.VerifyParams(params); err != nil {
 		return nil
 	}
@@ -128,7 +131,7 @@ func (a *AffineDecoder) WithChain(alphaSlave *cmn.Alphabet) error {
 			// based on the master parameters but restrained to the slave's
 			// condition, recalculate the A coefficient to apply to the SLAVE
 			// the master remains with its own A coefficient.
-			A := helper.CalculateSlaveCoprime(a.paramsM.B, slaveN)
+			A := helper.CalculateSlaveCoprime(a.paramsM, a.paramsM.B, slaveN)
 			if slaveParams, err = NewAffineParams(A, a.paramsM.B, slaveN); err != nil {
 				mlog.Error("could not set Affine slave due to error", err)
 				return err

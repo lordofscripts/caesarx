@@ -7,10 +7,12 @@
 -[X] cmd/tabularecta -demo GERMAN fails for key ß. `SpecialCases` deal with library errors.
 -[X] tabularecta_caesar_test#57 Key ẞ fails for ẞ `SpecialCases`
 -[X] caesar_test.go WithAlphabet() fails for Latin/Greek/Cyrillic but okay for English.
+-[ ] GH-010 sporadic Vigenere bin file decryption failure *to be verified* (since v1.1-0-RC3)
+-[ ] Affine decryption failure with `tests/testdata/input.bin` (since v1.1-0-RC4)
 
 ## ENHANCEMENTS
 
--[ ] use Sequencer for Affine as well.
+-[·] use Sequencer for Affine as well. v1.1.0-RC4 used in Binary
 -[X] ciphers.IPipe in CaesarCipherCommand{} `IPipe` & `Pipe`
 -[X] {cmn} allow built-in alphabets (namely German) have its  own equivalents to unicode.ToUpper/Lower(rune)
      and strings.ToUpper/Lower() by overriding pointers to standard functions. This allows
@@ -42,6 +44,8 @@
 -[ ] Error code for exit value reorganization so that it helps pinpoint errors
 -[ ] Use predefined `ErrXXXXX` errors
 -[ ] Custom errors `TabulaError`, `CipherError`, `ErrorInvalidValue`, `ErrorCliBadParam`
+-[ ] Encrypt/DecryptBinaryFile in `tabula_caesar.go` and `affine_crypto.go` are the same
+     but only need the `IKeySequencer` instance.
 
 # Project Milestones
 

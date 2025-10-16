@@ -20,7 +20,7 @@ const (
 
 	// Useful Unicode Characters
 	CHR_COPYRIGHT       = '\u00a9'      // ©
-	CHR_REGISTERD       = '\u00ae'      // ®
+	CHR_REGISTERED      = '\u00ae'      // ®
 	CHR_GUILLEMET_L     = '\u00ab'      // «
 	CHR_GUILLEMET_R     = '\u00bb'      // »
 	CHR_TRADEMARK       = '\u2122'      // ™
@@ -57,7 +57,7 @@ var (
 
 var (
 	// NOTE: Change these values accordingly
-	appVersion version = version{NAME, MANUAL_VERSION, statusRC, 3}
+	appVersion version = version{NAME, MANUAL_VERSION, statusRC, 4}
 
 	// DO NOT CHANGE THESE!
 	Version      string = appVersion.String()
