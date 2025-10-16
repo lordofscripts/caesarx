@@ -17,7 +17,7 @@ import (
 	"lordofscripts/caesarx/ciphers/vigenere"
 	"lordofscripts/caesarx/cmd"
 	"lordofscripts/caesarx/cmn"
-	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"lordofscripts/caesarx/internal/crypto"
 	"os"
 	"strings"
 )
@@ -119,7 +119,7 @@ func NewCaesarxOptions(common *cmd.CommonOptions) *CaesarxOptions {
  *-----------------------------------------------------------------*/
 
 func (c *CaesarxOptions) initialize() {
-	flag.StringVar(&c.VariantTag, FLAG_VARIANT, iciphers.ALG_NAME_CAESAR, "Algorithm (caesar|didimus|fibonacci|bellaso|vigenere)")
+	flag.StringVar(&c.VariantTag, FLAG_VARIANT, crypto.ALG_NAME_CAESAR, "Algorithm (caesar|didimus|fibonacci|bellaso|vigenere)")
 	flag.IntVar(&c.NGramSize, FLAG_NGRAM, -1, "Format encoded output as NGram")
 	flag.IntVar(&c.Offset, FLAG_OFFSET, 0, "Alternate key offset (Didimus)")
 	flag.BoolVar(&c.IsDecode, FLAG_DECODE, false, "Decode text")
@@ -161,32 +161,32 @@ func (c *CaesarxOptions) checkAlterEgo() {
 
 	default:
 		switch strings.ToLower(c.VariantTag) {
-		case strings.ToLower(iciphers.ALG_NAME_CAESAR):
+		case strings.ToLower(crypto.ALG_NAME_CAESAR):
 			c.VariantID = VariantCaesar
 			c.fileExt = commands.FILE_EXT_CAESAR
 			c.ItNeeds = NeedKey
 
-		case strings.ToLower(iciphers.ALG_NAME_DIDIMUS):
+		case strings.ToLower(crypto.ALG_NAME_DIDIMUS):
 			c.VariantID = VariantDidimus
 			c.fileExt = commands.FILE_EXT_DIDIMUS
 			c.ItNeeds = NeedCompositeKey
 
-		case strings.ToLower(iciphers.ALG_NAME_FIBONACCI):
+		case strings.ToLower(crypto.ALG_NAME_FIBONACCI):
 			c.VariantID = VariantFibonacci
 			c.fileExt = commands.FILE_EXT_FIBONACCI
 			c.ItNeeds = NeedKey
 
-		case strings.ToLower(iciphers.ALG_NAME_BELLASO):
+		case strings.ToLower(crypto.ALG_NAME_BELLASO):
 			c.VariantID = VariantBellaso
 			c.fileExt = commands.FILE_EXT_BELLASO
 			c.ItNeeds = NeedsSecret
 
-		case strings.ToLower(cmn.RemoveAccents(iciphers.ALG_NAME_VIGENERE)):
+		case strings.ToLower(cmn.RemoveAccents(crypto.ALG_NAME_VIGENERE)):
 			c.VariantID = VariantVigenere
 			c.fileExt = commands.FILE_EXT_VIGENERE
 			c.ItNeeds = NeedsSecret
 
-		case strings.ToLower(iciphers.ALG_NAME_AFFINE):
+		case strings.ToLower(crypto.ALG_NAME_AFFINE):
 			c.VariantID = VariantAffine
 			c.fileExt = commands.FILE_EXT_AFFINE
 			c.ItNeeds = NeedNone

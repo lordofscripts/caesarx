@@ -5,7 +5,7 @@ import (
 	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers/commands"
 	"lordofscripts/caesarx/cmn"
-	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"lordofscripts/caesarx/internal/crypto"
 	"os"
 	"testing"
 	"time"
@@ -48,7 +48,7 @@ func Test_DidimusCmd_RoundTrip(t *testing.T) {
 	const DUMMY = 'x'
 	for vnum, v := range allCases {
 		var k rune
-		seq := iciphers.NewDidimusSequencer(v.PrimeKey, v.Offset, v.Alpha)
+		seq := crypto.NewDidimusSequencer(v.PrimeKey, v.Offset, v.Alpha)
 		// Test PrimeKey
 		if k = seq.GetKey(EVEN_POS, DUMMY); k != v.PrimeKey {
 			t.Errorf("#%d PrimeKey exp: %c got: %c", vnum+1, v.PrimeKey, k)

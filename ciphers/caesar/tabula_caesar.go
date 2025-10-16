@@ -14,7 +14,7 @@ import (
 	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers"
 	"lordofscripts/caesarx/cmn"
-	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"lordofscripts/caesarx/internal/crypto"
 	"os"
 	"unicode/utf8"
 )
@@ -23,9 +23,9 @@ import (
  *						G l o b a l s
  *-----------------------------------------------------------------*/
 var (
-	Info = ciphers.NewCipherInfo(iciphers.ALG_CODE_CAESAR, "1.0",
+	Info = ciphers.NewCipherInfo(crypto.ALG_CODE_CAESAR, "1.0",
 		"Julius Caesar",
-		iciphers.ALG_NAME_CAESAR,
+		crypto.ALG_NAME_CAESAR,
 		"Caesar cipher")
 )
 
@@ -49,7 +49,7 @@ var _ ciphers.ICipher = (*CaesarTabulaRecta)(nil)
 type CaesarTabulaRecta struct {
 	alpha     *cmn.Alphabet
 	slave     *ciphers.TabulaRecta // implements cmn.IRuneLocalizer
-	sequencer iciphers.IKeySequencer
+	sequencer crypto.IKeySequencer
 }
 
 /* ----------------------------------------------------------------
@@ -69,7 +69,7 @@ func NewCaesarTabulaRecta(alphabet *cmn.Alphabet, key rune) *CaesarTabulaRecta {
 	return &CaesarTabulaRecta{
 		alpha:     alphabet,
 		slave:     nil,
-		sequencer: iciphers.NewCaesarSequencer(key),
+		sequencer: crypto.NewCaesarSequencer(key),
 	}
 }
 
@@ -91,7 +91,7 @@ func (cx *CaesarTabulaRecta) WithAlphabet(alphabet *cmn.Alphabet) ciphers.ICiphe
 	return cx
 }
 
-func (cx *CaesarTabulaRecta) WithSequencer(keygen iciphers.IKeySequencer) ciphers.ICipher {
+func (cx *CaesarTabulaRecta) WithSequencer(keygen crypto.IKeySequencer) ciphers.ICipher {
 	cx.sequencer = keygen
 	return cx
 }

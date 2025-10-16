@@ -9,7 +9,7 @@ package ciphers
 import (
 	"fmt"
 	"lordofscripts/caesarx/cmn"
-	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"lordofscripts/caesarx/internal/crypto"
 )
 
 /* ----------------------------------------------------------------
@@ -20,7 +20,7 @@ type ICipher interface {
 	// Setup methods
 	WithChain(*TabulaRecta) ICipher
 	WithAlphabet(alphabet *cmn.Alphabet) ICipher
-	WithSequencer(iciphers.IKeySequencer) ICipher
+	WithSequencer(crypto.IKeySequencer) ICipher
 
 	// Queries
 	cmn.IRuneLocalizer

@@ -16,16 +16,16 @@ import (
 	"lordofscripts/caesarx/ciphers"
 	"lordofscripts/caesarx/ciphers/caesar"
 	"lordofscripts/caesarx/cmn"
-	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"lordofscripts/caesarx/internal/crypto"
 )
 
 /* ----------------------------------------------------------------
  *						G l o b a l s
  *-----------------------------------------------------------------*/
 var (
-	Info = ciphers.NewCipherInfo(iciphers.ALG_CODE_VIGENERE, "1.0",
+	Info = ciphers.NewCipherInfo(crypto.ALG_CODE_VIGENERE, "1.0",
 		"Blaise de Vigenère",
-		iciphers.ALG_NAME_VIGENERE,
+		crypto.ALG_NAME_VIGENERE,
 		"Vigenère polyalphabetic cipher")
 )
 
@@ -66,7 +66,7 @@ type VigenereTabulaRecta struct {
  */
 func NewVigenereTabulaRecta(alphabet *cmn.Alphabet, secret string) *VigenereTabulaRecta {
 	base := caesar.NewCaesarTabulaRecta(alphabet, alphabet.GetRuneAt(0))
-	base.WithSequencer(iciphers.NewVigenereSequencer(secret, alphabet))
+	base.WithSequencer(crypto.NewVigenereSequencer(secret, alphabet))
 
 	vige := &VigenereTabulaRecta{*base}
 	vige.WithChain(ciphers.NewTabulaRecta(cmn.NUMBERS_DISK_EXT, true))
@@ -79,7 +79,7 @@ func NewVigenereTabulaRecta(alphabet *cmn.Alphabet, secret string) *VigenereTabu
  *-----------------------------------------------------------------*/
 
 func (cx *VigenereTabulaRecta) String() string {
-	return iciphers.ALG_NAME_VIGENERE
+	return crypto.ALG_NAME_VIGENERE
 }
 
 /* ----------------------------------------------------------------

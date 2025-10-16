@@ -15,7 +15,7 @@
  *			y' = A' * x + B
  * where A' is the Modular Inverse of A modulo N.
  *-----------------------------------------------------------------*/
-package ciphers
+package crypto
 
 import (
 	"fmt"

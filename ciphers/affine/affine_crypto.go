@@ -16,7 +16,7 @@ import (
 	"lordofscripts/caesarx/ciphers"
 	"lordofscripts/caesarx/ciphers/caesar"
 	"lordofscripts/caesarx/cmn"
-	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"lordofscripts/caesarx/internal/crypto"
 	"os"
 	"strings"
 )
@@ -41,7 +41,7 @@ type AffineCrypto struct {
 	paramsS   *AffineParams
 	master    *affineTranslator
 	slave     *affineTranslator
-	sequencer *iciphers.AffineSequencer
+	sequencer *crypto.AffineSequencer
 }
 
 /* ----------------------------------------------------------------
@@ -98,7 +98,7 @@ func NewAffineCrypto(alpha *cmn.Alphabet, params *AffineParams) *AffineCrypto {
 		paramsS:   nil,
 		master:    main,
 		slave:     nil,
-		sequencer: iciphers.NewAffineSequencer(params.A, params.B, alpha),
+		sequencer: crypto.NewAffineSequencer(params.A, params.B, alpha),
 	}
 }
 
@@ -108,7 +108,7 @@ func NewAffineCrypto(alpha *cmn.Alphabet, params *AffineParams) *AffineCrypto {
 
 // String() implements the fmt.Stringer interface
 func (c *AffineCrypto) String() string {
-	return fmt.Sprintf("%s %s", iciphers.ALG_CODE_AFFINE, c.langCode)
+	return fmt.Sprintf("%s %s", crypto.ALG_CODE_AFFINE, c.langCode)
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

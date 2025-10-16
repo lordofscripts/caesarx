@@ -12,16 +12,16 @@ import (
 	"lordofscripts/caesarx/ciphers"
 	"lordofscripts/caesarx/ciphers/caesar"
 	"lordofscripts/caesarx/cmn"
-	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"lordofscripts/caesarx/internal/crypto"
 )
 
 /* ----------------------------------------------------------------
  *						G l o b a l s
  *-----------------------------------------------------------------*/
 var (
-	Info = ciphers.NewCipherInfo(iciphers.ALG_CODE_BELLASO, "0.9",
+	Info = ciphers.NewCipherInfo(crypto.ALG_CODE_BELLASO, "0.9",
 		"Giovan Battista Bellaso",
-		iciphers.ALG_NAME_BELLASO,
+		crypto.ALG_NAME_BELLASO,
 		"Bellaso polyalphabetic cipher")
 )
 
@@ -62,7 +62,7 @@ type BellasoTabulaRecta struct {
  */
 func NewBellasoTabulaRecta(alphabet *cmn.Alphabet, secret string) *BellasoTabulaRecta {
 	base := caesar.NewCaesarTabulaRecta(alphabet, alphabet.GetRuneAt(0))
-	base.WithSequencer(iciphers.NewBellasoSequencer(secret, alphabet))
+	base.WithSequencer(crypto.NewBellasoSequencer(secret, alphabet))
 
 	giovanni := &BellasoTabulaRecta{*base}
 	giovanni.WithChain(ciphers.NewTabulaRecta(cmn.NUMBERS_DISK_EXT, true))
@@ -75,7 +75,7 @@ func NewBellasoTabulaRecta(alphabet *cmn.Alphabet, secret string) *BellasoTabula
  *-----------------------------------------------------------------*/
 
 func (cx *BellasoTabulaRecta) String() string {
-	return iciphers.ALG_NAME_BELLASO
+	return crypto.ALG_NAME_BELLASO
 }
 
 /* ----------------------------------------------------------------

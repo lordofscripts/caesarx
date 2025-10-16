@@ -5,7 +5,7 @@
  * The Key Sequencer is a flexible generator of the current key
  * during Encoding/Decoding.
  *-----------------------------------------------------------------*/
-package ciphers
+package crypto
 
 import "fmt"
 

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/cmn"
-	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"lordofscripts/caesarx/internal/crypto"
 	"strings"
 	"unicode/utf8"
 )
@@ -39,7 +39,7 @@ import (
  *-----------------------------------------------------------------*/
 
 type AffineHelper struct {
-	helper *iciphers.AffineHelper
+	helper *crypto.AffineHelper
 	param  *AffineParams
 }
 
@@ -56,7 +56,7 @@ type AffineHelper struct {
  *-----------------------------------------------------------------*/
 
 func NewAffineHelper() *AffineHelper {
-	return &AffineHelper{iciphers.NewAffineHelper(), nil}
+	return &AffineHelper{crypto.NewAffineHelper(), nil}
 }
 
 /* ----------------------------------------------------------------

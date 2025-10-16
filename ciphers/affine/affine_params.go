@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers"
-	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"lordofscripts/caesarx/internal/crypto"
 )
 
 /* ----------------------------------------------------------------
@@ -26,9 +26,9 @@ func init() {
  *						G l o b a l s
  *-----------------------------------------------------------------*/
 var (
-	Info = ciphers.NewCipherInfo(iciphers.ALG_CODE_AFFINE, "1.0",
+	Info = ciphers.NewCipherInfo(crypto.ALG_CODE_AFFINE, "1.0",
 		"Unknown",
-		iciphers.ALG_NAME_AFFINE,
+		crypto.ALG_NAME_AFFINE,
 		"Affine linear")
 )
 
@@ -54,7 +54,7 @@ type AffineParams struct {
 // that A and N are coprimes and only then returns a non-nil instance
 // of verified parameters suitable for both encription and decription.
 func NewAffineParams(a, b, n int) (*AffineParams, error) {
-	helper := iciphers.NewAffineHelper()
+	helper := crypto.NewAffineHelper()
 	if ap, err := helper.VerifySettings(a, b, n); err != nil {
 		mlog.ErrorT("invalid Affine parameter set",
 			mlog.Int("A", a),

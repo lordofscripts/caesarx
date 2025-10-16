@@ -5,7 +5,7 @@ import (
 	"lordofscripts/caesarx"
 	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers"
-	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"lordofscripts/caesarx/internal/crypto"
 	"reflect"
 	"strings"
 	"unicode/utf8"
@@ -18,7 +18,7 @@ type alphaRune struct {
 
 type TextIterator struct {
 	tabulas   []ciphers.ITabulaRecta
-	sequencer iciphers.IKeySequencer
+	sequencer crypto.IKeySequencer
 	sb        strings.Builder
 	pos       int
 	dataPtr   *string
@@ -39,7 +39,7 @@ func newAlphaRuneNotFound(r rune) *alphaRune {
 	return &alphaRune{Rune: r, Shift: -1}
 }
 
-func NewTextIterator(sx iciphers.IKeySequencer, tabs ...ciphers.ITabulaRecta) *TextIterator {
+func NewTextIterator(sx crypto.IKeySequencer, tabs ...ciphers.ITabulaRecta) *TextIterator {
 	tabulas := make([]ciphers.ITabulaRecta, 0)
 	for _, tab := range tabs {
 		if !isNil(tab) {

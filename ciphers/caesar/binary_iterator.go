@@ -5,14 +5,14 @@ import (
 	"lordofscripts/caesarx"
 	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers"
-	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"lordofscripts/caesarx/internal/crypto"
 	"strings"
 )
 
 // BinaryIterator is used for streaming through a binary file.
 type BinaryIterator struct {
 	tabulas   []ciphers.IGTabulaRecta[byte]
-	sequencer iciphers.IKeySequencer
+	sequencer crypto.IKeySequencer
 	sb        strings.Builder
 	pos       int
 	dataPtr   *([]byte)
@@ -39,7 +39,7 @@ func newByteRuneNotFound(r byte) *byteRune {
 }
 
 // NewBinaryIterator creates a new instance of a BinaryIterator.
-func NewBinaryIterator(sx iciphers.IKeySequencer, tabs ...ciphers.IGTabulaRecta[byte]) *BinaryIterator {
+func NewBinaryIterator(sx crypto.IKeySequencer, tabs ...ciphers.IGTabulaRecta[byte]) *BinaryIterator {
 	tabulas := make([]ciphers.IGTabulaRecta[byte], 0)
 	for _, tab := range tabs {
 		if !isNil(tab) {

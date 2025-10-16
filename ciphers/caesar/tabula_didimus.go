@@ -9,16 +9,16 @@ package caesar
 import (
 	"lordofscripts/caesarx/ciphers"
 	"lordofscripts/caesarx/cmn"
-	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"lordofscripts/caesarx/internal/crypto"
 )
 
 /* ----------------------------------------------------------------
  *						G l o b a l s
  *-----------------------------------------------------------------*/
 var (
-	InfoDidimus = ciphers.NewCipherInfo(iciphers.ALG_CODE_DIDIMUS, "1.0",
+	InfoDidimus = ciphers.NewCipherInfo(crypto.ALG_CODE_DIDIMUS, "1.0",
 		"Didimo Grimaldo",
-		iciphers.ALG_NAME_DIDIMUS,
+		crypto.ALG_NAME_DIDIMUS,
 		"Didimus polyalphabetic cipher")
 )
 
@@ -59,7 +59,7 @@ type DidimusTabulaRecta struct {
  */
 func NewDidimusTabulaRecta(alphabet *cmn.Alphabet, primeKey rune, offset uint8) *DidimusTabulaRecta {
 	base := NewCaesarTabulaRecta(alphabet, primeKey)
-	base.sequencer = iciphers.NewDidimusSequencer(primeKey, offset, alphabet)
+	base.sequencer = crypto.NewDidimusSequencer(primeKey, offset, alphabet)
 	didimus := &DidimusTabulaRecta{*base}
 	didimus.WithChain(ciphers.NewTabulaRecta(cmn.NUMBERS_DISK_EXT, true))
 

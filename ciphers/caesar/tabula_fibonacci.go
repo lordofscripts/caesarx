@@ -11,16 +11,16 @@ package caesar
 import (
 	"lordofscripts/caesarx/ciphers"
 	"lordofscripts/caesarx/cmn"
-	iciphers "lordofscripts/caesarx/internal/ciphers"
+	"lordofscripts/caesarx/internal/crypto"
 )
 
 /* ----------------------------------------------------------------
  *						G l o b a l s
  *-----------------------------------------------------------------*/
 var (
-	InfoFibonacci = ciphers.NewCipherInfo(iciphers.ALG_CODE_FIBONACCI, "1.0",
+	InfoFibonacci = ciphers.NewCipherInfo(crypto.ALG_CODE_FIBONACCI, "1.0",
 		"Didimo Grimaldo",
-		iciphers.ALG_NAME_FIBONACCI,
+		crypto.ALG_NAME_FIBONACCI,
 		"Fibonacci polyalphabetic cipher")
 )
 
@@ -61,7 +61,7 @@ type FibonacciTabulaRecta struct {
  */
 func NewFibonacciTabulaRecta(alphabet *cmn.Alphabet, primeKey rune) *FibonacciTabulaRecta {
 	base := NewCaesarTabulaRecta(alphabet, alphabet.GetRuneAt(0))
-	base.sequencer = iciphers.NewFibonacciSequencer(alphabet, primeKey)
+	base.sequencer = crypto.NewFibonacciSequencer(alphabet, primeKey)
 	fibo := &FibonacciTabulaRecta{*base}
 	fibo.WithChain(ciphers.NewTabulaRecta(cmn.NUMBERS_DISK_EXT, true))
 	return fibo
