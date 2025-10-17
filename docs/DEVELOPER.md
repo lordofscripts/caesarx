@@ -1,5 +1,9 @@
 # D E V E L O P E R
 
+As of v1.1.0RC5 the application checks for a minimum GO version v1.20.
+The reason being that in that version Math.Rand()'s behavior changed
+and we rely on that change to generate proper temporary filenames.
+
 ## OS: Unix/Linux/Darwin
 
 Nothing to be reported, just disappointed to learn that MacOS is a

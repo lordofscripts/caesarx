@@ -45,7 +45,8 @@ var _ ciphers.ICipherCommand = (*AffineCommand)(nil)
 
 type AffineCommand struct {
 	ciphers.Pipe
-	crypto *affine.AffineCrypto
+	crypto      *affine.AffineCrypto
+	outFilename string
 }
 
 /* ----------------------------------------------------------------
@@ -65,14 +66,24 @@ func NewAffineCommandExt(alpha *cmn.Alphabet, params *affine.AffineParams) *Affi
 	eng := affine.NewAffineCrypto(alpha, params)
 
 	return &AffineCommand{
-		Pipe:   ciphers.NewEmptyPipe(),
-		crypto: eng,
+		Pipe:        ciphers.NewEmptyPipe(),
+		crypto:      eng,
+		outFilename: "",
 	}
 }
 
 /* ----------------------------------------------------------------
- *							M e t h o d s (ICipherCommand)
+ *							M e t h o d s
  *-----------------------------------------------------------------*/
+
+// implements fmt.Stringer
+func (c *AffineCommand) String() string {
+	return c.crypto.String()
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					G e n e r a l   P u r p o s e
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
 /**
  * Same as Rebuild() for this simple cipher.
@@ -99,68 +110,10 @@ func (c *AffineCommand) WithChain(slave *cmn.Alphabet) ciphers.ICipherCommand {
 	return c
 }
 
-// Encode a text message using the Affine cipher
-func (c *AffineCommand) Encode(plain string) (string, error) {
-	ciphered, err := c.crypto.Encode(plain)
-	if err != nil {
-		return "", err
-	}
-
-	if c.IsPipeOpen() {
-		return c.PipeOutput(ciphers.PipeEncode, ciphered)
-	} else {
-		return ciphered, nil
-	}
-}
-
-// Decode a text message using the Affine cipher
-func (c *AffineCommand) Decode(ciphered string) (string, error) {
-	plain, err := c.crypto.Decode(ciphered)
-	if err != nil {
-		return "", err
-	}
-
-	if c.IsPipeOpen() {
-		return c.PipeOutput(ciphers.PipeDecode, plain)
-	} else {
-		return plain, nil
-	}
-}
-
-// EncryptTextFile encrypts the filename src using the standard Caesar cipher.
-// The output file has the FILE_EXT_AFFINE file extension. Please note that
-// this method is only for text files.
-func (c *AffineCommand) EncryptTextFile(src string) error {
-	fileOut := cmn.NewNameExtOnly(src, FILE_EXT_AFFINE, true)
-	err := c.crypto.EncryptTextFile(src, fileOut)
-
-	return err
-}
-
-// DecryptTextFile decrypts the filename src using the standard Caesar cipher.
-// The output file target must be explicitely given. Please note that
-// this method is only for text files.
-func (c *AffineCommand) DecryptTextFile(src, target string) error {
-	err := c.crypto.DecryptTextFile(src, target)
-
-	return err
-}
-
-// Encodes a binary file and produces a binary encoded file
-func (c *AffineCommand) EncryptBinFile(filenameIn string) error {
-	// generate the output filename
-	fileOut := cmn.NewNameExtOnly(filenameIn, FILE_EXT_AFFINE, true)
-
-	err := c.crypto.EncryptBinaryFile(filenameIn, fileOut) // error already logged by core
-
-	return err
-}
-
-// Decodes a binary file and produces a plain binary file
-func (c *AffineCommand) DecryptBinFile(filenameIn, filenameOut string) error {
-	err := c.crypto.DecryptBinaryFile(filenameIn, filenameOut) // error already logged by core
-
-	return err
+// this result is only meaningful after EncryptBinFile() or EncryptTextFile()
+// where the output filename is not explicitely given but generated.
+func (c *AffineCommand) GetOutputFilename() string {
+	return c.outFilename
 }
 
 func (c *AffineCommand) Alphabet() string {
@@ -196,8 +149,82 @@ func (c *AffineCommand) Rebuild(alphabet *cmn.Alphabet, opts ...any) { //@audit 
 	*/
 }
 
-func (c *AffineCommand) String() string {
-	return c.crypto.String()
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					E n c r y p t i o n
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+// Encode a text message using the Affine cipher
+func (c *AffineCommand) Encode(plain string) (string, error) {
+	ciphered, err := c.crypto.Encode(plain)
+	if err != nil {
+		return "", err
+	}
+
+	if c.IsPipeOpen() {
+		return c.PipeOutput(ciphers.PipeEncode, ciphered)
+	} else {
+		return ciphered, nil
+	}
+}
+
+// EncryptTextFile encrypts the filename src using the standard Caesar cipher.
+// The output file has the FILE_EXT_AFFINE file extension. Please note that
+// this method is only for text files.
+func (c *AffineCommand) EncryptTextFile(src string) error {
+	fileOut := cmn.NewNameExtOnly(src, FILE_EXT_AFFINE, true)
+	err := c.crypto.EncryptTextFile(src, fileOut)
+	if err == nil {
+		c.outFilename = fileOut
+	}
+
+	return err
+}
+
+// Encodes a binary file and produces a binary encoded file
+func (c *AffineCommand) EncryptBinFile(filenameIn string) error {
+	// generate the output filename
+	fileOut := cmn.NewNameExtOnly(filenameIn, FILE_EXT_AFFINE, true)
+
+	err := c.crypto.EncryptBinaryFile(filenameIn, fileOut) // error already logged by core
+	if err == nil {
+		c.outFilename = fileOut
+	}
+
+	return err
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					D e c r y p t i o n
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+// Decode a text message using the Affine cipher
+func (c *AffineCommand) Decode(ciphered string) (string, error) {
+	plain, err := c.crypto.Decode(ciphered)
+	if err != nil {
+		return "", err
+	}
+
+	if c.IsPipeOpen() {
+		return c.PipeOutput(ciphers.PipeDecode, plain)
+	} else {
+		return plain, nil
+	}
+}
+
+// DecryptTextFile decrypts the filename src using the standard Caesar cipher.
+// The output file target must be explicitely given. Please note that
+// this method is only for text files.
+func (c *AffineCommand) DecryptTextFile(src, target string) error {
+	err := c.crypto.DecryptTextFile(src, target)
+
+	return err
+}
+
+// Decodes a binary file and produces a plain binary file
+func (c *AffineCommand) DecryptBinFile(filenameIn, filenameOut string) error {
+	err := c.crypto.DecryptBinaryFile(filenameIn, filenameOut) // error already logged by core
+
+	return err
 }
 
 /* ----------------------------------------------------------------

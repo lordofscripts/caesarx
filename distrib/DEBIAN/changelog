@@ -1,3 +1,11 @@
+go-carousel (1.1.0-RC5) UNRELEASED; urgency=low
+
+* Check for minimum GO version. CaesarX needs v1.20+
+* Some code beautification
+* Rigged Affine & CaesarX with proper -verify support
+
+-- Lord of Scripts <lordofscripts@users.noreply.github.com>  Sat, 17 Oct 2025 14:30:00 -0500
+
 go-carousel (1.1.0-RC4) UNRELEASED; urgency=low
 
  * GH-007 Refactored AffineHelper, IKeySequencer and AffineSequencer in order to

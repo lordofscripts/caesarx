@@ -45,8 +45,9 @@ var _ ciphers.ICipherCommand = (*CaesarCommand)(nil)
 type CaesarCommand struct {
 	ciphers.Pipe
 	//core *caesar.CaesarTabulaRecta
-	core ciphers.ICipher
-	opts *caesar.CaesarOptions
+	core        ciphers.ICipher
+	opts        *caesar.CaesarOptions
+	outFilename string
 }
 
 /* ----------------------------------------------------------------
@@ -55,9 +56,10 @@ type CaesarCommand struct {
 
 func NewCaesarCommand(alpha *cmn.Alphabet, key rune) *CaesarCommand {
 	return &CaesarCommand{
-		Pipe: ciphers.NewEmptyPipe(),
-		core: caesar.NewCaesarTabulaRecta(alpha, key),
-		opts: caesar.NewCaesarOpts(key),
+		Pipe:        ciphers.NewEmptyPipe(),
+		core:        caesar.NewCaesarTabulaRecta(alpha, key),
+		opts:        caesar.NewCaesarOpts(key),
+		outFilename: "",
 	}
 }
 
@@ -74,8 +76,17 @@ func NewCaesarCommandWithOptions(alpha *cmn.Alphabet, opts *caesar.CaesarOptions
 }
 
 /* ----------------------------------------------------------------
- *							M e t h o d s (ICipherCommand)
+ *							M e t h o d s
  *-----------------------------------------------------------------*/
+
+// implements fmt.Stringer
+func (c *CaesarCommand) String() string {
+	return fmt.Sprintf("%s %s", c.core.GetLanguage(), c.core.String())
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					G e n e r a l   P u r p o s e
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
 /**
  * Same as Rebuild() for this simple cipher.
@@ -101,80 +112,13 @@ func (c *CaesarCommand) WithChain(slave *cmn.Alphabet) ciphers.ICipherCommand {
 	return c
 }
 
-func (c *CaesarCommand) Encode(plain string) (string, error) {
-	err := c.core.VerifyKey()
-	if err != nil {
-		return "", err
-	}
-
-	ciphered := c.core.Encode(plain)
-	if c.IsPipeOpen() {
-		return c.PipeOutput(ciphers.PipeEncode, ciphered)
-	} else {
-		return ciphered, nil
-	}
+// this result is only meaningful after EncryptBinFile() or EncryptTextFile()
+// where the output filename is not explicitely given but generated.
+func (c *CaesarCommand) GetOutputFilename() string {
+	return c.outFilename
 }
 
-func (c *CaesarCommand) Decode(ciphered string) (string, error) {
-	err := c.core.VerifyKey()
-	if err != nil {
-		return "", err
-	}
-
-	plain := c.core.Decode(ciphered)
-	if c.IsPipeOpen() {
-		return c.PipeOutput(ciphers.PipeDecode, plain)
-	} else {
-		return plain, nil
-	}
-}
-
-// EncryptTextFile encrypts the filename src using the standard Caesar cipher.
-// The output file has the FILE_EXT_CAESAR file extension. Please note that
-// this method is only for text files.
-func (c *CaesarCommand) EncryptTextFile(src string) error {
-	var err error = nil
-	if err = c.core.VerifyKey(); err == nil {
-		fileOut := cmn.NewNameExtOnly(src, FILE_EXT_CAESAR, true)
-		err = c.core.EncryptTextFile(src, fileOut) // error already logged by core
-	}
-
-	return err
-}
-
-// DecryptTextFile decrypts the filename src using the standard Caesar cipher.
-// The output file target must be explicitely given. Please note that
-// this method is only for text files.
-func (c *CaesarCommand) DecryptTextFile(src, target string) error {
-	var err error = nil
-	if err = c.core.VerifyKey(); err == nil {
-		err = c.core.DecryptTextFile(src, target) // error already logged by core
-	}
-
-	return err
-}
-
-// Encodes a binary file and produces a binary encoded file
-func (c *CaesarCommand) EncryptBinFile(filenameIn string) error {
-	var err error = nil
-	if err = c.core.VerifyKey(); err == nil {
-		fileOut := cmn.NewNameExtOnly(filenameIn, FILE_EXT_CAESAR, true)
-		err = c.core.EncryptBinaryFile(filenameIn, fileOut) // error already logged by core
-	}
-
-	return err
-}
-
-// Decodes a binary file and produces a plain binary file
-func (c *CaesarCommand) DecryptBinFile(filenameIn, filenameOut string) error {
-	var err error = nil
-	if err = c.core.VerifyKey(); err == nil {
-		err = c.core.DecryptBinaryFile(filenameIn, filenameOut) // error already logged by core
-	}
-
-	return err
-}
-
+// get the current alphabet's string
 func (c *CaesarCommand) Alphabet() string {
 	return c.core.GetAlphabet()
 }
@@ -193,13 +137,95 @@ func (c *CaesarCommand) Rebuild(alphabet *cmn.Alphabet, opts ...any) {
 	}
 }
 
-func (c *CaesarCommand) String() string {
-	return fmt.Sprintf("%s %s", c.core.GetLanguage(), c.core.String())
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					E n c r y p t i o n
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+// encode a short message using the plain Caesar cipher
+func (c *CaesarCommand) Encode(plain string) (string, error) {
+	err := c.core.VerifyKey()
+	if err != nil {
+		return "", err
+	}
+
+	ciphered := c.core.Encode(plain)
+	if c.IsPipeOpen() {
+		return c.PipeOutput(ciphers.PipeEncode, ciphered)
+	} else {
+		return ciphered, nil
+	}
 }
 
-/* ----------------------------------------------------------------
- *							F u n c t i o n s
- *-----------------------------------------------------------------*/
+// EncryptTextFile encrypts the filename src using the standard Caesar cipher.
+// The output file has the FILE_EXT_CAESAR file extension. Please note that
+// this method is only for text files.
+func (c *CaesarCommand) EncryptTextFile(src string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		fileOut := cmn.NewNameExtOnly(src, FILE_EXT_CAESAR, true)
+		err = c.core.EncryptTextFile(src, fileOut) // error already logged by core
+		if err == nil {
+			c.outFilename = fileOut
+		}
+	}
+
+	return err
+}
+
+// Encodes a binary file and produces a binary encoded file
+func (c *CaesarCommand) EncryptBinFile(filenameIn string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		fileOut := cmn.NewNameExtOnly(filenameIn, FILE_EXT_CAESAR, true)
+		err = c.core.EncryptBinaryFile(filenameIn, fileOut) // error already logged by core
+		if err == nil {
+			c.outFilename = fileOut
+		}
+	}
+
+	return err
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					D e c r y p t i o n
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+// decode a short message that was encoded with the Caesar cipher
+func (c *CaesarCommand) Decode(ciphered string) (string, error) {
+	err := c.core.VerifyKey()
+	if err != nil {
+		return "", err
+	}
+
+	plain := c.core.Decode(ciphered)
+	if c.IsPipeOpen() {
+		return c.PipeOutput(ciphers.PipeDecode, plain)
+	} else {
+		return plain, nil
+	}
+}
+
+// DecryptTextFile decrypts the filename src using the standard Caesar cipher.
+// The output file target must be explicitely given. Please note that
+// this method is only for text files.
+func (c *CaesarCommand) DecryptTextFile(src, target string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		err = c.core.DecryptTextFile(src, target) // error already logged by core
+	}
+
+	return err
+}
+
+// Decodes a binary file and produces a plain binary file
+func (c *CaesarCommand) DecryptBinFile(filenameIn, filenameOut string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		err = c.core.DecryptBinaryFile(filenameIn, filenameOut) // error already logged by core
+	}
+
+	return err
+}
 
 /* ----------------------------------------------------------------
  *						M A I N | E X A M P L E

@@ -20,6 +20,7 @@ import (
 	"lordofscripts/caesarx/ciphers/vigenere"
 	"lordofscripts/caesarx/cmd"
 	"lordofscripts/caesarx/cmn"
+	"os"
 )
 
 /* ----------------------------------------------------------------
@@ -84,6 +85,9 @@ func Demo(copts *cmd.CommonOptions, aopts *CaesarxOptions) (int, error) {
 }
 
 func DoCrypto(co *cmd.CommonOptions, ao *CaesarxOptions) (int, error) {
+	var tempOut string = "" // temporary filename IF used
+	var postCmd cmd.ICommander = nil
+
 	// These commands implement IPipe, ICipherCommand & ICommand
 	var cmdCipher ciphers.ICipherCommand
 	switch ao.VariantID {
@@ -138,6 +142,11 @@ func DoCrypto(co *cmd.CommonOptions, ao *CaesarxOptions) (int, error) {
 			} else {
 				err = cmdCipher.DecryptTextFile(ao.Files.Input, ao.Files.Output)
 			}
+
+			// is file verification requested
+			if err == nil && ao.OptVerify {
+				postCmd = cmd.NewVerifyFileCommand(ao.Files.Output, cmd.HashCRC64)
+			}
 		} else { // short messages that can be given on the CLI
 			plain, err = cmdCipher.Decode(cipher)
 		}
@@ -149,6 +158,26 @@ func DoCrypto(co *cmd.CommonOptions, ao *CaesarxOptions) (int, error) {
 				err = cmdCipher.EncryptBinFile(ao.Files.Input)
 			} else {
 				err = cmdCipher.EncryptTextFile(ao.Files.Input)
+			}
+
+			// For round-trip verification if -verify is given
+			if err == nil && ao.OptVerify {
+				// temporary filename for round-trip
+				tempOut = cmn.GenerateTemporaryFileName("tempfile-caesarx-*") //+ ao.FileExt()
+				cipherFilename := cmdCipher.GetOutputFilename()
+
+				if !ao.Common.IsBinary() {
+					err = cmdCipher.DecryptTextFile(cipherFilename, tempOut)
+				} else {
+					err = cmdCipher.DecryptBinFile(cipherFilename, tempOut)
+				}
+
+				// issue Verify command ONLY if the temporary decrypted file exists
+				if err == nil {
+					postCmd = cmd.NewVerifyFilesCommand(ao.Files.Input, tempOut, cmd.HashMD5)
+				} else {
+					tempOut = ""
+				}
 			}
 		} else {
 			cipher, err = cmdCipher.Encode(plain)
@@ -194,6 +223,21 @@ func DoCrypto(co *cmd.CommonOptions, ao *CaesarxOptions) (int, error) {
 			fmt.Println("Plain    : ", plain)
 			fmt.Println("Encoded  : ", cipher)
 		}
+
+		// any post-execution command?
+		if postCmd != nil {
+			// perform the file verification
+			if err = postCmd.Execute(); err == nil {
+				fmt.Println("\t", postCmd)
+				postCmd.GetOutput(true)
+			}
+
+			// remove temporary file
+			if tempOut != "" {
+				os.Remove(tempOut)
+			}
+		}
+
 		fmt.Println()
 	}
 

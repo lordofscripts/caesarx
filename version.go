@@ -9,6 +9,8 @@ package caesarx
 
 import (
 	"fmt"
+	"runtime"
+	"strings"
 	//_ "embed"
 )
 
@@ -57,7 +59,7 @@ var (
 
 var (
 	// NOTE: Change these values accordingly
-	appVersion version = version{NAME, MANUAL_VERSION, statusRC, 4}
+	appVersion version = version{NAME, MANUAL_VERSION, statusRC, 5}
 
 	// DO NOT CHANGE THESE!
 	Version      string = appVersion.String()
@@ -188,4 +190,19 @@ func Reverse(s string) string {
 		runes[i], runes[j] = runes[j], runes[i]
 	}
 	return string(runes)
+}
+
+// get the current GO language version
+func GoVersion() string {
+	ver := strings.Replace(runtime.Version(), "go", "", -1)
+	return ver
+}
+
+// retrieve the current GO language version and compare it
+// to the minimum required. It returns the current version
+// and whether the condition current >= min is fulfilled or not.
+func GoVersionMin(min string) (string, bool) {
+	current := GoVersion()
+	ok := current >= min
+	return current, ok
 }

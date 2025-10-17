@@ -27,7 +27,8 @@ const (
 	FLAG_COPRIMES = "coprime"
 	FLAG_MODULO   = "N" // (optional) only if -coprime is given
 	FLAG_TABULA   = "tabula"
-	FLAG_FILE     = "F" // (optional) free args are filenames and not strings
+	FLAG_FILE     = "F"      // (optional) free args are filenames and not strings
+	FLAG_VERIFY   = "verify" // (optional) ignored unless -F is used
 )
 
 /* ----------------------------------------------------------------
@@ -55,6 +56,7 @@ type AffineCliOptions struct {
 	OptModulo       int
 	OptNgramSize    int
 	OptUseFiles     bool
+	OptVerify       bool // ignored unless -F is used
 	ActListCoprimes bool
 	ActPrintTabula  bool
 	ActIsDecode     bool
@@ -80,6 +82,7 @@ func NewAffineOptions(common *cmd.CommonOptions) *AffineCliOptions {
 		OptModulo:       0,
 		OptNgramSize:    0,
 		OptUseFiles:     false,
+		OptVerify:       false,
 		ActListCoprimes: false,
 		ActPrintTabula:  false,
 		ActIsDecode:     false,
@@ -101,6 +104,7 @@ func (c *AffineCliOptions) initialize() {
 	flag.IntVar(&c.OptModulo, FLAG_MODULO, 0, "Affine module N (only if -coprime is used), else derived from alpha")
 	flag.IntVar(&c.OptNgramSize, FLAG_NGRAM, 0, "Format encoded output as NGram")
 	flag.BoolVar(&c.OptUseFiles, FLAG_FILE, false, "Free argument(s) are filenames")
+	flag.BoolVar(&c.OptVerify, FLAG_VERIFY, false, "Verify operation (only if -F is used)")
 	flag.BoolVar(&c.ActIsDecode, FLAG_DECODE, false, "Decode text")
 	flag.BoolVar(&c.ActListCoprimes, FLAG_COPRIMES, false, "List coprimes for 'A' for the chosen alphabet")
 	flag.BoolVar(&c.ActPrintTabula, FLAG_TABULA, false, "Print Tabula for chosen parameters")

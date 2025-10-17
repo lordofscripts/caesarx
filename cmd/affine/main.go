@@ -160,6 +160,8 @@ func ExecuteMessage(alpha, numbers *cmn.Alphabet, opts *AffineCliOptions, input 
 func ExecuteFile(alpha, numbers *cmn.Alphabet, opts *AffineCliOptions) (int, error) {
 	var err error
 	var exitCode int = z.EXIT_CODE_SUCCESS
+	var postCmd cmd.ICommander = nil
+	var tempOut string = "" // temporary filename IF used
 
 	cmdCipher := setupAffineCrypto(alpha, numbers, opts)
 
@@ -169,11 +171,35 @@ func ExecuteFile(alpha, numbers *cmn.Alphabet, opts *AffineCliOptions) (int, err
 		} else {
 			err = cmdCipher.DecryptBinFile(opts.Files.Input, opts.Files.Output)
 		}
+
+		if err == nil && opts.OptVerify {
+			postCmd = cmd.NewVerifyFileCommand(opts.Files.Output, cmd.HashCRC64)
+		}
 	} else {
 		if !opts.Common.IsBinary() {
 			err = cmdCipher.EncryptTextFile(opts.Files.Input)
 		} else {
 			err = cmdCipher.EncryptBinFile(opts.Files.Input)
+		}
+
+		// For round-trip verification if -verify is given
+		if err == nil && opts.OptVerify {
+			// temporary filename for round-trip
+			tempOut = cmn.GenerateTemporaryFileName("tempfile-affine-*")
+			cipherFilename := cmdCipher.GetOutputFilename()
+
+			if !opts.Common.IsBinary() {
+				err = cmdCipher.DecryptTextFile(cipherFilename, tempOut)
+			} else {
+				err = cmdCipher.DecryptBinFile(cipherFilename, tempOut)
+			}
+
+			// issue Verify command ONLY if the temporary decrypted file exists
+			if err == nil {
+				postCmd = cmd.NewVerifyFilesCommand(opts.Files.Input, tempOut, cmd.HashMD5)
+			} else {
+				tempOut = ""
+			}
 		}
 	}
 
@@ -197,6 +223,21 @@ func ExecuteFile(alpha, numbers *cmn.Alphabet, opts *AffineCliOptions) (int, err
 			fmt.Println("Plain    : ", opts.Files.Input)
 			fmt.Println("Encoded  : ", opts.Files.Output)
 		}
+
+		// any post-execution command?
+		if postCmd != nil {
+			// perform the file verification
+			if err = postCmd.Execute(); err == nil {
+				fmt.Println("\t", postCmd)
+				postCmd.GetOutput(true)
+			}
+
+			// remove temporary file
+			if tempOut != "" {
+				os.Remove(tempOut)
+			}
+		}
+
 		fmt.Println()
 	}
 

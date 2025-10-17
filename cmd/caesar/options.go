@@ -34,6 +34,7 @@ const (
 	FLAG_KEY     = "key"     // (only for Caesar, Didimus & Fibonacci) main encoding key
 	FLAG_SECRET  = "secret"  // (only for Vigenère & Bellaso) secret password/phrase
 	FLAG_FILE    = "F"       // ENCODE or DECODE files, free argument(s) are filenames
+	FLAG_VERIFY  = "verify"  // (optional) ignored unless -F is used
 )
 
 const (
@@ -78,6 +79,7 @@ type CaesarxOptions struct {
 	Offset         int
 	IsDecode       bool
 	UseFiles       bool
+	OptVerify      bool // ignored unless -F is used
 	// derived values
 	ItNeeds   Needs
 	VariantID CaesarVariant
@@ -105,6 +107,7 @@ func NewCaesarxOptions(common *cmd.CommonOptions) *CaesarxOptions {
 		VariantID:      VariantCaesar,
 		VariantVersion: "",
 		UseFiles:       false,
+		OptVerify:      false,
 		Common:         common,
 		isReady:        false,
 		Files:          nil,
@@ -124,6 +127,7 @@ func (c *CaesarxOptions) initialize() {
 	flag.IntVar(&c.Offset, FLAG_OFFSET, 0, "Alternate key offset (Didimus)")
 	flag.BoolVar(&c.IsDecode, FLAG_DECODE, false, "Decode text")
 	flag.BoolVar(&c.UseFiles, FLAG_FILE, false, "Free argument(s) are/is filename(s)")
+	flag.BoolVar(&c.OptVerify, FLAG_VERIFY, false, "Verify operation (only if -F is used)")
 	flag.Var(&c.MainKey, FLAG_KEY, "Main key")
 	flag.StringVar(&c.Secret, "secret", "", "Secret word/phrase used in Bellaso & Vigenere variants")
 	flag.Parse()
@@ -196,7 +200,7 @@ func (c *CaesarxOptions) checkAlterEgo() {
 
 func (c *CaesarxOptions) ShowUsage(name string) {
 	fmt.Println("Options for ALL variants:")
-	fmt.Println("\t[-alpha ALPHABET] [-ngram SIZE] [-F] [-d]")
+	fmt.Println("\t[-alpha ALPHABET] [-ngram SIZE] [-F [-verify]] [-d]")
 	fmt.Println("Caesar & Fibonacci variants")
 	fmt.Printf("\t%s -variant NAME -key LETTER [other options] 'user text'", name)
 	fmt.Println("Didimus variant")

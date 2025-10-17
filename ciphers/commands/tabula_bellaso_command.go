@@ -49,7 +49,8 @@ var _ ciphers.ICipherCommand = (*BellasoCommand)(nil)
 
 type BellasoCommand struct {
 	ciphers.Pipe
-	core *bellaso.BellasoTabulaRecta
+	core        *bellaso.BellasoTabulaRecta
+	outFilename string
 }
 
 /* ----------------------------------------------------------------
@@ -58,14 +59,24 @@ type BellasoCommand struct {
 
 func NewBellasoCommand(alpha *cmn.Alphabet, secret string) *BellasoCommand {
 	return &BellasoCommand{
-		Pipe: ciphers.NewEmptyPipe(),
-		core: bellaso.NewBellasoTabulaRecta(alpha, secret),
+		Pipe:        ciphers.NewEmptyPipe(),
+		core:        bellaso.NewBellasoTabulaRecta(alpha, secret),
+		outFilename: "",
 	}
 }
 
 /* ----------------------------------------------------------------
- *							M e t h o d s (ICipherCommand)
+ *							M e t h o d s
  *-----------------------------------------------------------------*/
+
+// implements fmt.Stringer
+func (c *BellasoCommand) String() string {
+	return c.core.String()
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					G e n e r a l   P u r p o s e
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
 /**
  * Same as Rebuild() for this simple cipher.
@@ -91,6 +102,33 @@ func (c *BellasoCommand) WithChain(slave *cmn.Alphabet) ciphers.ICipherCommand {
 	return c
 }
 
+// this result is only meaningful after EncryptBinFile() or EncryptTextFile()
+// where the output filename is not explicitely given but generated.
+func (c *BellasoCommand) GetOutputFilename() string {
+	return c.outFilename
+}
+
+// get the current alphabet's string
+func (c *BellasoCommand) Alphabet() string {
+	return c.core.GetAlphabet()
+}
+
+// Checks the alphabet, if OK it is applied to the underlying cipher machine.
+// Else it logs an error and exits with ERR_BAD_ALPHABET.
+func (c *BellasoCommand) Rebuild(alphabet *cmn.Alphabet, opts ...any) {
+	if alphabet.Check() {
+		c.core.WithAlphabet(alphabet)
+	} else {
+		err := fmt.Errorf("invalid alphabet '%s' size:%d", alphabet.Name, alphabet.Size())
+		mlog.ErrorE(err)
+		app.DieWithError(err, caesarx.ERR_BAD_ALPHABET)
+	}
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					E n c r y p t i o n
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
 func (c *BellasoCommand) Encode(plain string) (string, error) {
 	err := c.core.VerifyKey()
 	if err != nil {
@@ -105,6 +143,41 @@ func (c *BellasoCommand) Encode(plain string) (string, error) {
 	}
 }
 
+// EncryptTextFile encrypts the filename src using the standard Caesar cipher.
+// The output file has the FILE_EXT_BELLASO file extension. Please note that
+// this method is only for text files.
+func (c *BellasoCommand) EncryptTextFile(src string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		fileOut := cmn.NewNameExtOnly(src, FILE_EXT_BELLASO, true)
+		err = c.core.EncryptTextFile(src, fileOut) // error already logged by core
+		if err == nil {
+			c.outFilename = fileOut
+		}
+	}
+
+	return err
+}
+
+// Encodes a binary file and produces a binary encoded file (v1.1+)
+func (c *BellasoCommand) EncryptBinFile(filenameIn string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		fileOut := cmn.NewNameExtOnly(filenameIn, FILE_EXT_BELLASO, true)
+		err = c.core.EncryptBinaryFile(filenameIn, fileOut) // error already logged by core
+		if err == nil {
+			c.outFilename = fileOut
+		}
+	}
+
+	return err
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					D e c r y p t i o n
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+// decode a short message encrypted with Bellaso cipher
 func (c *BellasoCommand) Decode(ciphered string) (string, error) {
 	err := c.core.VerifyKey()
 	if err != nil {
@@ -119,19 +192,6 @@ func (c *BellasoCommand) Decode(ciphered string) (string, error) {
 	}
 }
 
-// EncryptTextFile encrypts the filename src using the standard Caesar cipher.
-// The output file has the FILE_EXT_BELLASO file extension. Please note that
-// this method is only for text files.
-func (c *BellasoCommand) EncryptTextFile(src string) error {
-	var err error = nil
-	if err = c.core.VerifyKey(); err == nil {
-		fileOut := cmn.NewNameExtOnly(src, FILE_EXT_BELLASO, true)
-		err = c.core.EncryptTextFile(src, fileOut) // error already logged by core
-	}
-
-	return err
-}
-
 // DecryptTextFile decrypts the filename src using the standard Caesar cipher.
 // The output file target must be explicitely given. Please note that
 // this method is only for text files.
@@ -139,17 +199,6 @@ func (c *BellasoCommand) DecryptTextFile(src, target string) error {
 	var err error = nil
 	if err = c.core.VerifyKey(); err == nil {
 		err = c.core.DecryptTextFile(src, target) // error already logged by core
-	}
-
-	return err
-}
-
-// Encodes a binary file and produces a binary encoded file (v1.1+)
-func (c *BellasoCommand) EncryptBinFile(filenameIn string) error {
-	var err error = nil
-	if err = c.core.VerifyKey(); err == nil {
-		fileOut := cmn.NewNameExtOnly(filenameIn, FILE_EXT_BELLASO, true)
-		err = c.core.EncryptBinaryFile(filenameIn, fileOut) // error already logged by core
 	}
 
 	return err
@@ -164,32 +213,6 @@ func (c *BellasoCommand) DecryptBinFile(filenameIn, filenameOut string) error {
 
 	return err
 }
-
-func (c *BellasoCommand) Alphabet() string {
-	return c.core.GetAlphabet()
-}
-
-/**
- * Checks the alphabet, if OK it is applied to the underlying cipher machine.
- * Else it logs an error and exits with ERR_BAD_ALPHABET.
- */
-func (c *BellasoCommand) Rebuild(alphabet *cmn.Alphabet, opts ...any) {
-	if alphabet.Check() {
-		c.core.WithAlphabet(alphabet)
-	} else {
-		err := fmt.Errorf("invalid alphabet '%s' size:%d", alphabet.Name, alphabet.Size())
-		mlog.ErrorE(err)
-		app.DieWithError(err, caesarx.ERR_BAD_ALPHABET)
-	}
-}
-
-func (c *BellasoCommand) String() string {
-	return c.core.String()
-}
-
-/* ----------------------------------------------------------------
- *							F u n c t i o n s
- *-----------------------------------------------------------------*/
 
 /* ----------------------------------------------------------------
  *						M A I N | E X A M P L E

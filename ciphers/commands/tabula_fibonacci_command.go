@@ -46,7 +46,8 @@ var _ ciphers.ICipherCommand = (*FibonacciCommand)(nil)
 
 type FibonacciCommand struct {
 	ciphers.Pipe
-	core *caesar.FibonacciTabulaRecta
+	core        *caesar.FibonacciTabulaRecta
+	outFilename string
 }
 
 /* ----------------------------------------------------------------
@@ -55,14 +56,24 @@ type FibonacciCommand struct {
 
 func NewFibonacciCommand(alpha *cmn.Alphabet, primeKey rune) *FibonacciCommand {
 	return &FibonacciCommand{
-		Pipe: ciphers.NewEmptyPipe(),
-		core: caesar.NewFibonacciTabulaRecta(alpha, primeKey),
+		Pipe:        ciphers.NewEmptyPipe(),
+		core:        caesar.NewFibonacciTabulaRecta(alpha, primeKey),
+		outFilename: "",
 	}
 }
 
 /* ----------------------------------------------------------------
  *							M e t h o d s (ICipherCommand)
  *-----------------------------------------------------------------*/
+
+// implements fmt.Stringer
+func (c *FibonacciCommand) String() string {
+	return c.core.String()
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					G e n e r a l   P u r p o s e
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
 
 /**
  * Same as Rebuild() for this simple cipher.
@@ -88,78 +99,10 @@ func (c *FibonacciCommand) WithChain(slave *cmn.Alphabet) ciphers.ICipherCommand
 	return c
 }
 
-func (c *FibonacciCommand) Encode(plain string) (string, error) {
-	err := c.core.VerifyKey()
-	if err != nil {
-		return "", err
-	}
-
-	ciphered := c.core.Encode(plain)
-	if c.IsPipeOpen() {
-		return c.PipeOutput(ciphers.PipeEncode, ciphered)
-	} else {
-		return ciphered, nil
-	}
-}
-
-func (c *FibonacciCommand) Decode(ciphered string) (string, error) {
-	err := c.core.VerifyKey()
-	if err != nil {
-		return "", err
-	}
-
-	plain := c.core.Decode(ciphered)
-	if c.IsPipeOpen() {
-		return c.PipeOutput(ciphers.PipeDecode, plain)
-	} else {
-		return plain, nil
-	}
-}
-
-// EncryptTextFile encrypts the filename src using the standard Caesar cipher.
-// The output file has the FILE_EXT_FIBONACCI file extension. Please note that
-// this method is only for text files.
-func (c *FibonacciCommand) EncryptTextFile(src string) error {
-	var err error = nil
-	if err = c.core.VerifyKey(); err == nil {
-		fileOut := cmn.NewNameExtOnly(src, FILE_EXT_FIBONACCI, true)
-		err = c.core.EncryptTextFile(src, fileOut) // error already logged by core
-	}
-
-	return err
-}
-
-// DecryptTextFile decrypts the filename src using the standard Caesar cipher.
-// The output file target must be explicitely given. Please note that
-// this method is only for text files.
-func (c *FibonacciCommand) DecryptTextFile(src, target string) error {
-	var err error = nil
-	if err = c.core.VerifyKey(); err == nil {
-		err = c.core.DecryptTextFile(src, target) // error already logged by core
-	}
-
-	return err
-}
-
-// Encodes a binary file and produces a binary encoded file
-func (c *FibonacciCommand) EncryptBinFile(filenameIn string) error {
-	var err error = nil
-	if err = c.core.VerifyKey(); err == nil {
-		fileOut := cmn.NewNameExtOnly(filenameIn, FILE_EXT_FIBONACCI, true)
-		err = c.core.EncryptBinaryFile(filenameIn, fileOut) // error already logged by core
-	}
-
-	return err
-}
-
-// Decodes a binary file and produces a plain binary file
-func (c *FibonacciCommand) DecryptBinFile(filenameIn, filenameOut string) error {
-	var err error = nil
-	if err = c.core.VerifyKey(); err == nil {
-		err = c.core.DecryptBinaryFile(filenameIn, filenameOut) // error already logged by core
-	}
-
-	return err
+// this result is only meaningful after EncryptBinFile() or EncryptTextFile()
+// where the output filename is not explicitely given but generated.
+func (c *FibonacciCommand) GetOutputFilename() string {
+	return c.outFilename
 }
 
 func (c *FibonacciCommand) Alphabet() string {
@@ -180,8 +123,86 @@ func (c *FibonacciCommand) Rebuild(alphabet *cmn.Alphabet, opts ...any) {
 	}
 }
 
-func (c *FibonacciCommand) String() string {
-	return c.core.String()
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					E n c r y p t i o n
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+func (c *FibonacciCommand) Encode(plain string) (string, error) {
+	err := c.core.VerifyKey()
+	if err != nil {
+		return "", err
+	}
+
+	ciphered := c.core.Encode(plain)
+	if c.IsPipeOpen() {
+		return c.PipeOutput(ciphers.PipeEncode, ciphered)
+	} else {
+		return ciphered, nil
+	}
+}
+
+// EncryptTextFile encrypts the filename src using the standard Caesar cipher.
+// The output file has the FILE_EXT_FIBONACCI file extension. Please note that
+// this method is only for text files.
+func (c *FibonacciCommand) EncryptTextFile(src string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		fileOut := cmn.NewNameExtOnly(src, FILE_EXT_FIBONACCI, true)
+		err = c.core.EncryptTextFile(src, fileOut) // error already logged by core
+	}
+
+	return err
+}
+
+// Encodes a binary file and produces a binary encoded file
+func (c *FibonacciCommand) EncryptBinFile(filenameIn string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		fileOut := cmn.NewNameExtOnly(filenameIn, FILE_EXT_FIBONACCI, true)
+		err = c.core.EncryptBinaryFile(filenameIn, fileOut) // error already logged by core
+	}
+
+	return err
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					D e c r y p t i o n
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+func (c *FibonacciCommand) Decode(ciphered string) (string, error) {
+	err := c.core.VerifyKey()
+	if err != nil {
+		return "", err
+	}
+
+	plain := c.core.Decode(ciphered)
+	if c.IsPipeOpen() {
+		return c.PipeOutput(ciphers.PipeDecode, plain)
+	} else {
+		return plain, nil
+	}
+}
+
+// DecryptTextFile decrypts the filename src using the standard Caesar cipher.
+// The output file target must be explicitely given. Please note that
+// this method is only for text files.
+func (c *FibonacciCommand) DecryptTextFile(src, target string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		err = c.core.DecryptTextFile(src, target) // error already logged by core
+	}
+
+	return err
+}
+
+// Decodes a binary file and produces a plain binary file
+func (c *FibonacciCommand) DecryptBinFile(filenameIn, filenameOut string) error {
+	var err error = nil
+	if err = c.core.VerifyKey(); err == nil {
+		err = c.core.DecryptBinaryFile(filenameIn, filenameOut) // error already logged by core
+	}
+
+	return err
 }
 
 /* ----------------------------------------------------------------

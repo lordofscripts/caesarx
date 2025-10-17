@@ -39,6 +39,8 @@ type ICipherCommand interface {
 	// Decodes a binary file and produces a plain binary file
 	DecryptBinFile(filenameIn, filenameOut string) error
 
+	// get the output filename when it was inferred
+	GetOutputFilename() string
 	// Get the alphabet string (don't use it for binary alphabets)
 	Alphabet() string
 	// deprecated

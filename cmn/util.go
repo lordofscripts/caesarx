@@ -306,7 +306,7 @@ func MakeSquareNumericTabula[T byte | int](size int) [][]T {
 	//columns := len(ASCII)
 	//fmt.Printf("is %02x total: %dx%d=%d\n", ASCII[len(ASCII)-1], rows, columns, rows*columns)
 	for i := range tabula {
-		tabula[i] = RotateSliceLeft[T](ASCII, i, false)
+		tabula[i] = RotateSliceLeft(ASCII, i, false)
 	}
 	return tabula
 }
