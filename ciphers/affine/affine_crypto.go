@@ -13,8 +13,6 @@ import (
 	"fmt"
 	"io"
 	"lordofscripts/caesarx/app/mlog"
-	"lordofscripts/caesarx/ciphers"
-	"lordofscripts/caesarx/ciphers/caesar"
 	"lordofscripts/caesarx/cmn"
 	"lordofscripts/caesarx/internal/crypto"
 	"os"
@@ -314,12 +312,22 @@ func (c *AffineCrypto) EncryptBinaryFile(input, output string) error {
 		os.Remove(fd.Name())
 	}
 
-	// -- Setup Cryptostream
-	// @todo implement AffineSequencer
-	master := ciphers.NewBinaryTabulaRecta()
-	c.sequencerE.SetDecryptionMode(false) // only matters with Vigenere
-	iter := caesar.NewBinaryIterator(c.sequencerE, master)
-	defer c.sequencerE.Reset()
+	// -- Setup Transliteration of 0..255
+	hlpr := NewAffineHelper()
+	if err := hlpr.SetParams(c.master.params); err != nil {
+		mlog.ErrorE(err)
+		return err
+	}
+
+	XlatE := make([]byte, 256)
+	for i := range len(XlatE) {
+		if enc, err := hlpr.Encode(i); err != nil {
+			mlog.ErrorT("error setting up Affine binary table", mlog.Err(err), mlog.At())
+			return err
+		} else {
+			XlatE[i] = byte(enc)
+		}
+	}
 
 	// -- Process cryptostream
 	const BUFFER_SIZE int = 4096
@@ -339,13 +347,14 @@ func (c *AffineCrypto) EncryptBinaryFile(input, output string) error {
 			break
 		}
 
-		// (b) GH-002 encode byte(s)
-		iter.Start(buffer[:n])
-		for !iter.EncodeNext() {
+		// (b) GH-002 encode byte(s) using Affine table for current Coefficients
+		for offset := range n {
+			toEncodeValue := buffer[offset]
+			buffer[offset] = XlatE[toEncodeValue]
 		}
 
 		// (c) GH-002 write byte(s) to binary output file
-		if writeCount, errW := fdOut.Write(iter.Result()); errW != nil {
+		if writeCount, errW := fdOut.Write(buffer[:n]); errW != nil {
 			// oops! something happened with the filesystem
 			err = errW
 			break
@@ -468,12 +477,22 @@ func (c *AffineCrypto) DecryptBinaryFile(input, output string) error {
 		os.Remove(fd.Name())
 	}
 
-	// -- Setup Cryptostream
-	// @todo implement AffineSequencer
-	master := ciphers.NewBinaryTabulaRecta()
-	c.sequencerD.SetDecryptionMode(true) // only matters with Vigenere
-	iter := caesar.NewBinaryIterator(c.sequencerD, master)
-	defer c.sequencerD.Reset()
+	// -- Setup Transliteration of 0..255
+	hlpr := NewAffineHelper()
+	if err := hlpr.SetParams(c.master.params); err != nil {
+		mlog.ErrorE(err)
+		return err
+	}
+
+	XlatD := make([]byte, 256)
+	for i := range len(XlatD) {
+		if dec, err := hlpr.Decode(i); err != nil {
+			mlog.ErrorT("error setting up Affine binary table", mlog.Err(err), mlog.At())
+			return err
+		} else {
+			XlatD[i] = byte(dec)
+		}
+	}
 
 	// -- Process cryptostream
 	const BUFFER_SIZE int = 4096
@@ -493,13 +512,14 @@ func (c *AffineCrypto) DecryptBinaryFile(input, output string) error {
 			break
 		}
 
-		// (b) GH-002 encode byte(s)
-		iter.Start(buffer[:n])
-		for !iter.DecodeNext() {
+		// (b) GH-002 encode byte(s) using Affine table for current Coefficients
+		for offset := range n {
+			toDecodeValue := buffer[offset]
+			buffer[offset] = XlatD[toDecodeValue]
 		}
 
 		// (c) GH-002 write byte(s) to binary output file
-		if writeCount, errW := fdOut.Write(iter.Result()); errW != nil {
+		if writeCount, errW := fdOut.Write(buffer[:n]); errW != nil {
 			// oops! something happened with the filesystem
 			err = errW
 			break
