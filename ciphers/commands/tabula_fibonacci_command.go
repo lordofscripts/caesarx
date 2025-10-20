@@ -149,6 +149,9 @@ func (c *FibonacciCommand) EncryptTextFile(src string) error {
 	if err = c.core.VerifyKey(); err == nil {
 		fileOut := cmn.NewNameExtOnly(src, FILE_EXT_FIBONACCI, true)
 		err = c.core.EncryptTextFile(src, fileOut) // error already logged by core
+		if err == nil {
+			c.outFilename = fileOut
+		}
 	}
 
 	return err
@@ -160,6 +163,9 @@ func (c *FibonacciCommand) EncryptBinFile(filenameIn string) error {
 	if err = c.core.VerifyKey(); err == nil {
 		fileOut := cmn.NewNameExtOnly(filenameIn, FILE_EXT_FIBONACCI, true)
 		err = c.core.EncryptBinaryFile(filenameIn, fileOut) // error already logged by core
+		if err == nil {
+			c.outFilename = fileOut
+		}
 	}
 
 	return err
