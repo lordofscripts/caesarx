@@ -135,11 +135,11 @@ func (h *AffineHelper) GetParams() *AffineParams {
 }
 
 // A multi-line string block with the Tabula Recta for the current
-// Affine parameters.
+// Affine parameters. The tabula is either for encoding or decoding.
 // @param alphabet (string) plain alphabet string by shift order
 // @returns (string) the corresponding Tabula Recta
 // @returns (error) nil on success, else encountered error
-func (h *AffineHelper) GetTabulaString(alphabet string, leader ...string) (string, error) {
+func (h *AffineHelper) GetTabulaString(isDecode bool, alphabet string, leader ...string) (string, error) {
 	const HEAD_1 string = "0.........1.........2.........3.........4"
 	const HEAD_2 string = "01234567890123456789012345678901234567890"
 	var sb strings.Builder
@@ -155,12 +155,20 @@ func (h *AffineHelper) GetTabulaString(alphabet string, leader ...string) (strin
 	sb.WriteString(pre + alphabet + "\n") // plain alphabet
 
 	// now the conversion duplet
+	var r rune
+	var err error
 	sb.WriteString(pre)
 	for _, char := range alphabet {
-		if r, err := h.EncodeRuneFrom(char, alphabet); err != nil {
-			return "", err
+		if isDecode {
+			r, err = h.DecodeRuneFrom(char, alphabet)
 		} else {
+			r, err = h.EncodeRuneFrom(char, alphabet)
+		}
+
+		if err == nil {
 			sb.WriteRune(r)
+		} else {
+			return "", err
 		}
 	}
 
@@ -180,6 +188,9 @@ func (h *AffineHelper) Encode(x int) (int, error) {
 	}
 
 	y := (h.param.A*x + h.param.B) % h.param.N
+	if y < 0 {
+		y += h.param.N
+	}
 	return y, nil
 }
 
@@ -197,6 +208,9 @@ func (h *AffineHelper) Decode(y int) (int, error) {
 
 	// (A' * ( y - B)) % N
 	x := (h.param.Ap * (y - h.param.B)) % h.param.N
+	if x < 0 {
+		x += h.param.N
+	}
 	return x, nil
 }
 

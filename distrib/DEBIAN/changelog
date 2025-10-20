@@ -1,3 +1,9 @@
+go-carousel (1.1.0-RC6) UNRELEASED; urgency=low
+
+* Fixed #13 Affine Encode/Decode yielding negative numbers
+
+-- Lord of Scripts <lordofscripts@users.noreply.github.com>  Sat, ?? ??? 2025 ??:??:00 -0500
+
 go-carousel (1.1.0-RC5) UNRELEASED; urgency=low
 
 * Check for minimum GO version. CaesarX needs v1.20+

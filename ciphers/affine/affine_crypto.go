@@ -36,12 +36,11 @@ import (
  *-----------------------------------------------------------------*/
 
 type AffineCrypto struct {
-	langCode  string
-	paramsM   *AffineParams
-	paramsS   *AffineParams
-	master    *affineTranslator
-	slave     *affineTranslator
-	sequencer *crypto.AffineSequencer
+	langCode   string
+	master     *affineContext
+	slave      *affineContext
+	sequencerE *crypto.AffineSequencer
+	sequencerD *crypto.AffineSequencer
 }
 
 /* ----------------------------------------------------------------
@@ -53,9 +52,10 @@ type AffineCrypto struct {
 // are built before-hand so that we can cache the lookup tables rather than
 // recalculating them for every item. This happens for both the master
 // and slave.
-type affineTranslator struct {
-	E *cmn.RuneTranslator // for Encoding
-	D *cmn.RuneTranslator // for Decoding
+type affineContext struct {
+	E      *cmn.RuneTranslator // for Encoding
+	D      *cmn.RuneTranslator // for Decoding
+	params *AffineParams
 }
 
 /* ----------------------------------------------------------------
@@ -73,7 +73,11 @@ type affineTranslator struct {
 //
 //	It returns the new instance or nil if there was an error.
 func NewAffineCrypto(alpha *cmn.Alphabet, params *AffineParams) *AffineCrypto {
-	main := &affineTranslator{nil, nil}
+	main := &affineContext{
+		E:      nil,
+		D:      nil,
+		params: params,
+	}
 
 	const FOR_ENCODING bool = true
 	const FOR_DECODING bool = false
@@ -93,12 +97,11 @@ func NewAffineCrypto(alpha *cmn.Alphabet, params *AffineParams) *AffineCrypto {
 	main.D = rtD
 
 	return &AffineCrypto{
-		langCode:  alpha.LangCodeISO(),
-		paramsM:   params,
-		paramsS:   nil,
-		master:    main,
-		slave:     nil,
-		sequencer: crypto.NewAffineSequencer(params.A, params.B, alpha),
+		langCode:   alpha.LangCodeISO(),
+		master:     main,
+		slave:      nil,
+		sequencerE: crypto.NewAffineSequencer(params.A, params.B, alpha),
+		sequencerD: crypto.NewAffineSequencer(params.A, params.B, alpha),
 	}
 }
 
@@ -124,10 +127,10 @@ func (c *AffineCrypto) GetAlphabet() string {
 // Get a copy of the master & slave (if any) parameters. There is no purpose
 // in modifying them because the returned values are cloned.
 func (c *AffineCrypto) GetParams() (masterP *AffineParams, slaveP *AffineParams) {
-	masterP = c.paramsM.Clone()
+	masterP = c.master.params.Clone()
 	slaveP = nil
-	if c.paramsS != nil {
-		slaveP = c.paramsS.Clone()
+	if c.slave != nil {
+		slaveP = c.slave.params.Clone()
 	}
 
 	return
@@ -144,7 +147,7 @@ func (c *AffineCrypto) WithChain(alphaSlave *cmn.Alphabet) error {
 
 	// use the helper to (re)build coefficients for the chain/slave
 	helper := NewAffineHelper()
-	if err := helper.SetParams(c.paramsM); err != nil {
+	if err := helper.SetParams(c.master.params); err != nil {
 		return err
 	}
 
@@ -153,16 +156,16 @@ func (c *AffineCrypto) WithChain(alphaSlave *cmn.Alphabet) error {
 	var err error
 
 	slaveN := int(alphaSlave.Size())
-	if slaveN == c.paramsM.N {
+	if slaveN == c.master.params.N {
 		// Case A
 		// alphabet lengths are equal, we can use the same parameters
-		slaveParams = c.paramsM.Clone()
+		slaveParams = c.master.params.Clone()
 		mlog.Info("Affine slave A1=A2, N1=N2")
 	} else { // differing alphabet lengths
 		// Case B
-		if helper.IsCommonCoprime(c.paramsM.A, c.paramsM.N, slaveN) {
+		if helper.IsCommonCoprime(c.master.params.A, c.master.params.N, slaveN) {
 			// common in both sets, no change either on A but on N
-			slaveParams = c.paramsM.Clone()
+			slaveParams = c.master.params.Clone()
 			slaveParams.N = slaveN
 			mlog.Info("Affine slave A1=A2, N1!=N2")
 		} else {
@@ -170,21 +173,20 @@ func (c *AffineCrypto) WithChain(alphaSlave *cmn.Alphabet) error {
 			// based on the master parameters but restrained to the slave's
 			// condition, recalculate the A coefficient to apply to the SLAVE
 			// the master remains with its own A coefficient.
-			A := helper.CalculateSlaveCoprime(c.paramsM, c.paramsM.B, slaveN)
-			if slaveParams, err = NewAffineParams(A, c.paramsM.B, slaveN); err != nil {
+			A := helper.CalculateSlaveCoprime(c.master.params, c.master.params.B, slaveN)
+			if slaveParams, err = NewAffineParams(A, c.master.params.B, slaveN); err != nil {
 				mlog.Error("could not set Affine slave due to error", err)
 				return err
 			}
 
 			// not an error but needs to be logged
 			mlog.InfoT("recalculated Affine A coefficient",
-				mlog.Int("Master-A", c.paramsM.A),
-				mlog.Int("Master-N", c.paramsM.N),
+				mlog.Int("Master-A", c.master.params.A),
+				mlog.Int("Master-N", c.master.params.N),
 				mlog.Int("Slave-A", A),
 				mlog.Int("Slave-N", slaveN))
 		}
 	}
-	c.paramsS = slaveParams // the slave coefficients we just calculated
 
 	// now build the Tabulae Rectae for the Slave/Chain/Secondary
 	const FOR_ENCODING bool = true
@@ -200,9 +202,10 @@ func (c *AffineCrypto) WithChain(alphaSlave *cmn.Alphabet) error {
 	}
 
 	// And finally store it in this instance as a properly configured chained alpha
-	c.slave = &affineTranslator{
-		E: rtSlaveE,
-		D: rtSlaveD,
+	c.slave = &affineContext{
+		E:      rtSlaveE,
+		D:      rtSlaveD,
+		params: slaveParams, // the slave coefficients we calculated above
 	}
 
 	return nil
@@ -314,9 +317,9 @@ func (c *AffineCrypto) EncryptBinaryFile(input, output string) error {
 	// -- Setup Cryptostream
 	// @todo implement AffineSequencer
 	master := ciphers.NewBinaryTabulaRecta()
-	c.sequencer.SetDecryptionMode(false) // only matters with Vigenere
-	iter := caesar.NewBinaryIterator(c.sequencer, master)
-	defer c.sequencer.Reset()
+	c.sequencerE.SetDecryptionMode(false) // only matters with Vigenere
+	iter := caesar.NewBinaryIterator(c.sequencerE, master)
+	defer c.sequencerE.Reset()
 
 	// -- Process cryptostream
 	const BUFFER_SIZE int = 4096
@@ -468,9 +471,9 @@ func (c *AffineCrypto) DecryptBinaryFile(input, output string) error {
 	// -- Setup Cryptostream
 	// @todo implement AffineSequencer
 	master := ciphers.NewBinaryTabulaRecta()
-	c.sequencer.SetDecryptionMode(true) // only matters with Vigenere
-	iter := caesar.NewBinaryIterator(c.sequencer, master)
-	defer c.sequencer.Reset()
+	c.sequencerD.SetDecryptionMode(true) // only matters with Vigenere
+	iter := caesar.NewBinaryIterator(c.sequencerD, master)
+	defer c.sequencerD.Reset()
 
 	// -- Process cryptostream
 	const BUFFER_SIZE int = 4096

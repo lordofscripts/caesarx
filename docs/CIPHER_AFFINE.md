@@ -216,6 +216,7 @@ from, but I suggest the *Extended* version.
 * `-demo` a demonstration of a round-trip encryption/decryption
 * `-ngram M` (**encryption only**) remove spaces from encrypted output and make groups
    of "M" characters separated by "·". "M" can be an integer between 2 and 5.
+* `-tabula` prints the Tabula Recta for the selected Alpha and A, B coefficients.   
 * `-F` to indicate the free argument(s) is/are filenames (encrypt/decrypt FILES). Without
 	this option, the free argument is a string to be encrypted/decrypted.
 
@@ -306,6 +307,21 @@ Plain    :  2025 fué un mal año
 Encoded  :  36378yfu8fo8iwb8wví
 NGram-5  :  36378·yfu8f·o8iwb·8wví
 ```
+
+### Easy Recipes
+
+Assuming `A=7` and  `B=23` to print the *Binary* (`N=256`) alphabet tabula
+for encoding/encrypting:
+
+>
+> affine -alpha binary -A 7 -B 23 -tabula
+>
+
+For the decoding/decryption tabula:
+
+>
+> affine -alpha binary -A 7 -B 23 -tabula -d
+>
 
 ***
 Copyright &copy;2025 Lord of Scripts

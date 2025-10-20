@@ -86,7 +86,7 @@ func PrintCoprimes(alpha *cmn.Alphabet, n int) int {
 	return z.EXIT_CODE_SUCCESS
 }
 
-func PrintAffineTabula(alpha *cmn.Alphabet, a, b int) int {
+func PrintAffineTabula(alpha *cmn.Alphabet, a, b int, isDecode bool) int {
 	aparams, err := affine.NewAffineParams(a, b, int(alpha.Size()))
 	if err != nil {
 		app.DieWithError(err, z.ERR_INTERNAL)
@@ -101,11 +101,52 @@ func PrintAffineTabula(alpha *cmn.Alphabet, a, b int) int {
 		app.DieWithError(err, z.ERR_INTERNAL)
 	}
 
-	var tabula string
-	if tabula, err = helper.GetTabulaString(alpha.Chars, "\t"); err != nil {
-		app.DieWithError(err, z.ERR_INTERNAL)
+	if !alpha.IsBinary() {
+		var tabula string
+		if tabula, err = helper.GetTabulaString(isDecode, alpha.Chars, "\t"); err != nil {
+			app.DieWithError(err, z.ERR_INTERNAL)
+		} else {
+			fmt.Println(tabula)
+		}
 	} else {
-		fmt.Println(tabula)
+		printRow := func(s []int) {
+			//fmt.Print("      ")
+			for _, v := range s {
+				fmt.Printf("%3d ", v)
+			}
+			fmt.Println()
+		}
+
+		const LEADER string = "        "
+		values := []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+		fmt.Print(LEADER + "      ")
+		printRow(values)
+		for i := range 26 {
+			decade := i * 10
+			fmt.Printf("%s%03d : ", LEADER, decade)
+
+			for j := range 10 {
+				if decade+j < 256 {
+					if isDecode {
+						values[j], err = helper.Decode(values[j])
+					} else {
+						values[j], err = helper.Encode(values[j])
+					}
+
+					if err != nil {
+						fmt.Println("Encode error ", err)
+					}
+				} else {
+					values[j] = -1
+				}
+			}
+			printRow(values)
+			for j := 0; j < 10; j++ {
+				decade = (i + 1) * 10
+				values[j] = decade + j
+			}
+		}
+		fmt.Println()
 	}
 
 	return z.EXIT_CODE_SUCCESS
@@ -319,7 +360,7 @@ func main() {
 		exitCode = PrintCoprimes(copts.Alphabet(), aopts.OptModulo)
 
 	case aopts.ActPrintTabula:
-		exitCode = PrintAffineTabula(copts.Alphabet(), aopts.CoefficientA, aopts.CoefficientB)
+		exitCode = PrintAffineTabula(copts.Alphabet(), aopts.CoefficientA, aopts.CoefficientB, aopts.ActIsDecode)
 
 	/*
 	 * Cryptographic operations
