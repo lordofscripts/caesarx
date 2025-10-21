@@ -52,7 +52,7 @@ type DidimusTabulaRecta struct {
  * foreign (UTF8) alphabets. Uses a Prime Key and an Alternate Key
  * for odd/even and an Extended Numeric Alphabet.
  * · Always follow it with a call to VerifyKey() or VerifySecret() prior to
- *	 begining encoding/decoding.
+ *	 beginning encoding/decoding.
  * · follow with WithChain() to chain with supplemental alphabets.
  * · follow with WithAlphabet() to specify a different alphabet prior to encoding.
  * · It does case-folding by default, so it handles & preserves upper/lowercase

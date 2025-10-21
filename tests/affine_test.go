@@ -294,16 +294,16 @@ func Test_AffineParams_Get(t *testing.T) {
 	}
 
 	if params.A != validAffineParamsEN.A {
-		t.Errorf("retrived param A not the same exp:%d got:%d", validAffineParamsEN.A, params.A)
+		t.Errorf("retrieved param A not the same exp:%d got:%d", validAffineParamsEN.A, params.A)
 	}
 	if params.B != validAffineParamsEN.B {
-		t.Errorf("retrived param B not the same exp:%d got:%d", validAffineParamsEN.B, params.B)
+		t.Errorf("retrieved param B not the same exp:%d got:%d", validAffineParamsEN.B, params.B)
 	}
 	if params.Ap != validAffineParamsEN.Ap {
-		t.Errorf("retrived param A' not the same exp:%d got:%d", validAffineParamsEN.Ap, params.Ap)
+		t.Errorf("retrieved param A' not the same exp:%d got:%d", validAffineParamsEN.Ap, params.Ap)
 	}
 	if params.N != validAffineParamsEN.N {
-		t.Errorf("retrived param N not the same exp:%d got:%d", validAffineParamsEN.N, params.N)
+		t.Errorf("retrieved param N not the same exp:%d got:%d", validAffineParamsEN.N, params.N)
 	}
 }
 

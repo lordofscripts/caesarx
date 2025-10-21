@@ -108,7 +108,7 @@ func (h *AffineHelper) ModularInverse(a, m int) (int, error) {
 	inverse := new(big.Int).ModInverse(A, M)
 	inverse64 := inverse.Int64()
 	if inverse64 > int64(maxIntValue()) {
-		return -1, fmt.Errorf("this overflow shouldn't ocurr in this application")
+		return -1, fmt.Errorf("this overflow shouldn't occur in this application")
 	}
 
 	return int(inverse64), nil

@@ -6,7 +6,7 @@
  * It does forward and reverse lookups and works fine with Unicode.
  * The index lookup in string objects was too unreliable, even with
  * utf8.RunesInString().
- *  If the rune is not found in the map, the transliterator retuns
+ *  If the rune is not found in the map, the transliterator returns
  * the same rune that was given as input (no translation).
  *-----------------------------------------------------------------*/
 package cmn
@@ -138,7 +138,7 @@ func (r *RuneTranslator) Lookup(char rune) (rune, error) {
 	return char, fmt.Errorf("couldn't find %s:%c during forward lookup", r.Title, char)
 }
 
-// Given a transliterated rune, it retuns the original rune. If it is
+// Given a transliterated rune, it returns the original rune. If it is
 // not found, it returns the input rune untraslated with error.
 // Case-insensitive lookup (preserves case)
 func (r *RuneTranslator) ReverseLookup(char rune) (rune, error) {

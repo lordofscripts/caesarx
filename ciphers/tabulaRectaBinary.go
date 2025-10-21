@@ -255,7 +255,7 @@ func (t *BinaryTabulaRecta) DecodeRuneRaw(r byte, rowIdx int) byte {
 	if exists, colIdx := t.rowContains(rowIdx, r); exists {
 		result = t.tabula[0][colIdx]
 	} else {
-		// This would never happen UNLESS someone edits TabulaCaesar(Commmand) and didn't
+		// This would never happen UNLESS someone edits TabulaCaesar(Command) and didn't
 		// check for rune's presence in the slave alphabet. But this check is here
 		// as a safeguard.
 		mlog.ErrorT("internal error: shouldn't be looking for that rune in this slave", mlog.Byte("Byte", r), mlog.String("Alpha", t.Name))

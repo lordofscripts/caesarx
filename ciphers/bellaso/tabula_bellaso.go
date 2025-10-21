@@ -55,7 +55,7 @@ type BellasoTabulaRecta struct {
  * foreign (UTF8) alphabets. Uses a 10-term Fibonacci series as offset
  * to the Prime key. Has an Extended Numeric alphabet.
  * · Always follow it with a call to VerifyKey() or VerifySecret() prior to
- *	 begining encoding/decoding.
+ *	 beginning encoding/decoding.
  * · follow with WithChain() to chain with supplemental alphabets.
  * · follow with WithAlphabet() to specify a different alphabet prior to encoding.
  * · It does case-folding by default, so it handles & preserves upper/lowercase

@@ -153,7 +153,7 @@ func Test_RoundTripAll(t *testing.T) {
 	}
 }
 
-// Verify the existance and location (shift offset) of a rune
+// Verify the existence and location (shift offset) of a rune
 // in the TabulaRecta alphabet. We try both existing and non-existing.
 // We also ensure to test those beyond the position of a multi-byte
 // rune, thus to avoid the UTF8 pitfalls.

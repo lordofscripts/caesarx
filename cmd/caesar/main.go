@@ -315,7 +315,7 @@ func main() {
 		if err != nil {
 			app.DieWithError(err, exitCode)
 		} else {
-			app.Die("an error ocurred", exitCode)
+			app.Die("an error occured", exitCode)
 		}
 	}
 
