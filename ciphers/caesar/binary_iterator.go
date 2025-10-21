@@ -112,8 +112,15 @@ func (t *BinaryIterator) EncodeNext() bool {
 			result = t.tabulas[currTab].EncodeRune(target.Rune, keyNew)
 		}
 
+		mlog.PrintCatheter("Encode",
+			mlog.Int("Pos", t.pos-1),
+			mlog.Rune("Rune", rune(target.Rune)),
+			mlog.Rune("WithKey", rune(currKey.Rune)),
+			mlog.Rune("Ciphered", rune(result)))
+
 		t.sb.WriteByte(result)
 	} else {
+		mlog.PrintCatheter("Skipping", mlog.Int("Pos", t.pos-1), mlog.Rune("Rune", rune(target.Rune)))
 		t.sequencer.Skip()
 		t.sb.WriteByte(target.Rune)
 	}
@@ -138,6 +145,12 @@ func (t *BinaryIterator) DecodeNext() bool {
 			result = t.tabulas[currTab].DecodeRune(target.Rune, newKey)
 		}
 
+		mlog.PrintCatheter("Decode",
+			mlog.Int("Pos", t.pos-1),
+			mlog.Rune("Rune", rune(target.Rune)),
+			mlog.Rune("WithKey", rune(keyCurr.Rune)),
+			mlog.Rune("Plain", rune(result)))
+
 		if err := t.sequencer.Feedback(rune(result)); err != nil {
 			mlog.FatalT(caesarx.ERR_SEQUENCER,
 				"feedback panic",
@@ -147,6 +160,7 @@ func (t *BinaryIterator) DecodeNext() bool {
 		}
 		t.sb.WriteByte(result)
 	} else {
+		mlog.PrintCatheter("Skipping", mlog.Int("Pos", t.pos-1), mlog.Rune("Rune", rune(target.Rune)))
 		t.sequencer.Skip()
 		t.sb.WriteByte(target.Rune)
 	}

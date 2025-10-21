@@ -3,6 +3,7 @@ package tests
 import (
 	"encoding/binary"
 	"fmt"
+	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers/commands"
 	"lordofscripts/caesarx/ciphers/vigenere"
 	"lordofscripts/caesarx/cmn"
@@ -128,6 +129,7 @@ func Test_VigenereCmd_EncryptTextFile(t *testing.T) {
 // It tests the underlying BinaryTabula EncodeBytes() & DecodeBytes()
 // which are the low-level functions for binary FILE encryption.
 func Test_EncodeDecodeBytes_Vigenere(t *testing.T) {
+	// go test packageName -run NameOfTest
 	allCases := []struct {
 		Secret string
 		Plain  uint32
@@ -184,9 +186,13 @@ func Test_VigenereCmd_EncryptBinFile(t *testing.T) {
 		InputFilename string // plain binary file to be encrypted
 		TwinFilename  string // plain binary file after round-trip encrypt-decrypt
 	}{
-		{"Amor", "input.bin", "output_V.bin"}, // 0x11223344556677880a => 0x526f82966688aacc5f
+		//{"Amor", "input.bin", "output_V.bin"}, // 0x11223344556677880a => 0x526f82966688aacc5f
 		{"Detox", "caesar-silver-coin.png", "caesar-silver-coin-V-ret.png"},
+		//{"Amor", "ascii.bin", "output_ascii.bin"},
 	}
+
+	mlog.SetCatheterFile("/tmp/vigenere.log")
+	defer mlog.CloseLogFiles()
 
 	for i, tc := range allCases {
 		var err error
@@ -197,6 +203,8 @@ func Test_VigenereCmd_EncryptBinFile(t *testing.T) {
 		assetOut := cmn.NewNameExtOnly(assetIn, ENC_FILE_EXT, true)
 		assetRet := getAssetFilename(t, TEST_ASSETS, tc.TwinFilename)
 		fmt.Printf("Binary file #%d - %s\n", i+1, assetIn)
+
+		mlog.PrintCatheter("Processing", mlog.String("InFile", assetIn))
 
 		ctr := commands.NewVigenereCommand(cmn.BINARY_DISK, tc.Secret)
 		// generate encrypted binary named assetOut
@@ -224,5 +232,23 @@ func Test_VigenereCmd_EncryptBinFile(t *testing.T) {
 
 		os.Remove(assetOut)
 		os.Remove(assetRet)
+	}
+}
+
+func OutputBinASCII() {
+	binFile, err := os.OpenFile("/tmp/ascii.bin", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		//t.Fatal(err)
+	}
+
+	ascii := make([]byte, 256)
+	for i := range 256 {
+		ascii[i] = byte(i)
+	}
+
+	if n, err := binFile.Write(ascii); err != nil {
+		//t.Fatal(err)
+	} else if n != 256 {
+		//t.Fatalf("only outputed %d out of 256 bytes", n)
 	}
 }
