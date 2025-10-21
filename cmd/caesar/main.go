@@ -12,6 +12,7 @@ import (
 	"fmt"
 	z "lordofscripts/caesarx"
 	"lordofscripts/caesarx/app"
+	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers"
 	"lordofscripts/caesarx/ciphers/affine"
 	"lordofscripts/caesarx/ciphers/bellaso"
@@ -258,6 +259,8 @@ func Help(co *cmd.CommonOptions, ao *CaesarxOptions) {
 func main() {
 	var exitCode int = -1
 	var err error
+	defer mlog.CloseLogFiles()
+
 	// -------	CLI FLAGS ------
 	copts := cmd.NewCommonOptions() // -help|-demo|-alpha ALPHA|-num N
 	aopts := NewCaesarxOptions(copts)

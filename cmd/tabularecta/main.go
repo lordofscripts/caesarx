@@ -5,6 +5,7 @@ import (
 	"fmt"
 	. "lordofscripts/caesarx"
 	"lordofscripts/caesarx/app"
+	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers"
 	"lordofscripts/caesarx/ciphers/caesar"
 	"lordofscripts/caesarx/cmd"
@@ -32,6 +33,8 @@ func main() {
 	var actHelp, actDemo, optCaseFold bool
 	var optAlpha string
 	var optKey, actEncode, actDecode, optNumbers cmd.RuneFlag
+	defer mlog.CloseLogFiles()
+
 	flag.BoolVar(&actHelp, "help", false, "Show help")
 	flag.BoolVar(&actDemo, "demo", false, "Demonstration")
 	flag.BoolVar(&optCaseFold, "foldcase", true, "Use case folding (preserves case)")

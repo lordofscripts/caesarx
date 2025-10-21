@@ -6,6 +6,9 @@
  * levels, extra log tags such as String, Bool, YesNo, Int, Byte,
  * Rune and At. But MLog is not for structured logging (JSON, etc.)
  * because I like traditional logging messages without clutter.
+ *   Log level can be set in an environment variable and an optional
+ * log filename too. It also has a supplementary log file called
+ * "catheter" which is not formatted.
  *-----------------------------------------------------------------*/
 package mlog
 
@@ -27,6 +30,7 @@ const (
 	defaultPrefix string   = ""
 	defaultLevel  LogLevel = LevelError
 
+	tagCATHE string = "[CAT] "
 	tagTRACE string = "[TRC] "
 	tagDEBUG string = "[DBG] "
 	tagINFO  string = "[INF] "
@@ -34,6 +38,12 @@ const (
 	tagERROR string = "[ERR] "
 	tagFATAL string = "[DIE] "
 
+	// environment variable that overrides the default (Error) Log Level for CaesarX
+	LOG_LEVEL_ENV string = "LOG_LEVEL_CX"
+	// environment variable that indicates the log output filename for CaesarX (default stderr)
+	LOG_FILE_ENV string = "LOG_FILE_CX"
+
+	// Logging level enumeration
 	LevelTrace LogLevel = iota
 	LevelDebug
 	LevelInfo
@@ -46,6 +56,8 @@ var (
 	logMutex    sync.Mutex
 	minLogLevel LogLevel    = LevelDebug
 	ilogger     *log.Logger = nil
+	logFile     *os.File    = nil
+	catFile     *os.File    = nil
 )
 
 /* ----------------------------------------------------------------
@@ -53,7 +65,7 @@ var (
  *-----------------------------------------------------------------*/
 
 func init() {
-	levelString := os.Getenv("LOG_LEVEL")
+	levelString := os.Getenv(LOG_LEVEL_ENV)
 	if levelString != "" {
 		minLogLevel = parseLevel(levelString)
 	} else {
@@ -65,8 +77,17 @@ func init() {
 
 	//ilogger = log.New(os.Stderr, defaultPrefix, log.Ldate|log.Ltime|log.Lshortfile)
 	ilogger = log.New(os.Stderr, defaultPrefix, log.Ldate|log.Ltime|log.Lmsgprefix)
-	ilogger.SetOutput(cw)
 	ilogger.SetFlags(log.Lmsgprefix)
+	outputLogFilename := os.Getenv(LOG_FILE_ENV)
+	if len(outputLogFilename) != 0 {
+		if fd, err := openLogFile(outputLogFilename, true); err != nil {
+			ilogger.SetOutput(cw) // fallback to stderr
+		} else {
+			ilogger.SetOutput(fd)
+		}
+	} else {
+		ilogger.SetOutput(cw)
+	}
 }
 
 /* ----------------------------------------------------------------
@@ -110,6 +131,59 @@ func (clw *customLogWriter) Write(p []byte) (n int, err error) {
 /* ----------------------------------------------------------------
  *							F u n c t i o n s
  *-----------------------------------------------------------------*/
+
+// opens the log file and outputs the first message to delimit
+// multiple application runs.
+func openLogFile(filePath string, isMainLog bool) (*os.File, error) {
+	logFileX, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	if err != nil {
+		return nil, err
+	}
+
+	const LEADER string = "> > > >   T h e   B e g i n n i n g   < < < <\n"
+	if isMainLog {
+		ilogger.Print(LEADER)
+	} else {
+		logFileX.WriteString(LEADER)
+	}
+
+	return logFileX, nil
+}
+
+// Create a "catheter" log file. It is a supplementary lifeline for
+// exceptional logging and contains no format. Use PrintCathether()
+// for writing output.
+func SetCatheterFile(filename string) bool {
+	var err error = nil
+	if catFile != nil {
+		return false
+	}
+	catFile, err = openLogFile(filename, false)
+
+	return err == nil
+}
+
+// CloseLogFiles to close the log file. Call this in a defer statement in your
+// main() IF you specified a log filename in the LOG_FILENAME environment var.
+// It does nothing if you used SetOutput() with your own file writer.
+func CloseLogFiles() {
+	const TRAILER string = "> > > >   T h e   E n d   < < < <\n"
+	if logFile != nil {
+		ilogger.Print(TRAILER)
+		err := logFile.Close()
+		if err != nil {
+			ilogger.Printf("Error closing log file: %v", err)
+		}
+	}
+
+	if catFile != nil {
+		catFile.WriteString(TRAILER)
+		err := catFile.Close()
+		if err != nil {
+			ilogger.Printf("Error closing catheter file: %v", err)
+		}
+	}
+}
 
 // parse a string to convert it to a LogLevel value
 func parseLevel(s string) LogLevel {
@@ -170,6 +244,20 @@ func SetOutput(w io.Writer) {
 	defer logMutex.Unlock()
 
 	ilogger.SetOutput(w)
+}
+
+// Print to the catheter file.
+func PrintCatheter(message string, v ...ILogKeyValuePair) {
+	if catFile != nil {
+		var sb strings.Builder
+		sb.WriteString(tagCATHE)
+		sb.WriteString(message)
+		for _, t := range v {
+			sb.WriteString(" " + t.String())
+		}
+
+		catFile.WriteString(sb.String() + "\n")
+	}
 }
 
 // Trace level with variadic parameters

@@ -15,6 +15,7 @@ import (
 	"fmt"
 	z "lordofscripts/caesarx"
 	"lordofscripts/caesarx/app"
+	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers/affine"
 	"lordofscripts/caesarx/ciphers/commands"
 	"lordofscripts/caesarx/cmd"
@@ -317,6 +318,7 @@ func setupAffineCrypto(alpha, numbers *cmn.Alphabet, opts *AffineCliOptions) *co
  *						M A I N | E X A M P L E
  *-----------------------------------------------------------------*/
 func main() {
+	defer mlog.CloseLogFiles()
 	// -------	CLI FLAGS ------
 	copts := cmd.NewCommonOptions() // -help|-demo|-alpha ALPHA|-num N
 	aopts := NewAffineOptions(copts)

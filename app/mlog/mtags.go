@@ -83,7 +83,7 @@ func (k *kvString) String() string {
 
 // implements fmt.Stringer for mlog.Rune()
 func (k *kvRune) String() string {
-	return fmt.Sprintf("%s='%c'", k.k, k.v)
+	return fmt.Sprintf("%s='%c' (0x%X)", k.k, k.v, k.v)
 }
 
 // implements fmt.Stringer for mlog.Int()
