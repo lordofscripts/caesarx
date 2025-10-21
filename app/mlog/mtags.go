@@ -9,6 +9,7 @@ package mlog
 
 import (
 	"fmt"
+	"unicode"
 )
 
 /* ----------------------------------------------------------------
@@ -83,7 +84,13 @@ func (k *kvString) String() string {
 
 // implements fmt.Stringer for mlog.Rune()
 func (k *kvRune) String() string {
-	return fmt.Sprintf("%s='%c' (0x%X)", k.k, k.v, k.v)
+	var out string
+	if unicode.IsPrint(k.v) {
+		out = fmt.Sprintf("%s='%c' (0x%X)", k.k, k.v, k.v)
+	} else {
+		out = fmt.Sprintf("%s=*** (0x%X)", k.k, k.v)
+	}
+	return out
 }
 
 // implements fmt.Stringer for mlog.Int()

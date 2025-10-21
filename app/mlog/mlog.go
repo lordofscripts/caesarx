@@ -9,6 +9,8 @@
  *   Log level can be set in an environment variable and an optional
  * log filename too. It also has a supplementary log file called
  * "catheter" which is not formatted.
+ *   If a log file is used, the main log is appended whereas the
+ * catheter is truncated.
  *-----------------------------------------------------------------*/
 package mlog
 
@@ -58,6 +60,8 @@ var (
 	ilogger     *log.Logger = nil
 	logFile     *os.File    = nil
 	catFile     *os.File    = nil
+	// UTF8 BOM (Byte Order Mark)
+	UTF8_BOM []byte = []byte{0xEF, 0xBB, 0xBF}
 )
 
 /* ----------------------------------------------------------------
@@ -80,7 +84,7 @@ func init() {
 	ilogger.SetFlags(log.Lmsgprefix)
 	outputLogFilename := os.Getenv(LOG_FILE_ENV)
 	if len(outputLogFilename) != 0 {
-		if fd, err := openLogFile(outputLogFilename, true); err != nil {
+		if fd, err := openLogFile(outputLogFilename, true, false); err != nil {
 			ilogger.SetOutput(cw) // fallback to stderr
 		} else {
 			ilogger.SetOutput(fd)
@@ -134,17 +138,24 @@ func (clw *customLogWriter) Write(p []byte) (n int, err error) {
 
 // opens the log file and outputs the first message to delimit
 // multiple application runs.
-func openLogFile(filePath string, isMainLog bool) (*os.File, error) {
-	logFileX, err := os.OpenFile(filePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+func openLogFile(filePath string, isMainLog, truncate bool) (*os.File, error) {
+	fileFlags := os.O_CREATE | os.O_WRONLY
+	if truncate {
+		fileFlags |= os.O_TRUNC
+	} else {
+		fileFlags |= os.O_APPEND
+	}
+
+	logFileX, err := os.OpenFile(filePath, fileFlags, 0666)
 	if err != nil {
 		return nil, err
 	}
 
-	const LEADER string = "> > > >   T h e   B e g i n n i n g   < < < <\n"
+	const LEADER string = "[BEG]\t> > > >   T h e   B e g i n n i n g   < < < <\n"
 	if isMainLog {
-		ilogger.Print(LEADER)
+		ilogger.Print(string(UTF8_BOM), LEADER)
 	} else {
-		logFileX.WriteString(LEADER)
+		logFileX.WriteString(string(UTF8_BOM) + LEADER)
 	}
 
 	return logFileX, nil
@@ -158,7 +169,7 @@ func SetCatheterFile(filename string) bool {
 	if catFile != nil {
 		return false
 	}
-	catFile, err = openLogFile(filename, false)
+	catFile, err = openLogFile(filename, false, true)
 
 	return err == nil
 }
@@ -167,7 +178,7 @@ func SetCatheterFile(filename string) bool {
 // main() IF you specified a log filename in the LOG_FILENAME environment var.
 // It does nothing if you used SetOutput() with your own file writer.
 func CloseLogFiles() {
-	const TRAILER string = "> > > >   T h e   E n d   < < < <\n"
+	const TRAILER string = "[END]\t> > > >   T h e   E n d   < < < <\n"
 	if logFile != nil {
 		ilogger.Print(TRAILER)
 		err := logFile.Close()
