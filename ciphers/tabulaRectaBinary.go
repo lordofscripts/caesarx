@@ -71,6 +71,15 @@ func NewBinaryTabulaRecta() *BinaryTabulaRecta {
  *							M e t h o d s
  *-----------------------------------------------------------------*/
 
+// implements fmt.Stringer by rendering the Tabula Recta
+func (t *BinaryTabulaRecta) String() string {
+	return t.renderTabulaRecta(false)
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					G e n e r a l   P u r p o s e
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
 func (t *BinaryTabulaRecta) GetName() string {
 	return t.Name
 }
@@ -85,79 +94,6 @@ func (t *BinaryTabulaRecta) HasRune(r byte) (bool, int) {
 	}
 
 	return exists, where
-}
-
-/**
- * Encode a rune with the key using the current Tabula Recta.
- * @param r (rune) character to encode
- * @param key (rune) encoding key
- * @returns (rune) encoded rune, or r if not found.
- */
-func (t *BinaryTabulaRecta) EncodeRune(r, key byte) byte {
-	var result byte = r // pass-through if not found
-
-	if exists, atColumn := t.rowContains(0, r); exists {
-		keyIndex := byte(key)
-		result = t.tabula[keyIndex][atColumn]
-	}
-
-	return result
-}
-
-func (t *BinaryTabulaRecta) EncodeRuneRaw(r byte, rowIdx, colIdx int) byte {
-	var result byte = r
-
-	// Pre
-	if rowIdx >= len(t.tabula) {
-		mlog.Error("out-of-range row", mlog.String("At", "DecodeRuneRaw"), mlog.Int("Value", rowIdx))
-		panic("Bad thing happened")
-	}
-	if colIdx >= len(t.tabula[0]) {
-		mlog.ErrorT("out-of-range column", mlog.String("At", "DecodeRuneRaw"), mlog.Int("Value", colIdx))
-		panic("Bad thing happened")
-	}
-
-	// Middle
-	result = t.tabula[rowIdx][colIdx]
-
-	return result
-}
-
-func (t *BinaryTabulaRecta) DecodeRune(r, key byte) byte {
-	var result byte = r
-
-	if exists, keyIndex := t.HasRune(key); exists {
-		exists, column := t.rowContains(keyIndex, r)
-		if exists {
-			result = t.tabula[0][column]
-		}
-	} else {
-		mlog.WarnT("Key absent in alphabet", mlog.String("Alpha", t.Name), mlog.Byte("Byte", key))
-	}
-
-	return result
-}
-
-func (t *BinaryTabulaRecta) DecodeRuneRaw(r byte, rowIdx int) byte {
-	var result byte = r
-
-	if rowIdx >= len(t.tabula[0]) { // the Tabula Recta is a square matrix NxN
-		mlog.ErrorT("out-of-range column", mlog.String("At", "DecodeRuneRaw"), mlog.Int("Value", rowIdx))
-		panic("Bad thing happened")
-	}
-
-	// Middle
-	if exists, colIdx := t.rowContains(rowIdx, r); exists {
-		result = t.tabula[0][colIdx]
-	} else {
-		// This would never happen UNLESS someone edits TabulaCaesar(Commmand) and didn't
-		// check for rune's presence in the slave alphabet. But this check is here
-		// as a safeguard.
-		mlog.ErrorT("internal error: shouldn't be looking for that rune in this slave", mlog.Byte("Byte", r), mlog.String("Alpha", t.Name))
-		panic("Internal Error")
-	}
-
-	return result
 }
 
 /**
@@ -242,17 +178,101 @@ func (t *BinaryTabulaRecta) PrintTape(key byte) {
 	}
 }
 
-func (t *BinaryTabulaRecta) String() string {
-	return t.renderTabulaRecta(false)
+// Gets the substitution tabula (0..255) for the given shift key value.
+func (t *BinaryTabulaRecta) GetTabulaForKey(shift byte) []byte {
+	return t.tabula[shift]
 }
 
-func (t *BinaryTabulaRecta) generateTabulaRecta(size int) [][]byte {
-	return cmn.MakeSquareNumericTabula[byte](size + 1) // 0xFF becomes 256x256
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					E n c r y p t i o n
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+/**
+ * Encode a rune with the key using the current Tabula Recta.
+ * @param r (rune) character to encode
+ * @param key (rune) encoding key
+ * @returns (rune) encoded rune, or r if not found.
+ */
+func (t *BinaryTabulaRecta) EncodeRune(r, key byte) byte {
+	var result byte = r // pass-through if not found
+
+	if exists, atColumn := t.rowContains(0, r); exists {
+		keyIndex := byte(key)
+		result = t.tabula[keyIndex][atColumn]
+	}
+
+	return result
+}
+
+func (t *BinaryTabulaRecta) EncodeRuneRaw(r byte, rowIdx, colIdx int) byte {
+	var result byte = r
+
+	// Pre
+	if rowIdx >= len(t.tabula) {
+		mlog.Error("out-of-range row", mlog.String("At", "DecodeRuneRaw"), mlog.Int("Value", rowIdx))
+		panic("Bad thing happened")
+	}
+	if colIdx >= len(t.tabula[0]) {
+		mlog.ErrorT("out-of-range column", mlog.String("At", "DecodeRuneRaw"), mlog.Int("Value", colIdx))
+		panic("Bad thing happened")
+	}
+
+	// Middle
+	result = t.tabula[rowIdx][colIdx]
+
+	return result
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ *					D e c r y p t i o n
+ *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -*/
+
+// Decode a rune using the key
+func (t *BinaryTabulaRecta) DecodeRune(r, key byte) byte {
+	var result byte = r
+
+	if exists, keyIndex := t.HasRune(key); exists {
+		exists, column := t.rowContains(keyIndex, r)
+		if exists {
+			result = t.tabula[0][column]
+		}
+	} else {
+		mlog.WarnT("Key absent in alphabet", mlog.String("Alpha", t.Name), mlog.Byte("Byte", key))
+	}
+
+	return result
+}
+
+func (t *BinaryTabulaRecta) DecodeRuneRaw(r byte, rowIdx int) byte {
+	var result byte = r
+
+	if rowIdx >= len(t.tabula[0]) { // the Tabula Recta is a square matrix NxN
+		mlog.ErrorT("out-of-range column", mlog.String("At", "DecodeRuneRaw"), mlog.Int("Value", rowIdx))
+		panic("Bad thing happened")
+	}
+
+	// Middle
+	if exists, colIdx := t.rowContains(rowIdx, r); exists {
+		result = t.tabula[0][colIdx]
+	} else {
+		// This would never happen UNLESS someone edits TabulaCaesar(Commmand) and didn't
+		// check for rune's presence in the slave alphabet. But this check is here
+		// as a safeguard.
+		mlog.ErrorT("internal error: shouldn't be looking for that rune in this slave", mlog.Byte("Byte", r), mlog.String("Alpha", t.Name))
+		panic("Internal Error")
+	}
+
+	return result
 }
 
 /* ----------------------------------------------------------------
  *				P r i v a t e	M e t h o d s
  *-----------------------------------------------------------------*/
+
+// generates a square matrix of 256x256 with values 0..255
+func (t *BinaryTabulaRecta) generateTabulaRecta(size int) [][]byte {
+	return cmn.MakeSquareNumericTabula[byte](size + 1) // 0xFF becomes 256x256
+}
 
 func (t *BinaryTabulaRecta) rowContains(rowNum int, target byte) (bool, int) {
 	exists := false

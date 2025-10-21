@@ -1,6 +1,9 @@
 go-carousel (1.1.0-RC6) UNRELEASED; urgency=low
 
 * Fixed #13 Affine Encode/Decode yielding negative numbers
+* Fixed #14 Affine binary file encryption failure
+* Closed #15 improvements to MLog logger
+* TabulaRecta app can now print the Binary alphabet lookup tabula
 
 -- Lord of Scripts <lordofscripts@users.noreply.github.com>  Sat, ?? ??? 2025 ??:??:00 -0500
 
