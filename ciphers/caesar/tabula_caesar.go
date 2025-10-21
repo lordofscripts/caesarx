@@ -16,6 +16,7 @@ import (
 	"lordofscripts/caesarx/cmn"
 	"lordofscripts/caesarx/internal/crypto"
 	"os"
+	"sync"
 	"unicode/utf8"
 )
 
@@ -50,6 +51,7 @@ type CaesarTabulaRecta struct {
 	alpha     *cmn.Alphabet
 	slave     *ciphers.TabulaRecta // implements cmn.IRuneLocalizer
 	sequencer crypto.IKeySequencer
+	mu        *sync.Mutex
 }
 
 /* ----------------------------------------------------------------
@@ -60,7 +62,7 @@ type CaesarTabulaRecta struct {
  * (Ctor) Caesar Cipher using a Tabula Recta that supports ASCII and
  * foreign (UTF8) alphabets.
  * · Always follow it with a call to VerifyKey() or VerifySecret() prior to
- *	 begining encoding/decoding.
+ *	 beginning encoding/decoding.
  * · follow with WithChain() to chain with supplemental alphabets.
  * · follow with WithAlphabet() to specify a different alphabet prior to encoding.
  * · It does case-folding by default, so it handles & preserves upper/lowercase
@@ -70,6 +72,7 @@ func NewCaesarTabulaRecta(alphabet *cmn.Alphabet, key rune) *CaesarTabulaRecta {
 		alpha:     alphabet,
 		slave:     nil,
 		sequencer: crypto.NewCaesarSequencer(key),
+		mu:        new(sync.Mutex),
 	}
 }
 
@@ -89,6 +92,9 @@ func (cx *CaesarTabulaRecta) String() string {
 // WithChain() reconfigures the current instance to attach a chained (secondary/slave)
 // alphabet disk with supplementary characters not present in the main (primary/master).
 func (cx *CaesarTabulaRecta) WithChain(extra *ciphers.TabulaRecta) ciphers.ICipher {
+	cx.mu.Lock()
+	defer cx.mu.Unlock()
+
 	if !cx.alpha.IsBinary() {
 		cx.slave = extra // v1.1 When primary is Binary no slaves are allowed
 	} else {
@@ -100,12 +106,18 @@ func (cx *CaesarTabulaRecta) WithChain(extra *ciphers.TabulaRecta) ciphers.ICiph
 // WithAlphabet() reconfigures the current instance to replace the MAIN
 // (primary) alphabet.
 func (cx *CaesarTabulaRecta) WithAlphabet(alphabet *cmn.Alphabet) ciphers.ICipher {
+	cx.mu.Lock()
+	defer cx.mu.Unlock()
+
 	cx.alpha = alphabet
 	return cx
 }
 
 // WithSequencer() specifies a Key Sequencer for the current instance.
 func (cx *CaesarTabulaRecta) WithSequencer(keygen crypto.IKeySequencer) ciphers.ICipher {
+	cx.mu.Lock()
+	defer cx.mu.Unlock()
+
 	cx.sequencer = keygen
 	return cx
 }
@@ -239,6 +251,9 @@ func (cx *CaesarTabulaRecta) EncodeBytes(plain []byte) []byte {
 // Encrypts the input TEXT file using the selected Caesar variant and
 // produces the output filename with the encrypted contents.
 func (cx *CaesarTabulaRecta) EncryptTextFile(input, output string) error {
+	cx.mu.Lock()
+	defer cx.mu.Unlock()
+
 	fdIn, err := os.Open(input)
 	if err != nil {
 		mlog.ErrorE(err)
@@ -288,6 +303,9 @@ func (cx *CaesarTabulaRecta) EncryptTextFile(input, output string) error {
 // Encrypts a binary file and reports any error. If there was an error of
 // any kind, the unfinished output file is deleted from the filesystem. (v1.1+)
 func (cx *CaesarTabulaRecta) EncryptBinaryFile(input, output string) error {
+	cx.mu.Lock()
+	defer cx.mu.Unlock()
+
 	// -- Preamble
 	fdIn, err := os.Open(input)
 	if err != nil {
@@ -315,6 +333,7 @@ func (cx *CaesarTabulaRecta) EncryptBinaryFile(input, output string) error {
 	// -- Process cryptostream
 	const BUFFER_SIZE int = 4096
 	buffer := make([]byte, BUFFER_SIZE)
+	firstCall := true
 
 	for {
 		// (a) read bytes from input stream
@@ -331,7 +350,13 @@ func (cx *CaesarTabulaRecta) EncryptBinaryFile(input, output string) error {
 		}
 
 		// (b) GH-002 encode byte(s)
-		iter.Start(buffer[:n])
+		if firstCall {
+			iter.Start(buffer[:n])
+			firstCall = false
+		} else {
+			iter.Update(buffer[:n])
+		}
+
 		for !iter.EncodeNext() {
 		}
 
@@ -398,6 +423,9 @@ func (cx *CaesarTabulaRecta) DecodeBytes(ciphered []byte) []byte {
 // Decrypts the input TEXT file using the selected Caesar variant and
 // produces the output filename with the decrypted contents.
 func (cx *CaesarTabulaRecta) DecryptTextFile(input, output string) error {
+	cx.mu.Lock()
+	defer cx.mu.Unlock()
+
 	fdIn, err := os.Open(input)
 	if err != nil {
 		mlog.ErrorE(err)
@@ -447,6 +475,9 @@ func (cx *CaesarTabulaRecta) DecryptTextFile(input, output string) error {
 // Decrypts a binary file and reports any error. If there was an error of
 // any kind, the unfinished output file is deleted from the filesystem. (v1.1+)
 func (cx *CaesarTabulaRecta) DecryptBinaryFile(input, output string) error {
+	cx.mu.Lock()
+	defer cx.mu.Unlock()
+
 	// -- Preamble
 	fdIn, err := os.Open(input)
 	if err != nil {
@@ -474,6 +505,7 @@ func (cx *CaesarTabulaRecta) DecryptBinaryFile(input, output string) error {
 	// -- Process cryptostream
 	const BUFFER_SIZE int = 4096
 	buffer := make([]byte, BUFFER_SIZE)
+	firstCall := true
 
 	for {
 		// (a) read bytes from input stream
@@ -490,7 +522,13 @@ func (cx *CaesarTabulaRecta) DecryptBinaryFile(input, output string) error {
 		}
 
 		// (b) GH-002 encode byte(s)
-		iter.Start(buffer[:n])
+		if firstCall {
+			iter.Start(buffer[:n])
+			firstCall = false
+		} else {
+			iter.Update(buffer[:n])
+		}
+
 		for !iter.DecodeNext() {
 		}
 

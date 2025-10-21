@@ -11,12 +11,13 @@ import (
 
 // BinaryIterator is used for streaming through a binary file.
 type BinaryIterator struct {
-	tabulas   []ciphers.IGTabulaRecta[byte]
-	sequencer crypto.IKeySequencer
-	sb        strings.Builder
-	pos       int
-	dataPtr   *([]byte)
-	max       int
+	tabulas     []ciphers.IGTabulaRecta[byte]
+	sequencer   crypto.IKeySequencer
+	sb          strings.Builder
+	accumulated int
+	pos         int
+	dataPtr     *([]byte)
+	max         int
 }
 
 type byteRune struct {
@@ -48,11 +49,12 @@ func NewBinaryIterator(sx crypto.IKeySequencer, tabs ...ciphers.IGTabulaRecta[by
 	}
 
 	return &BinaryIterator{
-		tabulas:   tabulas,
-		sequencer: sx,
-		pos:       -1,
-		dataPtr:   nil,
-		max:       -1,
+		tabulas:     tabulas,
+		sequencer:   sx,
+		accumulated: 0,
+		pos:         -1,
+		dataPtr:     nil,
+		max:         -1,
 	}
 }
 
@@ -62,8 +64,17 @@ func (a *byteRune) String() string {
 }
 
 // Start initializes the binary iterator's buffer prior to the
-// EncodeNext or DecodeNext operations.
+// EncodeNext or DecodeNext operations. If using buffered blocks
+// then it should only be called at the beginning and then use
+// Update() instead.
 func (t *BinaryIterator) Start(buf []byte) {
+	t.dataPtr = &buf
+	t.pos = 0
+	t.max = len(buf)
+}
+
+func (t *BinaryIterator) Update(buf []byte) {
+	t.accumulated += t.pos
 	t.dataPtr = &buf
 	t.pos = 0
 	t.max = len(buf)
@@ -72,18 +83,11 @@ func (t *BinaryIterator) Start(buf []byte) {
 // getByteAt returns the said byte from the binary iterator's buffer
 // and an indication whether the said return byte is valid or not.
 func (t *BinaryIterator) getByteAt(buf []byte, nr int) (byte, bool) {
-	if nr < 0 {
+	if nr < 0 || nr >= len(buf) {
 		return 0, false // @audit I guess this should panic
 	}
 
-	count := 0
-	for _, r := range buf {
-		if count == nr {
-			return r, true
-		}
-		count++
-	}
-	return 0, false
+	return buf[nr], true
 }
 
 // EncodeNext encodes the next byte in the binary iterator's buffer.
@@ -100,7 +104,7 @@ func (t *BinaryIterator) EncodeNext() bool {
 		if err := t.sequencer.Feedback(rune(target.Rune)); err != nil {
 			mlog.FatalT(caesarx.ERR_SEQUENCER,
 				"feedback panic",
-				mlog.Int("Pos", t.pos),
+				mlog.Int("Pos", t.pos+t.accumulated),
 				mlog.At(),
 			)
 		}
@@ -112,15 +116,16 @@ func (t *BinaryIterator) EncodeNext() bool {
 			result = t.tabulas[currTab].EncodeRune(target.Rune, keyNew)
 		}
 
-		mlog.PrintCatheter("Encode",
-			mlog.Int("Pos", t.pos-1),
-			mlog.Rune("Rune", rune(target.Rune)),
-			mlog.Rune("WithKey", rune(currKey.Rune)),
-			mlog.Rune("Ciphered", rune(result)))
-
+		/*
+			mlog.PrintCatheter("Encode",
+				mlog.Int("Pos", t.accumulated+t.pos-1),
+				mlog.Rune("Rune", rune(target.Rune)),
+				mlog.Rune("WithKey", rune(currKey.Rune)),
+				mlog.Rune("Ciphered", rune(result)))
+		*/
 		t.sb.WriteByte(result)
 	} else {
-		mlog.PrintCatheter("Skipping", mlog.Int("Pos", t.pos-1), mlog.Rune("Rune", rune(target.Rune)))
+		//mlog.PrintCatheter("Skipping", mlog.Int("Pos", t.accumulated+t.pos-1), mlog.Rune("Rune", rune(target.Rune)))
 		t.sequencer.Skip()
 		t.sb.WriteByte(target.Rune)
 	}
@@ -145,22 +150,24 @@ func (t *BinaryIterator) DecodeNext() bool {
 			result = t.tabulas[currTab].DecodeRune(target.Rune, newKey)
 		}
 
-		mlog.PrintCatheter("Decode",
-			mlog.Int("Pos", t.pos-1),
-			mlog.Rune("Rune", rune(target.Rune)),
-			mlog.Rune("WithKey", rune(keyCurr.Rune)),
-			mlog.Rune("Plain", rune(result)))
+		/*
+			mlog.PrintCatheter("Decode",
+				mlog.Int("Pos", t.accumulated+t.pos-1),
+				mlog.Rune("Rune", rune(target.Rune)),
+				mlog.Rune("WithKey", rune(keyCurr.Rune)),
+				mlog.Rune("Plain", rune(result)))
+		*/
 
 		if err := t.sequencer.Feedback(rune(result)); err != nil {
 			mlog.FatalT(caesarx.ERR_SEQUENCER,
 				"feedback panic",
-				mlog.Int("Pos", t.pos),
+				mlog.Int("Pos", t.accumulated+t.pos),
 				mlog.At(),
 			)
 		}
 		t.sb.WriteByte(result)
 	} else {
-		mlog.PrintCatheter("Skipping", mlog.Int("Pos", t.pos-1), mlog.Rune("Rune", rune(target.Rune)))
+		//mlog.PrintCatheter("Skipping", mlog.Int("Pos", t.accumulated+t.pos-1), mlog.Rune("Rune", rune(target.Rune)))
 		t.sequencer.Skip()
 		t.sb.WriteByte(target.Rune)
 	}
@@ -195,7 +202,7 @@ func (t *BinaryIterator) next() (int, *byteRune, *byteRune) {
 	}
 
 	if targetChar, ok := t.getByteAt(*t.dataPtr, t.pos); ok {
-		key := t.sequencer.GetKey(t.pos, rune(targetChar)) // always from Primary alphabet
+		key := t.sequencer.GetKey(t.accumulated+t.pos, rune(targetChar)) // always from Primary alphabet
 		keyTabulaId, keyInfo := locatorFx(byte(key))
 		if keyTabulaId != -1 {
 			currKey = keyInfo

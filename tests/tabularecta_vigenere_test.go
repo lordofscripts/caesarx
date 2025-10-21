@@ -177,21 +177,26 @@ func Test_VigenereCmd_EncryptBinFile(t *testing.T) {
 	// this depends on the encryption algorithm
 	const ENC_FILE_EXT string = commands.FILE_EXT_VIGENERE
 
-	if os.Getenv("GITHUBLOS") != "" { // @audit GH-010 is pending
+	/* Featurette: How to skip a test on GitHub by setting env in Build Workflow
+	if os.Getenv("GITHUBLOS") != "" {
 		t.Skip("Skipping not finished test")
 	}
+	*/
 
 	allCases := []struct {
 		Secret        string
 		InputFilename string // plain binary file to be encrypted
 		TwinFilename  string // plain binary file after round-trip encrypt-decrypt
 	}{
-		//{"Amor", "input.bin", "output_V.bin"}, // 0x11223344556677880a => 0x526f82966688aacc5f
+		// a small file (9 bytes)
+		{"Amor", "input.bin", "output_V.bin"}, // 0x11223344556677880a => 0x526f82966688aacc5f
+		// a big file whose size is bigger than the Binary processing buffer (4096)
 		{"Detox", "caesar-silver-coin.png", "caesar-silver-coin-V-ret.png"},
-		//{"Amor", "ascii.bin", "output_ascii.bin"},
+		// a small file that covers ALL 256 bytes in the binary tabula
+		{"Toxic", "ascii.bin", "output_ascii.bin"},
 	}
 
-	mlog.SetCatheterFile("/tmp/vigenere.log")
+	//mlog.SetCatheterFile("/tmp/vigenere.log")
 	defer mlog.CloseLogFiles()
 
 	for i, tc := range allCases {
@@ -204,7 +209,7 @@ func Test_VigenereCmd_EncryptBinFile(t *testing.T) {
 		assetRet := getAssetFilename(t, TEST_ASSETS, tc.TwinFilename)
 		fmt.Printf("Binary file #%d - %s\n", i+1, assetIn)
 
-		mlog.PrintCatheter("Processing", mlog.String("InFile", assetIn))
+		//mlog.PrintCatheter("Processing", mlog.String("InFile", assetIn))
 
 		ctr := commands.NewVigenereCommand(cmn.BINARY_DISK, tc.Secret)
 		// generate encrypted binary named assetOut
