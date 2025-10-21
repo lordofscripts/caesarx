@@ -102,7 +102,7 @@ debian:
 	cp ${BIN_OUT_3} ${PKG_BUILD_DIR}/usr/bin	
 	cp distrib/DEBIAN/copyright ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
 	cp docs/README.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
-	cp docs/LICENSE.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
+	cp LICENSE.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
 	cp docs/LANGUAGES.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
 	cp docs/CIPHER_AFFINE.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
 	cp docs/CIPHER_BELLASO.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}

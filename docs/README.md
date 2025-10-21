@@ -41,7 +41,7 @@ This fun application and library is merely an educational experiment I did for f
 
 #### License
 
-You are **not** granted permission to use this library, application or derivative works for profit or commercial purposes. Just to let you know... Read the [LICENSE](LICENSE.md) for more details.
+You are **not** granted permission to use this library, application or derivative works for profit or commercial purposes. Just to let you know... Read the [LICENSE](../LICENSE.md) for more details.
 
 ### Installation
 
