@@ -51,7 +51,7 @@ func PrintBinaryTabulaRecta(key byte, asHex bool) {
 	// utilitary function to print a row of 10 integers
 	printRow := func(s []byte, asHex, lastRow bool) {
 		for pos, v := range s {
-			if lastRow && pos >= 6 { // 256..259
+			if !asHex && lastRow && pos >= 6 { // 256..259
 				break
 			}
 
@@ -64,10 +64,26 @@ func PrintBinaryTabulaRecta(key byte, asHex bool) {
 		fmt.Println()
 	}
 
+	const IDX_HEX = 0
+	const IDX_DEC = 1
+	baseSettings := []struct {
+		Base   int
+		Range  int
+		Header []byte
+	}{
+		{16, 16, []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}},
+		{10, 26, []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}},
+	}
+
+	cfg := baseSettings[IDX_DEC]
+	if asHex {
+		cfg = baseSettings[IDX_HEX]
+	}
+
 	trB := ciphers.NewBinaryTabulaRecta()
 
 	const LEADER string = "        "
-	lidIndex := 10                     // open set (value not included) highest value
+	lidIndex := cfg.Base               // open set (value not included) highest value
 	values := trB.GetTabulaForKey(key) // 0..255
 	keyChar := ""
 	if unicode.IsPrint(rune(key)) {
@@ -76,14 +92,14 @@ func PrintBinaryTabulaRecta(key byte, asHex bool) {
 	fmt.Printf("%s   Binary Tabula for Key = %d · %02Xh %s\n\n", LEADER, key, key, keyChar)
 
 	fmt.Print(LEADER + "      ")
-	printRow([]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, asHex, false)
+	printRow(cfg.Header, asHex, false)
 	start := 0
-	for i := range 26 {
-		decade := i * 10
+	for i := range cfg.Range {
+		decade := i * cfg.Base
 		if asHex {
-			fmt.Printf("%s%03X : ", LEADER, decade)
+			fmt.Printf("%s%3X : ", LEADER, decade)
 		} else {
-			fmt.Printf("%s%03d : ", LEADER, decade)
+			fmt.Printf("%s%3d : ", LEADER, decade)
 		}
 
 		/*
@@ -104,7 +120,7 @@ func PrintBinaryTabulaRecta(key byte, asHex bool) {
 			}
 		*/
 
-		printRow(values[start:lidIndex], asHex, i == 25)
+		printRow(values[start:lidIndex], asHex, i == cfg.Range-1)
 		/*
 			for j := 0; j < 10; j++ {
 				decade = (i + 1) * 10
@@ -112,7 +128,7 @@ func PrintBinaryTabulaRecta(key byte, asHex bool) {
 			}
 		*/
 		start = lidIndex
-		lidIndex += 10
+		lidIndex += cfg.Base
 		if lidIndex > 256 {
 			lidIndex = 256
 		}
@@ -145,12 +161,13 @@ func PrintBinaryTabulaRecta(key byte, asHex bool) {
 //
 //	tabularecta -alpha german -key Ü -d ẞ
 //
-// Print the Binary Tabula Recta for shift key
+// Print the Binary Tabula Recta for shift key. By default the tabula is
+// printed in decimal. For hexadecimal format add the -x flag.
 //
-//	tabularecta -alpha binary -key M
-//	tabularecta -alpha binary -shift 129
+//	tabularecta -alpha binary -key M [-x]
+//	tabularecta -alpha binary -shift 129 [-x]
 func main() {
-	var actHelp, actDemo, optCaseFold bool
+	var actHelp, actDemo, optCaseFold, optHex bool
 	var optAlpha string
 	var optKey, actEncode, actDecode, optNumbers cmd.RuneFlag
 	var optShift cmd.ByteFlag
@@ -160,6 +177,7 @@ func main() {
 	flag.BoolVar(&actHelp, "help", false, "Show help")
 	flag.BoolVar(&actDemo, "demo", false, "Demonstration")
 	flag.BoolVar(&optCaseFold, "foldcase", true, "Use case folding (preserves case)")
+	flag.BoolVar(&optHex, "x", false, "Use hex number format for Tabula output")
 	flag.StringVar(&optAlpha, "alpha", cmn.ALPHA_NAME_ENGLISH, "Alphabet: english|latin|german|greek|cyrillic|custom")
 	flag.Var(&optKey, "key", "Caesar (Main) Key")
 	flag.Var(&optShift, "shift", "Caesar (Main) key as shift value 0..255")
@@ -276,7 +294,7 @@ func main() {
 		} else if optKey.IsSet {
 			binaryShift = byte(optKey.Value) // we already validated that it was < 256
 		}
-		PrintBinaryTabulaRecta(binaryShift, true)
+		PrintBinaryTabulaRecta(binaryShift, optHex)
 
 	case actEncode.IsSet:
 		trAlpha := ciphers.NewTabulaRecta(alphabet, optCaseFold)
