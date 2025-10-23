@@ -1,3 +1,4 @@
+# DEB & RPM Build & Packaging of GO project v1.0
 name: Debian and RPM Packaging
 
 on:
@@ -36,6 +37,18 @@ jobs:
 
       - name: Replace version in RPM spec so correct source is downloaded when building RPM
         run: sed -Ei 's/(^Version:[[:space:]]*).*/\1${{github.ref_name}}/' distrib/Fedora/${{ env.PKG_NAME }}.spec
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+
+      - name: Install dependencies
+        run: |
+          go get .
+
+      - name: Build
+        run: go build -v ./...        
 
 # - name: Create source archive
 #   run: tar -cvf ${{ env.PKG_NAME }}-${{ github.ref_name }}.tar.gz *
