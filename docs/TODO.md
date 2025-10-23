@@ -7,8 +7,8 @@
 -[X] cmd/tabularecta -demo GERMAN fails for key ß. `SpecialCases` deal with library errors.
 -[X] tabularecta_caesar_test#57 Key ẞ fails for ẞ `SpecialCases`
 -[X] caesar_test.go WithAlphabet() fails for Latin/Greek/Cyrillic but okay for English.
--[ ] GH-010 sporadic Vigenere bin file decryption failure *to be verified* (since v1.1-0-RC3)
--[ ] Affine decryption failure with `tests/testdata/input.bin` (since v1.1-0-RC4)
+-[X] GH-010 sporadic Vigenere bin file decryption failure *to be verified* (since v1.1-0-RC3)
+-[X] Affine decryption failure with `tests/testdata/input.bin` (since v1.1-0-RC4)
 
 ## ENHANCEMENTS
 
@@ -21,6 +21,9 @@
 -[ ] HTTP API module that uses command patterns to do encodings as a web service
 -[ ] {cmd} generate a day-of-the-month encoding parameter table like ENIGMA that never changes for
      the same input seed. In GitHub there is a Go table formatter package.
+-[ ] User configuration file to set preferred `-alpha`, `-variant` and the parameters for the current
+     day if the *day-of-the-month* feature is implemented.
+-[ ] [Build RPM](https://infotechys.com/how-to-create-and-build-rpm-packages/) or perhaps with [workflow](https://www.spencersmolen.com/creating-an-automated-rpm-build-pipeline-using-github-actions/)
 
 ## TESTS
 

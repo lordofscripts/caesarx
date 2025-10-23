@@ -32,6 +32,7 @@ This fun application and library is merely an educational experiment I did for f
 * Supports grouping encrypted output in groups of 2/3/4/5 characters for CLI text encryption (message-based).
 * Supports **text file encrytion** in all algorithm modalities! You are not limited to short messages anymore.
 * Supports **binary file encryption** for all algorithms. Now you can encrypt images and other binary data.
+* For *text* encoding/decoding you can use a Pipe construct: `cat plaintext.txt | caesarx -alpha latin -key M > cipher.cae`
 * Lots of test cases included
 
 |     | Show your support   |
@@ -57,7 +58,7 @@ To install the `tabularecta`, `caesarx` and `affine` executables in your system:
 
 Or you can install the Debian package (recommended):
 
-`sudo apt-get install go-caesarx******.deb` 
+`sudo apt-get install caesarx******.deb` 
 
 On **Linux** you have the `caesarx`, `tabularecta` and `affine` as main CLI apps, 
 with `didimus`, `fibonacci`, `bellaso` and `vigenere` probably appearing as
