@@ -1,3 +1,5 @@
+%define bindir /usr/local/bin
+
 Name:           caesarx
 Version:        1.1.1
 Release:        1%{?dist}
@@ -15,6 +17,11 @@ CaesarX is a collection of modernized Caesar ciphers (caesar, didimus, fibonacci
 
 %prep
 %setup -q
+
+%build
+go build -tags logx -v -buildmode=pie -o bin/caesarx cmd/caesar/*.go
+go build -tags logx -v -buildmode=pie -o bin/affine cmd/affine/*go
+go build -tags logx -v -buildmode=pie -o bin/tabularecta cmd/tabularecta/*go
 
 %install
 rm -rf $RPM_BUILD_ROOT
