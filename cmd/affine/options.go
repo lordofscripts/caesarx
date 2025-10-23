@@ -10,6 +10,7 @@ import (
 	"errors"
 	"flag"
 	z "lordofscripts/caesarx"
+	"lordofscripts/caesarx/app"
 	"lordofscripts/caesarx/ciphers/commands"
 	"lordofscripts/caesarx/cmd"
 	"lordofscripts/caesarx/cmn"
@@ -44,6 +45,8 @@ var (
 	ErrNGramSize              = errors.New("size of NGram should be 2,3,4 or 5")
 	ErrFreeTextRequired       = errors.New("for encode/decode text the SINGLE free parameter must be a string")
 	ErrFilesRequired          = errors.New("for encode/decode a file the 2 free parameters must be input and output filenames")
+	ErrPipeTextOnly           = errors.New("for pipe input only text operations allowed")
+	ErrPipeOutOnly            = errors.New("for pipe input only piped output allowed")
 )
 
 /* ----------------------------------------------------------------
@@ -146,27 +149,38 @@ func (c *AffineCliOptions) Validate() (int, error) {
 			err = ErrNeedAffineCoefficients
 		} else if !c.ActPrintTabula {
 			// encode OR decode (-d) operation requested
-			if c.OptUseFiles { // -F given
-				// 2 free arguments are input & output filenames respectively
-				if c.ActIsDecode { // -F -d ciphered_filename output_filename
-					if flag.NArg() != 2 {
-						err = ErrFilesRequired
-					} else {
-						c.Files = cmd.NewFileOptions(flag.Arg(0), flag.Arg(1))
+			if !app.IsPipedInput() {
+				if c.OptUseFiles { // -F given
+					// 2 free arguments are input & output filenames respectively
+					if c.ActIsDecode { // -F -d ciphered_filename output_filename
+						if flag.NArg() != 2 {
+							err = ErrFilesRequired
+						} else {
+							c.Files = cmd.NewFileOptions(flag.Arg(0), flag.Arg(1))
+						}
+					} else { // -F plain_filename
+						if flag.NArg() != 1 {
+							err = ErrFilesRequired
+						} else {
+							// @note in Ring 1 the encrypted filename is auto-generated, we use the same spec here
+							outputFilename := cmn.NewNameExtOnly(flag.Arg(0), commands.FILE_EXT_AFFINE, true)
+							c.Files = cmd.NewFileOptions(flag.Arg(0), outputFilename)
+						}
 					}
-				} else { // -F plain_filename
+
+				} else { // single free argument is plain OR cipher string
 					if flag.NArg() != 1 {
-						err = ErrFilesRequired
-					} else {
-						// @note in Ring 1 the encrypted filename is auto-generated, we use the same spec here
-						outputFilename := cmn.NewNameExtOnly(flag.Arg(0), commands.FILE_EXT_AFFINE, true)
-						c.Files = cmd.NewFileOptions(flag.Arg(0), outputFilename)
+						err = ErrFreeTextRequired
 					}
 				}
+			} else {
+				// Validations for exclusively Piped input
+				if c.Common.IsBinary() {
+					return z.ERR_PARAMETER, ErrPipeTextOnly
+				}
 
-			} else { // single free argument is plain OR cipher string
-				if flag.NArg() != 1 {
-					err = ErrFreeTextRequired
+				if c.OptUseFiles {
+					return z.ERR_PARAMETER, ErrPipeOutOnly
 				}
 			}
 		}

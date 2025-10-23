@@ -8,6 +8,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	z "lordofscripts/caesarx"
@@ -44,9 +45,11 @@ type CaesarVariant uint8
  *				M o d u l e   I n i t i a l i z a t i o n
  *-----------------------------------------------------------------*/
 func init() {
-	z.Copyright(z.CO1, true)
-	z.BuyMeCoffee()
-	fmt.Println("\t=========================================")
+	if !app.IsPipedInput() {
+		z.Copyright(z.CO1, true)
+		z.BuyMeCoffee()
+		fmt.Println("\t=========================================")
+	}
 }
 
 /* ----------------------------------------------------------------
@@ -148,6 +151,23 @@ func DoCrypto(co *cmd.CommonOptions, ao *CaesarxOptions) (int, error) {
 			if err == nil && ao.OptVerify {
 				postCmd = cmd.NewVerifyFileCommand(ao.Files.Output, cmd.HashCRC64)
 			}
+		} else if app.IsPipedInput() {
+			reader := bufio.NewReader(os.Stdin)
+			scanner := bufio.NewScanner(reader)
+			var lineIn string
+			for scanner.Scan() {
+				lineIn = scanner.Text()
+				plain, err = cmdCipher.Decode(lineIn)
+				if err != nil {
+					mlog.ErrorE(err)
+					break
+				}
+				fmt.Println(plain)
+			}
+
+			if err = scanner.Err(); err != nil {
+				mlog.ErrorE(err)
+			}
 		} else { // short messages that can be given on the CLI
 			plain, err = cmdCipher.Decode(cipher)
 		}
@@ -180,6 +200,23 @@ func DoCrypto(co *cmd.CommonOptions, ao *CaesarxOptions) (int, error) {
 					tempOut = ""
 				}
 			}
+		} else if app.IsPipedInput() {
+			reader := bufio.NewReader(os.Stdin)
+			scanner := bufio.NewScanner(reader)
+			var lineIn string
+			for scanner.Scan() {
+				lineIn = scanner.Text()
+				cipher, err = cmdCipher.Encode(lineIn)
+				if err != nil {
+					mlog.ErrorE(err)
+					break
+				}
+				fmt.Println(cipher)
+			}
+
+			if err = scanner.Err(); err != nil {
+				mlog.ErrorE(err)
+			}
 		} else {
 			cipher, err = cmdCipher.Encode(plain)
 		}
@@ -187,7 +224,7 @@ func DoCrypto(co *cmd.CommonOptions, ao *CaesarxOptions) (int, error) {
 
 	if err != nil {
 		return z.ERR_INTERNAL, err
-	} else {
+	} else if !app.IsPipedInput() {
 		// common output
 		numbersName, _ := co.WantsSlave()
 		fmt.Println("Algorithm: ", cmdCipher.String())
@@ -319,5 +356,7 @@ func main() {
 		}
 	}
 
-	z.BuyMeCoffee()
+	if !app.IsPipedInput() {
+		z.BuyMeCoffee()
+	}
 }

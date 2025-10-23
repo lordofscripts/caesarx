@@ -11,6 +11,7 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	z "lordofscripts/caesarx"
@@ -41,10 +42,11 @@ var (
  *				M o d u l e   I n i t i a l i z a t i o n
  *-----------------------------------------------------------------*/
 func init() {
-	//fmt.Println("GoCaesarPlus v1.0 (C)2025 Didimo Grimaldo \u2720 " + caesarx.RuneString("LordOfScripts"))
-	z.Copyright(z.CO1, true)
-	z.BuyMeCoffee()
-	fmt.Println("\t=========================================")
+	if !app.IsPipedInput() {
+		z.Copyright(z.CO1, true)
+		z.BuyMeCoffee()
+		fmt.Println("\t=========================================")
+	}
 }
 
 /* ----------------------------------------------------------------
@@ -190,6 +192,45 @@ func ExecuteMessage(alpha, numbers *cmn.Alphabet, opts *AffineCliOptions, input 
 			fmt.Println("Encoded  : ", output)
 		}
 		fmt.Println()
+	}
+
+	return exitCode, err
+}
+
+// Text encryption or decryption when the application receives input via a pipe
+func ExecutePipedMessage(alpha, numbers *cmn.Alphabet, opts *AffineCliOptions) (int, error) {
+	var err error = nil
+	var exitCode int = z.EXIT_CODE_SUCCESS
+
+	cmdCipher := setupAffineCrypto(alpha, numbers, opts)
+
+	var command func(string) (string, error)
+
+	if opts.ActIsDecode {
+		command = cmdCipher.Decode
+	} else {
+		command = cmdCipher.Encode
+	}
+
+	reader := bufio.NewReader(os.Stdin)
+	scanner := bufio.NewScanner(reader)
+	var lineIn, lineOut string
+	for scanner.Scan() {
+		lineIn = scanner.Text()
+		lineOut, err = command(lineIn)
+		if err != nil {
+			mlog.ErrorE(err)
+			break
+		}
+		fmt.Println(lineOut)
+	}
+
+	if err = scanner.Err(); err != nil {
+		mlog.ErrorE(err)
+	}
+
+	if err != nil {
+		exitCode = z.ERR_CIPHER
 	}
 
 	return exitCode, err
@@ -367,6 +408,9 @@ func main() {
 	/*
 	 * Cryptographic operations
 	 */
+	case app.IsPipedInput():
+		exitCode, err = ExecutePipedMessage(copts.Alphabet(), copts.Numbers(), aopts)
+
 	case aopts.UseFiles():
 		// the input is a filename specified in the CLI arguments
 		exitCode, err = ExecuteFile(copts.Alphabet(), copts.Numbers(), aopts)
@@ -381,5 +425,7 @@ func main() {
 		os.Exit(exitCode)
 	}
 
-	z.BuyMeCoffee()
+	if !app.IsPipedInput() {
+		z.BuyMeCoffee()
+	}
 }

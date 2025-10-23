@@ -11,6 +11,7 @@ import (
 	"flag"
 	"fmt"
 	z "lordofscripts/caesarx"
+	"lordofscripts/caesarx/app"
 	"lordofscripts/caesarx/ciphers/bellaso"
 	"lordofscripts/caesarx/ciphers/caesar"
 	"lordofscripts/caesarx/ciphers/commands"
@@ -55,6 +56,8 @@ const (
 )
 
 var (
+	ErrPipeTextOnly     = errors.New("for pipe input only text operations allowed")
+	ErrPipeOutOnly      = errors.New("for pipe input only piped output allowed")
 	ErrFreeTextRequired = errors.New("encode/decode the SINGLE free parameter must be a text string")
 	ErrFilesRequired    = errors.New("encode/decode the free parameter(s) must be filename(s)")
 	ErrNGramSize        = errors.New("size of NGram should be 2,3,4 or 5")
@@ -235,29 +238,40 @@ func (c *CaesarxOptions) Validate() (int, error) {
 	if !c.Common.NeedsDemo() {
 		// check nr. of free arguments
 		if !c.Common.IsReady() { // the common options are NOT terminal
-			if !c.UseFiles {
-				if flag.NArg() != 1 {
-					return z.ERR_PARAMETER, ErrFreeTextRequired
-				}
-			} else { // free arguments are filenames
-				numargs := 1
-				if c.IsDecode {
-					numargs = 2
-				}
-
-				if flag.NArg() != numargs {
-					return z.ERR_PARAMETER, ErrFilesRequired
-				} else {
-					// now we know we have sufficient free args
+			if !app.IsPipedInput() {
+				if !c.UseFiles {
+					if flag.NArg() != 1 {
+						return z.ERR_PARAMETER, ErrFreeTextRequired
+					}
+				} else { // free arguments are filenames
+					numargs := 1
 					if c.IsDecode {
-						c.Files = cmd.NewFileOptions(flag.Arg(0), flag.Arg(1))
+						numargs = 2
+					}
+
+					if flag.NArg() != numargs {
+						return z.ERR_PARAMETER, ErrFilesRequired
 					} else {
-						// @note in Ring 1 the encrypted filename is auto-generated, we use the same spec here
-						outputFilename := cmn.NewNameExtOnly(flag.Arg(0), c.fileExt, true)
-						c.Files = cmd.NewFileOptions(flag.Arg(0), outputFilename)
+						// now we know we have sufficient free args
+						if c.IsDecode {
+							c.Files = cmd.NewFileOptions(flag.Arg(0), flag.Arg(1))
+						} else {
+							// @note in Ring 1 the encrypted filename is auto-generated, we use the same spec here
+							outputFilename := cmn.NewNameExtOnly(flag.Arg(0), c.fileExt, true)
+							c.Files = cmd.NewFileOptions(flag.Arg(0), outputFilename)
+						}
 					}
 				}
+			} else { // Piped input validations
+				if c.Common.IsBinary() {
+					return z.ERR_PARAMETER, ErrPipeTextOnly
+				}
+
+				if c.UseFiles {
+					return z.ERR_PARAMETER, ErrPipeOutOnly
+				}
 			}
+
 		}
 
 		switch c.ItNeeds {
