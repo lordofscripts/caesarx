@@ -19,17 +19,18 @@ CaesarX is a collection of modernized Caesar ciphers (caesar, didimus, fibonacci
 %install
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/%{_bindir}
-install %{name} $RPM_BUILD_ROOT/%{_bindir}
+install -m 0755  bin/%{name} $RPM_BUILD_ROOT/%{_bindir}
+install -m 0755  bin/affine $RPM_BUILD_ROOT/%{_bindir}
+install -m 0755  bin/tabularecta $RPM_BUILD_ROOT/%{_bindir}
+ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/didimus
+ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/fibonacci
+ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/bellaso
+ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/vigenere
 mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}
-install %{name}rc $RPM_BUILD_ROOT/%{_sysconfdir}
+#install %{name}rc $RPM_BUILD_ROOT/%{_sysconfdir}
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1/
-install %{name}.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
-
-%post
-ln -s -f $RPM_BUILD_ROOT/%{_bindir}/caesarx $RPM_BUILD_ROOT/%{_bindir}/didimus
-ln -s -f $RPM_BUILD_ROOT/%{_bindir}/caesarx $RPM_BUILD_ROOT/%{_bindir}/fibonacci
-ln -s -f $RPM_BUILD_ROOT/%{_bindir}/caesarx $RPM_BUILD_ROOT/%{_bindir}/bellaso
-ln -s -f $RPM_BUILD_ROOT/%{_bindir}/caesarx $RPM_BUILD_ROOT/%{_bindir}/vigenere
+install distrib/manpages/man1/%{name}.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install distrib/manpages/man1/affine.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 
 %postun
 rm -f $RPM_BUILD_ROOT/%{_bindir}/didimus
@@ -43,11 +44,11 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %{_bindir}/%{name}
 %{_bindir}/affine
-%{_bindir}/didimus -> %{_bindir}/%{name}
-%{_bindir}/fibonacci -> %{_bindir}/%{name}
-%{_bindir}/bellaso -> %{_bindir}/%{name}
-%{_bindir}/vigenere -> %{_bindir}/%{name}
 %{_bindir}/tabularecta
+%{_bindir}/didimus
+%{_bindir}/fibonacci
+%{_bindir}/bellaso
+%{_bindir}/vigenere
 #%{_sysconfdir}/%{name}rc
 %doc %{_mandir}/man1/%{name}.1.*
 %doc %{_mandir}/man1/affine.1.*
