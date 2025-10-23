@@ -58,6 +58,74 @@ use its own *Binary Tabula* instead of the language chosen for the instance.
 This means, you don't have to create a specific instance to deal with binary
 files.
 
+## Package Building
+
+The `Makefile` now has build targets to build DEB and RPM packages. The
+local build paths are specified in the Makefile which currently default to:
+
+* `~/Develop/Distrib/Build/caesarx/rpmbuild` for RPM
+* `~/Develop/Distrib/Build/caesarx/DEBIAN` for DEB
+
+That is for manual creation of packages. I am currently (v1.1.1) trying to
+get the [Packaging Workflow](../.github/workflows/packaging.yml) to work. It
+still gives error on GitHub.
+
+### DEB Package
+
+I use **Debian** so it is my native build environment.
+
+> make debian
+
+and the resulting Debian package can be found at `~/Develop/Distrib/Build/caesarx/`.
+
+### RPM Package
+
+I use **Debian** so it is my native build environment. In order to build RPM packages
+on Debian you must install the `rpmbuild` package and rebuild its empty database so
+that it doesn't give SQLite errors during build:
+
+> sudo apt update
+> sudo apt install rpmbuild
+> rpmbuild --version
+> sudo rpm --rebuilddb
+
+The RPM package can be build with:
+
+> make rpmclean; make rpm
+
+and the resulting RPM package can be found at the directory
+`~/Develop/Distrib/Build/caesarx/rpmbuild/BUILD/RPMS/x86_64/`.
+
+*NOTE: I don't have a RedHat/Fedora system at my disposal; therefore, I am
+currently unable to test the actual installation of the RPM package*
+
+To list the files that would be installed by the RPM package:
+
+> rpm -qlp ../RPMS/x86_64/caesarx-1.1.1-1.x86_64.rpm
+
+which currently lists:
+
+```
+/usr/bin/affine
+/usr/bin/bellaso
+/usr/bin/caesarx
+/usr/bin/didimus
+/usr/bin/fibonacci
+/usr/bin/tabularecta
+/usr/bin/vigenere
+/usr/lib/.build-id
+/usr/lib/.build-id/14
+/usr/lib/.build-id/14/e9dec8dd643856378523f48095d1d6e0324d8a
+/usr/lib/.build-id/1e
+/usr/lib/.build-id/1e/51cf2bef833e85d783074902000226682988f9
+/usr/lib/.build-id/b4
+/usr/lib/.build-id/b4/8fc2fc3f8436637d5335e3d65897c0a272dbe7
+/usr/share/licenses/caesarx-1.1.1
+/usr/share/licenses/caesarx-1.1.1/LICENSE.md
+/usr/share/man/man1/affine.1.gz
+/usr/share/man/man1/caesarx.1.gz
+```
+
 ## Other 
 
 ### Debugging

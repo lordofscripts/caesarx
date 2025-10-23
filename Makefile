@@ -116,3 +116,18 @@ debian:
 	(cd ${PKG_BUILD_DIR} && dpkg-deb --root-owner-group -b ./ ${PKG_FULLNAME}.deb)
 	#(cd ${PKG_BUILD_DIR} && fakeroot /usr/bin/dpkg-buildpackage --build=binary -us -uc -b ./ ${PKG_FULLNAME})
 	#@mv /tmp/${PKG_FULLNAME}.deb ${DEST_REPOSITORY}
+
+rpm:
+	mkdir -p ${PKG_BUILD_DIR}/rpmbuild/BUILD
+	mkdir -p ${PKG_BUILD_DIR}/rpmbuild/RPMS/x86_64
+	mkdir -p ${PKG_BUILD_DIR}/rpmbuild/SOURCES
+	mkdir -p ${PKG_BUILD_DIR}/rpmbuild/SPECS
+	mkdir -p ${PKG_BUILD_DIR}/rpmbuild/SRPMS
+	#echo "%_topdir ${PKG_BUILD_DIR}/rpmbuild" > ~/.rpmmacros
+	cp distrib/Fedora/${PKG_NAME}.spec ${PKG_BUILD_DIR}/rpmbuild/SPECS/
+	tar --exclude=".git*" --transform='s/^caesarx/caesarx-1.1.1/' -cvzf ${PKG_BUILD_DIR}/rpmbuild/SOURCES/${PKG_NAME}-${PKG_VERSION}.${PKG_REVISION}.tar.gz ../${PKG_NAME}/
+	cd ${PKG_BUILD_DIR}/rpmbuild/SPECS
+	#rpmbuild -bb ${PKG_NAME}.spec
+
+rpmclean:
+	rm -fR ${PKG_BUILD_DIR}/rpmbuild
