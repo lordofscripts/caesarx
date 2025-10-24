@@ -1,4 +1,5 @@
 # DEB & RPM Build & Packaging of GO project v1.0
+
 name: Debian and RPM Packaging
 
 on:
