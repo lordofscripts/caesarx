@@ -54,7 +54,6 @@ jobs:
         run: |
           echo "Current directory: $(pwd)"
           echo "Environment variables: $(printenv)"
-          ls ./bin
           go version
 
 # - name: Create source archive
