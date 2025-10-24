@@ -1,4 +1,5 @@
 %define bindir /usr/local/bin
+%define __cp %{__cp} -r
 
 Name:           caesarx
 Version:        1.1.1
@@ -9,7 +10,7 @@ License:        CC BY-NC-ND 4.0
 URL:            https://github.com/lordofscripts/caesarx
 Source:         %{name}-%{version}.tar.gz
 BuildArch:      x86_64
-
+BuildRequires:  golang
 Requires:       golang
 
 %description
@@ -33,17 +34,20 @@ ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/didimus
 ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/fibonacci
 ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/bellaso
 ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/vigenere
-mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}
+#mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}
 #install %{name}rc $RPM_BUILD_ROOT/%{_sysconfdir}
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1/
 install distrib/manpages/man1/%{name}.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install distrib/manpages/man1/affine.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 
 %postun
+rm -f $RPM_BUILD_ROOT/%{_bindir}/caesarx
 rm -f $RPM_BUILD_ROOT/%{_bindir}/didimus
 rm -f $RPM_BUILD_ROOT/%{_bindir}/fibonacci
 rm -f $RPM_BUILD_ROOT/%{_bindir}/bellaso
 rm -f $RPM_BUILD_ROOT/%{_bindir}/vigenere
+rm -f $RPM_BUILD_ROOT/%{_bindir}/affine
+rm -f $RPM_BUILD_ROOT/%{_bindir}/tabularecta
 
 %clean
 rm -rf $RPM_BUILD_ROOT
