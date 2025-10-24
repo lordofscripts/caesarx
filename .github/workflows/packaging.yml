@@ -29,14 +29,18 @@ jobs:
     steps:
       - run: exit 1
 
-  extract-tag:
+  extractTag:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4    
       - name: Extract version from version.go
+        id: tagStep
         run: |
           grep -m 1 'MANUAL_VERSION' version.go | sed -E 's/.*"([^"]+)".*/TAG_NAME=\1/' >> $GITHUB_ENV
+    outputs:
+      my_version: ${{ steps.tagStep.outputs.my_version }}
+
       - name: Set TAG_NAME from workflow_run
         run: |
           # prefer ref for tag pushes
@@ -52,15 +56,15 @@ jobs:
           echo "TAG_NAMEW=$TAG" >> $GITHUB_ENV
 
   use-tag:
-    needs: extract-tag
+    needs: extractTag
     runs-on: ubuntu-latest
     steps:
       - name: Use the tag name
-        run: echo "The tag name is $TAG_NAME"
+        run: echo "The tag name is ${{ needs.extractTag.outputs.my_version }}"
 
   build_tarball:
     name: Build source archive
-    needs: extract-tag
+    needs: extractTag
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -82,7 +86,7 @@ jobs:
         run: |
           echo "Current directory: $(pwd)"
           echo "Environment variables: $(printenv)"
-          echo "Tag Name: $(TAG_NAME)"
+          echo "Tag Name: $(TAG_NAME) or ${{ needs.extractTag.outputs.my_version }}"
           go version
 
 # - name: Create source archive
@@ -96,14 +100,14 @@ jobs:
 
   build_rpm:
     name: Build .rpm package
-    needs: [build_tarball, extract-tag]
+    needs: [build_tarball, extractTag]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Replace version in RPM spec so correct source is downloaded when building RPM
-        run: sed -Ei "s/(^Version:[[:space:]]*).*/\1$TAG_NAME/" distrib/Fedora/${{ env.PKG_NAME }}.spec
+        run: sed -Ei "s/(^Version:[[:space:]]*).*/\1${{ needs.extractTag.outputs.my_version }}/" distrib/Fedora/${{ env.PKG_NAME }}.spec
 
       - name: Run rpmbuild on RPM spec to produce package
         id: rpm
@@ -115,19 +119,19 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           tag: v$TAG_NAME
-          name: ${{ env.PKG_NAME }}-$TAG_NAME-1.${{ env.DIST }}.${{ env.ARCH }}.rpm
+          name: ${{ env.PKG_NAME }}-${{ needs.extractTag.outputs.my_version }}-1.${{ env.DIST }}.${{ env.ARCH }}.rpm
           path: rpmbuild/RPMS/${{ env.ARCH }}/*.rpm
 
   build_deb:
     name: Build .deb package
-    needs: [build_rpm, extract-tag]
+    needs: [build_rpm, extractTag]
     runs-on: ubuntu-latest
     steps:
       - name: Download .rpm artifact
         uses: actions/download-artifact@v4
         id: download
         with:
-          name: ${{ env.PKG_NAME }}-$TAG_NAME-1.${{ env.DIST }}.${{ env.ARCH }}.rpm
+          name: ${{ env.PKG_NAME }}-${{ needs.extractTag.outputs.my_version }}-1.${{ env.DIST }}.${{ env.ARCH }}.rpm
 
       - name: find .
         run: find .
@@ -144,7 +148,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           tag: v$TAG_NAME
-          name: ${{ env.PKG_NAME }}-$TAG_NAME-1.${{ env.DIST }}.${{ env.ARCH }}.deb
+          name: ${{ env.PKG_NAME }}-${{ needs.extractTag.outputs.my_version }}-1.${{ env.DIST }}.${{ env.ARCH }}.deb
           path: ${{ env.PKG_NAME }}*.deb
 
 # release:
