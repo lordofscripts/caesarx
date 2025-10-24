@@ -1,9 +1,9 @@
 module lordofscripts/caesarx
 
-go 1.25
+go 1.22
 
 require (
-	github.com/lordofscripts/go-roundrobin v0.0.0-20250921220136-9ada075dff01
+	github.com/lordofscripts/go-roundrobin v1.3.1
 	golang.org/x/text v0.22.0
 )
 

@@ -14,8 +14,8 @@ import "fmt"
  *-----------------------------------------------------------------*/
 
 const (
-	// v1.20 due to the nature of the math.Rand generator
-	GO_MIN_REQUIRED = "1.20"
+	// v1.20 due to the nature of the math.Rand generator, and mingo
+	GO_MIN_REQUIRED = "1.22"
 
 	EXIT_CODE_SUCCESS = 0
 	ERR_PARAMETER     = 1
