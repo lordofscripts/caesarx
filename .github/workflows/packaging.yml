@@ -32,7 +32,7 @@ jobs:
   extract-tag:
     runs-on: ubuntu-latest
     steps:
-      - name Extract version from version.go
+      - name: Extract version from version.go
         run: |
           grep -m 1 'MANUAL_VERSION' version.go | sed -E 's/.*"([^"]+)".*/TAG_NAME=\1/' >> $GITHUB_ENV
 
