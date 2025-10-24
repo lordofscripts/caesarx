@@ -50,6 +50,9 @@ release:
 	$(GO) build $(GOFLAGS) -o ${BIN_OUT} ${MAIN}
 	strip --strip-unneeded ${BIN_OUT}
 
+version:
+	@grep -m 1 'MANUAL_VERSION' version.go | sed -E 's/.*"([^"]+)".*/\1/'
+
 # Application Targets
 
 tabula:

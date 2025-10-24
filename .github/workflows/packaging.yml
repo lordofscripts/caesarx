@@ -32,6 +32,10 @@ jobs:
   extract-tag:
     runs-on: ubuntu-latest
     steps:
+      - name Extract version from version.go
+        run: |
+          grep -m 1 'MANUAL_VERSION' version.go | sed -E 's/.*"([^"]+)".*/TAG_NAME=\1/' >> $GITHUB_ENV
+
       - name: Set TAG_NAME from workflow_run
         run: |
           # prefer ref for tag pushes
@@ -44,7 +48,7 @@ jobs:
           fi
           # remove leading v if present
           TAG="${TAG#v}"
-          echo "TAG_NAME=$TAG" >> $GITHUB_ENV
+          echo "TAG_NAMEW=$TAG" >> $GITHUB_ENV
 
   use-tag:
     needs: extract-tag
@@ -60,9 +64,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Replace version in RPM spec so correct source is downloaded when building RPM
-        run: sed -Ei "s/(^Version:[[:space:]]*).*/\1$TAG_NAME/" distrib/Fedora/${{ env.PKG_NAME }}.spec
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -80,6 +81,7 @@ jobs:
         run: |
           echo "Current directory: $(pwd)"
           echo "Environment variables: $(printenv)"
+          echo "Tag Name: $(TAG_NAME)"
           go version
 
 # - name: Create source archive
