@@ -32,10 +32,11 @@ jobs:
   extract-tag:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4    
       - name: Extract version from version.go
         run: |
           grep -m 1 'MANUAL_VERSION' version.go | sed -E 's/.*"([^"]+)".*/TAG_NAME=\1/' >> $GITHUB_ENV
-
       - name: Set TAG_NAME from workflow_run
         run: |
           # prefer ref for tag pushes
