@@ -32,29 +32,14 @@ jobs:
 
   extractTag:
     runs-on: ubuntu-latest
+    outputs:
+      my_version: ${{ steps.tagStep.outputs.my_version }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4    
       - name: Extract version from version.go
         id: tagStep
-        run: |
-          grep -m 1 'MANUAL_VERSION' version.go | sed -E 's/.*"([^"]+)".*/TAG_NAME=\1/' >> $GITHUB_ENV
-    outputs:
-      my_version: ${{ steps.tagStep.outputs.my_version }}
-
-      - name: Set TAG_NAME from workflow_run
-        run: |
-          # prefer ref for tag pushes
-          REF="${{ github.event.workflow_run.ref || '' }}"
-          if [ -n "$REF" ] && [[ "$REF" == refs/tags/* ]]; then
-            TAG="${REF#refs/tags/}"
-          else
-            # fallback: maybe head_branch contains branch name
-            TAG="${{ github.event.workflow_run.head_branch || '' }}"
-          fi
-          # remove leading v if present
-          TAG="${TAG#v}"
-          echo "TAG_NAMEW=$TAG" >> $GITHUB_ENV
+        run: grep -m 1 'MANUAL_VERSION' version.go | sed -E 's/.*"([^"]+)".*/\1/' >> $GITHUB_OUTPUT
 
   use-tag:
     needs: extractTag
