@@ -32,30 +32,24 @@ jobs:
   extract-tag:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up gotham-script
-        uses: actions/github-script@v6
-        id: get_tag
-        with:
-          script: |
-            const previousRun = await github.rest.actions.listWorkflowRuns({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'Multi platform Release',
-              per_page: 1,
-              status: 'completed'
-            });
-            const tagName = previousRun.workflow_runs[0].head_commit.id; // Assume 'tagName' is stored in head_commit
-            return tagName;
+      - name: Set TAG_NAME from workflow_run
+        run: |
+          # prefer ref for tag pushes
+          REF="${{ github.event.workflow_run.ref || '' }}"
+          if [ -n "$REF" ] && [[ "$REF" == refs/tags/* ]]; then
+            TAG="${REF#refs/tags/}"
+          else
+            # fallback: maybe head_branch contains branch name
+            TAG="${{ github.event.workflow_run.head_branch || '' }}"
+          fi
+          # remove leading v if present
+          TAG="${TAG#v}"
+          echo "TAG_NAME=$TAG" >> $GITHUB_ENV
 
   use-tag:
     needs: extract-tag
     runs-on: ubuntu-latest
     steps:
-      - name: Set tag name as an environment variable
-        run: |
-          TAG_NAME="${{ steps.get_tag.outputs.result }}"
-          TAG_NAME=${TAG_NAME#v} # Remove leading "v"
-          echo "TAG_NAME=${TAG_NAME}" >> $GITHUB_ENV
       - name: Use the tag name
         run: echo "The tag name is $TAG_NAME"
 
@@ -67,7 +61,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Replace version in RPM spec so correct source is downloaded when building RPM
-        run: sed -Ei 's/(^Version:[[:space:]]*).*/\1$TAG_NAME/' distrib/Fedora/${{ env.PKG_NAME }}.spec
+        run: sed -Ei "s/(^Version:[[:space:]]*).*/\1$TAG_NAME/" distrib/Fedora/${{ env.PKG_NAME }}.spec
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -105,7 +99,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Replace version in RPM spec so correct source is downloaded when building RPM
-        run: sed -Ei 's/(^Version:[[:space:]]*).*/\1$TAG_NAME/' distrib/Fedora/${{ env.PKG_NAME }}.spec
+        run: sed -Ei "s/(^Version:[[:space:]]*).*/\1$TAG_NAME/" distrib/Fedora/${{ env.PKG_NAME }}.spec
 
       - name: Run rpmbuild on RPM spec to produce package
         id: rpm
