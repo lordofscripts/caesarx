@@ -1,3 +1,4 @@
+%global debug_package %{nil} %global _builddebuginfo_packages %{nil}
 %define bindir /usr/local/bin
 %define __cp %{__cp} -r
 
