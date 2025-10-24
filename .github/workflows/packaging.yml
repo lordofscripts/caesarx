@@ -116,6 +116,7 @@ jobs:
       - name: Upload .rpm package as artifact
         uses: actions/upload-artifact@v4
         with:
+          tag: v$TAG_NAME
           name: ${{ env.PKG_NAME }}-$TAG_NAME-1.${{ env.DIST }}.${{ env.ARCH }}.rpm
           path: rpmbuild/RPMS/${{ env.ARCH }}/*.rpm
 
@@ -144,6 +145,7 @@ jobs:
       - name: Upload .deb package as artifact
         uses: actions/upload-artifact@v4
         with:
+          tag: v$TAG_NAME
           name: ${{ env.PKG_NAME }}-$TAG_NAME-1.${{ env.DIST }}.${{ env.ARCH }}.deb
           path: ${{ env.PKG_NAME }}*.deb
 
