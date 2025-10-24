@@ -55,6 +55,7 @@ jobs:
 
   build_tarball:
     name: Build source archive
+    needs: extract-tag
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -92,7 +93,7 @@ jobs:
 
   build_rpm:
     name: Build .rpm package
-    needs: build_tarball
+    needs: [build_tarball, extract-tag]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -116,7 +117,7 @@ jobs:
 
   build_deb:
     name: Build .deb package
-    needs: build_rpm
+    needs: [build_rpm, extract-tag]
     runs-on: ubuntu-latest
     steps:
       - name: Download .rpm artifact
