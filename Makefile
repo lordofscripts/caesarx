@@ -1,11 +1,13 @@
-# OS Platform
+# - Host OS Platform
 ifeq ($(OS),Windows_NT) 
     detected_OS := Windows
 else
     detected_OS := $(sh -c 'uname 2>/dev/null || echo Unknown')
 endif
-# Go Build Environment
+
+# - Go Build Environment
 GO=go
+GO_TAGS=-tags mlog
 ifeq ($(detected_OS), Windows)
 	GOFLAGS = -v -buildmode=exe -gcflags all=-N 
 	EXE_EXT=.exe
@@ -13,21 +15,25 @@ else
 	GOFLAGS = -v -buildmode=pie
 	EXE_EXT=
 endif
-# Makefile's directory (GNU Make >= v3.81)
+
+# - Source Project Environment
+# get the Makefile's directory (GNU Make >= v3.81)
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 mkfile_dir := $(dir $(mkfile_path))
-# GO Project's BIN directory
+# set the GO Project's BIN directory
 GO_PROJ_BIN=${mkfile_dir}bin
 
-# Packagers only
+# - Packagers only
+PKG_FULL_VERSION=$(shell grep -m 1 'MANUAL_VERSION' version.go | sed -E 's/.*"([^"]+)".*/\1/')
 PKG_NAME=caesarx
-PKG_REVISION=2
-PKG_VERSION=1.1
+PKG_REVISION=1
+PKG_VERSION=1.1.2
 PKG_ARCH=amd64
 PKG_FULLNAME=${PKG_NAME}_${PKG_VERSION}-${PKG_REVISION}_${PKG_ARCH}
 PKG_BUILD_DIR=${HOME}/Develop/Distrib/Build/${PKG_NAME}
 PKG_PPA_DIR=${HOME}/Develop/Distrib/PPA
-# Application stanza
+
+# - Application stanza
 EXEC_TABULA=tabularecta
 MAIN_TABULA=cmd/tabularecta/*go
 BIN_OUT_1=$(GO_PROJ_BIN)/$(EXEC_TABULA)$(EXE_EXT)
@@ -38,33 +44,36 @@ EXEC_AFFINE=affine
 MAIN_AFFINE=cmd/affine/*go
 BIN_OUT_3=$(GO_PROJ_BIN)/$(EXEC_AFFINE)$(EXE_EXT)
 
-# Main Targets
+# - Main Targets
 .PHONY: clean build
 
-all: tabula, caesar
+all: tabula, caesar, affine
 	
-buildwin:
-	$(GO) build -tags logx $(GOFLAGS) -o ${BIN_OUT}.exe ${MAIN}
+allwin:
+	$(GO) build $(GO_TAGS) mlog $(GOFLAGS) -o ${BIN_OUT_2}.exe ${MAIN_CAESAR}
+	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_3}.exe ${MAIN_AFFINE}
+	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_1}.exe ${MAIN_TABULA}
 
 release:
-	$(GO) build $(GOFLAGS) -o ${BIN_OUT} ${MAIN}
-	strip --strip-unneeded ${BIN_OUT}
+	strip --strip-unneeded ${BIN_OUT_1}
+	strip --strip-unneeded ${BIN_OUT_2}
+	strip --strip-unneeded ${BIN_OUT_3}
 
 version:
-	@grep -m 1 'MANUAL_VERSION' version.go | sed -E 's/.*"([^"]+)".*/\1/'
+	@echo $(PKG_FULL_VERSION)
 
-# Application Targets
+# - Application Targets
 
 tabula:
-	$(GO) build -tags logx $(GOFLAGS) -o ${BIN_OUT_1} ${MAIN_TABULA}
+	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_1} ${MAIN_TABULA}
 
 caesar:
-	$(GO) build -tags logx $(GOFLAGS) -o ${BIN_OUT_2} ${MAIN_CAESAR}
+	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_2} ${MAIN_CAESAR}
 
 affine:
-	$(GO) build -tags logx $(GOFLAGS) -o ${BIN_OUT_3} ${MAIN_AFFINE}
+	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_3} ${MAIN_AFFINE}
 
-# Secondary Targets
+# - Secondary Targets
 
 clean:
 	go clean
@@ -84,9 +93,24 @@ testall:
 update:
 	go get -u all
 
+help:
+	@echo "· Application related"
+	@echo  "\tall - make ALL application targets on/for Linux"
+	@echo  "\tallwin - make ALL application targets on/for Windows"
+	@echo  "\tversion - print the application version found in the source code"
+	@echo "· GO Language targets"
+	@echo  "\ttest - Run all the tests"
+	@echo  "\tupdate - Update all 3rd party GO package dependencies"
+	@echo  "\tlint - Run GO Lint"
+	@echo "· Package Building"
+	@echo  "\tdebian - Build the Debian (${PKG_FULLNAME}-${PKG_REVISION}.deb) package"
+	@echo  "\trpm - Build the RPM (${PKG_FULLNAME}.rpm) package"
+	@echo  "\trpmclean - Cleans the RPM build area"
+
 # Package Builders
 
 debian:
+	GO_TAGS=
 	rm -fR ${PKG_BUILD_DIR}
 	mkdir -p ${PKG_BUILD_DIR}/DEBIAN
 	ln -s ${PKG_BUILD_DIR}/DEBIAN ${PKG_BUILD_DIR}/debian
@@ -121,6 +145,7 @@ debian:
 	#@mv /tmp/${PKG_FULLNAME}.deb ${DEST_REPOSITORY}
 
 rpm:
+	GO_TAGS=
 	mkdir -p ${PKG_BUILD_DIR}/rpmbuild/BUILD
 	mkdir -p ${PKG_BUILD_DIR}/rpmbuild/RPMS/x86_64
 	mkdir -p ${PKG_BUILD_DIR}/rpmbuild/SOURCES
@@ -128,9 +153,10 @@ rpm:
 	mkdir -p ${PKG_BUILD_DIR}/rpmbuild/SRPMS
 	#echo "%_topdir ${PKG_BUILD_DIR}/rpmbuild" > ~/.rpmmacros
 	cp distrib/Fedora/${PKG_NAME}.spec ${PKG_BUILD_DIR}/rpmbuild/SPECS/
-	tar --exclude=".git*" --transform='s/^caesarx/caesarx-1.1.1/' -cvzf ${PKG_BUILD_DIR}/rpmbuild/SOURCES/${PKG_NAME}-${PKG_VERSION}.${PKG_REVISION}.tar.gz ../${PKG_NAME}/
-	cd ${PKG_BUILD_DIR}/rpmbuild/SPECS
-	#rpmbuild -bb ${PKG_NAME}.spec
+	sed -Ei "s/(^Version:[[:space:]]*).*/\1${PKG_FULL_VERSION}/" ${PKG_BUILD_DIR}/rpmbuild/SPECS/${PKG_NAME}.spec
+	tar --exclude=".git*" --transform='s/^caesarx/caesarx-${PKG_FULL_VERSION}/' -cvzf ${PKG_BUILD_DIR}/rpmbuild/SOURCES/${PKG_NAME}-${PKG_FULL_VERSION}.tar.gz ../${PKG_NAME}/
+	(cd ${PKG_BUILD_DIR}/rpmbuild/SPECS && rpmbuild --nodeps -bb ${PKG_NAME}.spec)
 
 rpmclean:
 	rm -fR ${PKG_BUILD_DIR}/rpmbuild
+	@echo "Cleaned RPM build v$(PKG_FULL_VERSION)"
