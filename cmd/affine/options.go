@@ -102,10 +102,16 @@ func NewAffineOptions(common *cmd.CommonOptions) *AffineCliOptions {
  *-----------------------------------------------------------------*/
 
 func (c *AffineCliOptions) initialize() {
+	// user-defined configuration defaults
+	var defaultNGram int = -1
+	if cmd.AppConfig.IsGood() {
+		defaultNGram = cmd.AppConfig.Configuration.Defaults.NGramSize
+	}
+
 	flag.IntVar(&c.CoefficientA, FLAG_COEFF_A, -1, "Affine coefficient A")
 	flag.IntVar(&c.CoefficientB, FLAG_COEFF_B, -1, "Affine coefficient B")
 	flag.IntVar(&c.OptModulo, FLAG_MODULO, 0, "Affine module N (only if -coprime is used), else derived from alpha")
-	flag.IntVar(&c.OptNgramSize, FLAG_NGRAM, 0, "Format encoded output as NGram")
+	flag.IntVar(&c.OptNgramSize, FLAG_NGRAM, defaultNGram, "Format encoded output as NGram")
 	flag.BoolVar(&c.OptUseFiles, FLAG_FILE, false, "Free argument(s) are filenames")
 	flag.BoolVar(&c.OptVerify, FLAG_VERIFY, false, "Verify operation (only if -F is used)")
 	flag.BoolVar(&c.ActIsDecode, FLAG_DECODE, false, "Decode text")

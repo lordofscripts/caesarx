@@ -27,6 +27,8 @@ const (
 	supportedNumbers   string = "(N)one (A)rabic (E)xtended (H)indi"
 )
 
+var AppConfig = NewConfiguration()
+
 /* ----------------------------------------------------------------
  *				M o d u l e   I n i t i a l i z a t i o n
  *-----------------------------------------------------------------*/
@@ -78,6 +80,7 @@ func NewCommonOptions() *CommonOptions {
 	copts := &CommonOptions{}
 	copts.DefaultPhrase = "Let's encrypt!"
 	copts.initialize()
+	AppConfig.InitConfiguration()
 	return copts
 }
 
@@ -247,11 +250,17 @@ func (c *CommonOptions) IsReady() bool {
 }
 
 func (c *CommonOptions) initialize() {
+	// user-configuration overrides: Primary alphabet
+	defLang := defaultLanguage
+	if AppConfig.IsGood() {
+		defLang = AppConfig.Configuration.Defaults.AlphaName
+	}
+
 	flag.BoolVar(&c.help, "help", false, "Show help")
 	flag.BoolVar(&c.demo, "demo", false, "Demonstration mode")
 	flag.BoolVar(&c.list, "list", false, "List all cipher variants")
 	flag.BoolVar(&c.version, "version", false, "Show version number")
-	flag.StringVar(&c.alpha, "alpha", defaultLanguage, "Choose alphabet")
+	flag.StringVar(&c.alpha, "alpha", defLang, "Choose alphabet")
 	flag.Var(&c.numeric, "num", "Include Numbers disk: (N)one, (A)rabic, (H)indi (E)xtended")
 	c.isReady = false
 }

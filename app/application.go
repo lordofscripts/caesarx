@@ -11,6 +11,8 @@ import (
 	"fmt"
 	"lordofscripts/caesarx/app/mlog"
 	"os"
+	"path/filepath"
+	"runtime"
 )
 
 /* ----------------------------------------------------------------
@@ -71,4 +73,46 @@ func AnnounceError(err error, exitCode int) {
 func IsPipedInput() bool {
 	fi, _ := os.Stdin.Stat()
 	return (fi.Mode() & os.ModeCharDevice) == 0
+}
+
+// platform-agnostic function to obtain the user's configuration directory.
+// In Linux "~/.config/appName", Windows "APPDATA/appName" and
+// MacOS "~/Library/Application Support/appName"
+func GetConfigDir(orgName, appName string) string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+
+	switch runtime.GOOS {
+	case "windows":
+		return filepath.Join(os.Getenv("APPDATA"), orgName, appName)
+	case "darwin": // macOS
+		return filepath.Join(homeDir, "Library", "Application Support", orgName, appName)
+	default: // Other platforms (Linux, etc.)
+		return filepath.Join(homeDir, ".config", orgName, appName)
+	}
+}
+
+// Ensures a directory and all its parents exist and create them if necessary.
+// Default permissions is 0755.
+func EnsureConfigDir(path string) error {
+	// Create the config directory if it doesn't exist
+	err := os.MkdirAll(path, 0755) // 0755 permissions: rwxr-xr-x
+	if err != nil {
+		return fmt.Errorf("failed to create config directory: %w", err)
+	}
+	return nil
+}
+
+// Checks whether the file exists and is readable.
+func CheckFileExistsAndReadable(filePath string) error {
+	_, err := os.Stat(filePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("file does not exist: %s", filePath)
+		}
+		return fmt.Errorf("error checking file: %w", err)
+	}
+	return nil
 }

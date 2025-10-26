@@ -1,8 +1,10 @@
-github.com/lordofscripts/go-roundrobin v0.0.0-20250921220136-9ada075dff01 h1:lU9SUE33kikmX734V1g5GlDSe59wdDD7phPj736lXGQ=
-github.com/lordofscripts/go-roundrobin v0.0.0-20250921220136-9ada075dff01/go.mod h1:6lEAx7gvAB6y0ke7mtFbOWqPmWGYUFGe7Gce4Y5vgYc=
 github.com/lordofscripts/go-roundrobin v1.3.1 h1:2tWE6oDfVmCPTkW9iY+uO3jiUUfmRiW1YElHKVyu8qA=
 github.com/lordofscripts/go-roundrobin v1.3.1/go.mod h1:8A799ctvFqMxsAv4hKT5XPQAcOFsWXERFxEjFsHDM9Q=
 github.com/pion/transport/v3 v3.0.7 h1:iRbMH05BzSNwhILHoBoAPxoB9xQgOaJk+591KC9P1o0=
 github.com/pion/transport/v3 v3.0.7/go.mod h1:YleKiTZ4vqNxVwh77Z0zytYi7rXHl7j6uPLGhhz9rwo=
 golang.org/x/text v0.22.0 h1:bofq7m3/HAFvbF51jz3Q9wLg3jkvSPuiZu/pD1XwgtM=
 golang.org/x/text v0.22.0/go.mod h1:YRoo4H8PVmsu+E3Ou7cqLVH8oXWIHVoX0jqUWALQhfY=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
+gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=

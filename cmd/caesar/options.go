@@ -125,8 +125,14 @@ func NewCaesarxOptions(common *cmd.CommonOptions) *CaesarxOptions {
  *-----------------------------------------------------------------*/
 
 func (c *CaesarxOptions) initialize() {
+	// user-defined configuration defaults
+	var defaultNGram int = -1
+	if cmd.AppConfig.IsGood() {
+		defaultNGram = cmd.AppConfig.Configuration.Defaults.NGramSize
+	}
+
 	flag.StringVar(&c.VariantTag, FLAG_VARIANT, crypto.ALG_NAME_CAESAR, "Algorithm (caesar|didimus|fibonacci|bellaso|vigenere)")
-	flag.IntVar(&c.NGramSize, FLAG_NGRAM, -1, "Format encoded output as NGram")
+	flag.IntVar(&c.NGramSize, FLAG_NGRAM, defaultNGram, "Format encoded output as NGram")
 	flag.IntVar(&c.Offset, FLAG_OFFSET, 0, "Alternate key offset (Didimus)")
 	flag.BoolVar(&c.IsDecode, FLAG_DECODE, false, "Decode text")
 	flag.BoolVar(&c.UseFiles, FLAG_FILE, false, "Free argument(s) are/is filename(s)")
@@ -324,7 +330,7 @@ func (c *CaesarxOptions) Validate() (int, error) {
 // checked for Encoding operations provided it has been set
 // via the CLI
 func (c *CaesarxOptions) isValidNGram() bool {
-	const NOT_SET = -1
+	const NOT_SET = 0
 	valid := true
 	if !c.IsDecode && c.NGramSize != NOT_SET {
 		if c.NGramSize < 2 || c.NGramSize > 5 {
