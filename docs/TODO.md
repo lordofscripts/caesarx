@@ -23,7 +23,7 @@
      the same input seed. In GitHub there is a Go table formatter package.
 -[ ] User configuration file to set preferred `-alpha`, `-variant` and the parameters for the current
      day if the *day-of-the-month* feature is implemented.
--[ ] [Build RPM](https://infotechys.com/how-to-create-and-build-rpm-packages/) or perhaps with [workflow](https://www.spencersmolen.com/creating-an-automated-rpm-build-pipeline-using-github-actions/)
+-[X] [Build RPM](https://infotechys.com/how-to-create-and-build-rpm-packages/) or perhaps with [workflow](https://www.spencersmolen.com/creating-an-automated-rpm-build-pipeline-using-github-actions/) **v1.1.2**
 
 ## TESTS
 
@@ -43,7 +43,7 @@
 -[X] Re-Audit usage of string[from:to] because that refers to indices and does not
      work with multi-byte rune strings!. **Watch the source of a few bugs here**
 -[ ] Use caesarx.CipherVariant enum instead of cmd/caesar/VariantID
--[ ] Refactor using `internal` tree to export only what needs to be exported
+-[·] Refactor using `internal` tree to export only what needs to be exported
 -[ ] Error code for exit value reorganization so that it helps pinpoint errors
 -[ ] Use predefined `ErrXXXXX` errors
 -[ ] Custom errors `TabulaError`, `CipherError`, `ErrorInvalidValue`, `ErrorCliBadParam`

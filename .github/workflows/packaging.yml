@@ -101,12 +101,29 @@ jobs:
         with:
           spec_file: distrib/Fedora/${{ env.PKG_NAME }}.spec
 
+      - name: Get Latest Release
+        id: get_release
+        run: |
+          RELEASE_JSON=$(gh release list --repo ${{ github.repository }} --limit 1 --json name,id)
+          echo "::set-output name=release_id::$(echo $RELEASE_JSON | jq -r '.[0].id')"
+          echo "::set-output name=release_name::$(echo $RELEASE_JSON | jq -r '.[0].name')"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload .rpm package as artifact
         uses: actions/upload-artifact@v4
         with:
-          tag: v$TAG_NAME
           name: ${{ env.PKG_NAME }}-${{ needs.extractTag.outputs.my_version }}-1.${{ env.DIST }}.${{ env.ARCH }}.rpm
           path: rpmbuild/RPMS/${{ env.ARCH }}/*.rpm
+
+      - name: Attach to Existing Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          tag_name: ${{ steps.get_release.outputs.release_name }}
+          files: rpmbuild/RPMS/${{ env.ARCH }}/*.rpm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build_deb:
     name: Build .deb package
@@ -130,12 +147,29 @@ jobs:
       - name: find .
         run: find . -exec readlink -f {} \;
 
+      - name: Get Latest Release
+        id: get_release
+        run: |
+          RELEASE_JSON=$(gh release list --repo ${{ github.repository }} --limit 1 --json name,id)
+          echo "::set-output name=release_id::$(echo $RELEASE_JSON | jq -r '.[0].id')"
+          echo "::set-output name=release_name::$(echo $RELEASE_JSON | jq -r '.[0].name')"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload .deb package as artifact
         uses: actions/upload-artifact@v4
         with:
-          tag: v$TAG_NAME
           name: ${{ env.PKG_NAME }}-${{ needs.extractTag.outputs.my_version }}-1.${{ env.DIST }}.${{ env.ARCH }}.deb
           path: ${{ env.PKG_NAME }}*.deb
+
+      - name: Attach to Existing Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          tag_name: ${{ steps.get_release.outputs.release_name }}
+          files: ${{ env.PKG_NAME }}*.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 # release:
 #   name: Create release with all assets

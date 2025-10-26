@@ -21,7 +21,7 @@ CaesarX is a collection of modernized Caesar ciphers (caesar, didimus, fibonacci
 %setup -q
 
 %build
-mkdir bin
+[ -d bin ] || mkdir bin
 go build -tags logx -v -buildmode=pie -o bin/caesarx cmd/caesar/*.go
 go build -tags logx -v -buildmode=pie -o bin/affine cmd/affine/*go
 go build -tags logx -v -buildmode=pie -o bin/tabularecta cmd/tabularecta/*go
