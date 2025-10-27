@@ -41,6 +41,10 @@ ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/vigenere
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1/
 install distrib/manpages/man1/%{name}.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 install distrib/manpages/man1/affine.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install distrib/manpages/man1/didimus.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install distrib/manpages/man1/fibonacci.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install distrib/manpages/man1/bellaso.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
+install distrib/manpages/man1/vigenere.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 
 %postun
 rm -f $RPM_BUILD_ROOT/%{_bindir}/caesarx
@@ -50,6 +54,12 @@ rm -f $RPM_BUILD_ROOT/%{_bindir}/bellaso
 rm -f $RPM_BUILD_ROOT/%{_bindir}/vigenere
 rm -f $RPM_BUILD_ROOT/%{_bindir}/affine
 rm -f $RPM_BUILD_ROOT/%{_bindir}/tabularecta
+rm -f $RPM_BUILD_ROOT/%{_mandir}/man1/%{name}.1.gz
+rm -f $RPM_BUILD_ROOT/%{_mandir}/man1/affine.1.gz
+rm -f $RPM_BUILD_ROOT/%{_mandir}/man1/bellaso.1.gz
+rm -f $RPM_BUILD_ROOT/%{_mandir}/man1/didimus.1.gz
+rm -f $RPM_BUILD_ROOT/%{_mandir}/man1/fibonacci.1.gz
+rm -f $RPM_BUILD_ROOT/%{_mandir}/man1/vigenere.1.gz
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -62,12 +72,21 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/fibonacci
 %{_bindir}/bellaso
 %{_bindir}/vigenere
+%{_mandir}/man1/%{name}.1.gz
+%{_mandir}/man1/affine.1.gz
+%{_mandir}/man1/bellaso.1.gz
+%{_mandir}/man1/didimus.1.gz
+%{_mandir}/man1/fibonacci.1.gz
+%{_mandir}/man1/vigenere.1.gz
 #%{_sysconfdir}/%{name}rc
 %doc %{_mandir}/man1/%{name}.1.*
 %doc %{_mandir}/man1/affine.1.*
 %license LICENSE.md
 
 %changelog
+* Mon Oct 27 2025 lordofscripts
+- added missing manual pages to the install
+
 * Thu Oct 23 2025 lordofscripts
 - configured spec file for use with GitHub Actions to automate building of RPM
 

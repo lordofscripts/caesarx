@@ -1,0 +1,187 @@
+.\"Modified from man(1) of FreeBSD, the NetBSD mdoc.template, and mdoc.samples.
+.\"See Also:
+.\"man mdoc.samples for a complete listing of options
+.\"man mdoc for the short list of editing options
+.\"/usr/share/misc/mdoc.template
+.Dd 26/10/25               \" DATE
+.Dt didimus      \" Program name and manual section number
+.Os Linux
+.Sh NAME                 \" Section Header - required - don't modify
+.Nm didimus,
+.\" Use .Nm macro to designate other names for the documented program.
+.NM caesarx
+.Nd Didimus polialphabetic cipher but made suitable for modern-day applications.
+.Sh SYNOPSIS             \" Section Header - required - don't modify
+.Nm
+.Op Fl demo|-help|-F|-d              \" [-abcd]
+.Op Fl secret Ar 'Password'          \" [-a path]
+.Op Fl num Ar letter
+.Op Fl ngram Ar size
+.Ar 'text to process'                \" Underlined argument - use .Ar anywhere to underline
+.Sh DESCRIPTION          \" Section Header - required - don't modify
+The Didimus cipher was created as a fun experiment by engineer Dídimo Grimaldo.
+Despite its simplicity it still fulfills certain use cases without the pitfalls
+of the Caesar cipher.
+
+
+This cipher is based on the Caesar cipher, therefore it is a substitution
+cipher. However, unlike Caesar's, this is a polyalphabetic cipher. Rather than
+using a single letter (or key) to encrypt, the Didimus cipher uses a
+.Ar key
+like in Caesar but an additional parameter named 
+.Ar offset .
+This offset, when added (modulo alphabet length) to the shift represented by
+the 
+.Ar key ,
+creates a secondary key. The main key is used for even characters, whereas the
+secondary key is used for odd characters. 
+.PP
+
+
+The keys are used for substitution but only over characters that can be encrypted,
+i.e. characters that appear in either the master or chained alphabets. Likewise,
+the attribute "odd" or "even" position is derived only based on the encodeable
+characters; therefore, it the resulting position takes into consideration how
+many characters have been skipped.
+
+
+The 
+.Nm 
+program is equivalent to executing the
+.Ar caesarx
+program with the 
+.Ar -variant didimus
+command-line argument.
+
+
+.Pp
+Flags and their descriptions that apply to ALL variants:
+.Bl -tag -width -indent  \" Differs from above in tag removed
+.It Fl help                 \"-a flag as a list item
+General command help
+.It Fl demo
+Run a demonstration of Bellaso encryption/decryption
+.It Fl ngram
+The size (2..5) of the output group for encrypted output
+.It Fl alpha
+Selects the built-in language alphabet
+.It Fl num
+Specify an optional secondary alphabet: N|A|H|E 
+.It Fl F
+Indicates the free argument is a filename rather than text.
+.El                      \" Ends the list
+
+The following flags are Didimus-specific:
+.Bl -tag -width -indent
+.It Fl key
+The main key, a single letter from the encodeable character set.
+.It Fl offset
+An offset added to the main key to create a secondary key.
+.El
+
+The following built-in language/alphabets are supported via the 
+.Ar -alpha
+flag:
+
+.Bl -tag -width -indent
+.It english
+(default) The English alphabet composed entirely of ASCII
+.It latin 
+Common to all/most languages from the Latin family
+.It spanish
+Same as latin.
+.It german
+The German alphabet
+.It greek
+The Greek alphabet
+.It cyrillic
+The cyrillic alphabet
+.It russian
+Same as cyrillic.
+.It ukrainian
+Same as cyrillic.
+.El
+
+As indicated above, by default the cipher only processes the letter characters
+in the primary alphabet selected with 
+.Ar -alpha .
+But to increase security and usability, it is possible to add a secondary
+alphabet to complement the primary. These are the four numeric/symbol alphabets
+that can be selected with the 
+.Ar -num 
+flag:
+
+.Bl -tag -width -indent
+.It N
+(default) "None", just encrypt the letters in the primary alphabet.
+.It A
+"Arabic" numbers: 0123456789
+.It H
+"Hindi" numerals: ٠١٢٣٤٥٦٧٨٩
+.It E
+"Extended" comprises the "Arabic" numbers, space, and these: #$%+-@
+.El
+
+.Pp
+.\" .Sh ENVIRONMENT      \" May not be needed
+.\" .Bl -tag -width "ENV_VAR_1" -indent \" ENV_VAR_1 is width of the string ENV_VAR_1
+.\" .It Ev ENV_VAR_1
+.\" Description of ENV_VAR_1
+.\" .It Ev ENV_VAR_2
+.\" Description of ENV_VAR_2
+.\" .El
+.Sh FILES                \" File used or created by the topic of the man page
+.Bl -tag -width "/Users/joeuser/Library/really_long_file_name" -compact
+.It Pa /usr/bin/bellaso
+Symbolic link to the caesarx application
+.It Pa /usr/bin/caesarx
+The actual application that supports all Caesar variants
+.It Pa ~/.config/coralys/caesarx/caesarx.yml
+User configuration file
+.It Pa /usr/share/doc/caesarx/LICENSE.md 
+The software license
+.It Pa /usr/share/doc/caesarx/* 
+All documentation
+.El                      \" Ends the list
+.\" .Sh DIAGNOSTICS       \" May not be needed
+.\" .Bl -diag
+.\" .It Diagnostic Tag
+.\" Diagnostic informtion here.
+.\" .It Diagnostic Tag
+.\" Diagnostic informtion here.
+.\" .El
+.Sh EXAMPLES
+caesarx -variant didimus -alpha spanish -key M -offset 5 "El ñoño está con vergüenza"
+
+didimus -key M -offset 5 -alpha german "Daß ist nicht wahr, es ist geöffnet"
+
+didimus -key M -offset 5 -alpha spanish -d "Pé züzü pdül ñüy gpcrppófq"
+
+cat "Pé züzü pdül ñüy gpcrppófq" | didimus -key M -offset 5 -alpha spanish -d
+
+didimus -key M -offset 20 -num E -F plain_text_file.txt
+
+.Sh SEE ALSO
+.\" List links in ascending order by section, alphabetically within a section.
+.\" Please do not reference files that do not exist without filing a bug report
+.Xr caesarx 1 ,
+.Xr tabularecta 1 ,
+.Xr affine 1 ,
+.Xr vigenere 1 ,
+.Xr bellaso 1 ,
+.Xr fibonacci 1 ,
+.Xr caesarx 5
+.\" .Sh BUGS              \" Document known, unremedied bugs
+.Sh HISTORY           \" Document history if command behaves in a unique manner
+.\" List application history
+.Bl -tag -width -indent  \" Begins a tagged list
+.It 27-Sep-2025                \" Each item preceded by .It macro
+Initial version supporting multiple Caesar variants
+.It 14-Oct-2025
+Added support for Text file encryption/decryption
+.It 25-Oct-2025
+Added support for Binary file encryption/decryption
+.El                      \" Ends the list
+.Sh AUTHOR
+Didimo Grimaldo <lordofscripts@users.noreply.github.com>
+

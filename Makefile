@@ -121,6 +121,10 @@ debian:
 	mkdir -p ${PKG_BUILD_DIR}/usr/share/man/man1
 	gzip -n -9 -c distrib/manpages/man1/$(EXEC_CAESAR).1 > ${PKG_BUILD_DIR}/usr/share/man/man1/$(EXEC_CAESAR).1.gz
 	gzip -n -9 -c distrib/manpages/man1/$(EXEC_AFFINE).1 > ${PKG_BUILD_DIR}/usr/share/man/man1/$(EXEC_AFFINE).1.gz
+	gzip -n -9 -c distrib/manpages/man1/$(EXEC_AFFINE).1 > ${PKG_BUILD_DIR}/usr/share/man/man1/bellaso.1.gz
+	gzip -n -9 -c distrib/manpages/man1/$(EXEC_AFFINE).1 > ${PKG_BUILD_DIR}/usr/share/man/man1/didimus.1.gz
+	gzip -n -9 -c distrib/manpages/man1/$(EXEC_AFFINE).1 > ${PKG_BUILD_DIR}/usr/share/man/man1/fibonacci.1.gz
+	gzip -n -9 -c distrib/manpages/man1/$(EXEC_AFFINE).1 > ${PKG_BUILD_DIR}/usr/share/man/man1/vigenere.1.gz
 	strip --strip-unneeded ${BIN_OUT_1}
 	cp ${BIN_OUT_1} ${PKG_BUILD_DIR}/usr/bin
 	strip --strip-unneeded ${BIN_OUT_2}

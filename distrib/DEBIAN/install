@@ -3,6 +3,8 @@ affine /usr/bin/
 tabula /usr/bin/
 caesarx.1.gz /usr/share/man/man1
 bellaso.1.gz /usr/share/man/man1
+didimus.1.gz /usr/share/man/man1
+fibonacci.1.gz /usr/share/man/man1
 vigenere.1.gz /usr/share/man/man1
 affine.1.gz /usr/share/man/man1
 copyright /usr/share/doc/caesarx/
