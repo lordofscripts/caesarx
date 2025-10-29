@@ -11,7 +11,9 @@ package cmn
  *-----------------------------------------------------------------*/
 
 const (
-	punctuation_DISK string = "¡!\"#$%&'()*+,-./:;<=>¿?@[]"
+	ALPHA_NAME_PUNCTUATION string = "punctuation"
+
+	punctuation_DISK string = "¡!\"#$%&'()*+,-./:;<=>¿?@[]" // Punctuation 26 runes 28 bytes
 )
 
 /* ----------------------------------------------------------------
@@ -19,5 +21,7 @@ const (
  *-----------------------------------------------------------------*/
 
 var (
+	// The Punctuation disk only contains the most common punctuation characters.
+	// It does not contain any numerals.
 	PUNCTUATION_DISK *Alphabet = &Alphabet{"Punctuation", punctuation_DISK, false, false, true, nil, false, ""}
 )

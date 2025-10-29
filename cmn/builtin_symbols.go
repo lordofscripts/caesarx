@@ -1,5 +1,3 @@
-//go:build exclude
-
 /* -----------------------------------------------------------------
  *					L o r d  O f   S c r i p t s (tm)
  *				  Copyright (C)2025 Dídimo Grimaldo T.
@@ -16,9 +14,11 @@ package cmn
  *-----------------------------------------------------------------*/
 
 const (
+	ALPHA_NAME_SYMBOLS string = "symbols"
+
 	// Punctuation: ¡!"#%&'()*,-./:;¿?@
 	// Symbol     : $+<=>
-	symbol_DISK string = "¡!\"#$%&'()*+,-./0123456789:;<=>¿?@[]"
+	symbol_DISK string = "¡!\"#$%&'()*+,-./0123456789:;<=>¿?@[]" // Symbols 36 runes 38 bytes
 )
 
 /* ----------------------------------------------------------------
@@ -26,5 +26,7 @@ const (
  *-----------------------------------------------------------------*/
 
 var (
-	SYMBOL_DISK *Alphabet = &Alphabet{"Symbols", symbol_DISK, false, false, true}
+	// The Symbols disk contains Decimal numerals, some punctuation and some symbols.
+	// It is a more complete version of the Western Numerals Extended disk.
+	SYMBOL_DISK *Alphabet = &Alphabet{"Symbols", symbol_DISK, false, false, true, nil, false, ""}
 )

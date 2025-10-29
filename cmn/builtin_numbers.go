@@ -16,11 +16,11 @@ const (
 	ALPHA_NAME_NUMBERS_EASTERN         = "numbers_east"
 	ALPHA_NAME_NUMBERS_ARABIC_EXTENDED = "numbers+"
 
-	numbers_DISK         string = "0123456789" // Western Arabic Numerals
-	numbers_DISK_EASTERN string = "٠١٢٣٤٥٦٧٨٩" // Eastern Arabic Numerals
+	numbers_DISK         string = "0123456789" // Western Arabic Numerals 10 runes 10 bytes
+	numbers_DISK_EASTERN string = "٠١٢٣٤٥٦٧٨٩" // Eastern Arabic Numerals 10 runes 20 bytes
 
 	// The symbols after the numbers are in their ASCII code order!
-	numbers_DISK_EXT string = "0123456789 #$%+-@"
+	numbers_DISK_EXT string = "0123456789 #$%+-@" // Western Numbers & Basic Symbols 17 runes 17 bytes
 )
 
 /* ----------------------------------------------------------------

@@ -27,7 +27,7 @@ import (
 // debugging, I found it out! I had to take special measures in
 // Alphabet.ToUpper()
 const (
-	alpha_DISK_GERMAN string = "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ" // German UPPERCASES!
+	alpha_DISK_GERMAN string = "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜẞ" // German 30 runes 34 bytes UPPERCASES!
 )
 
 /* ----------------------------------------------------------------
