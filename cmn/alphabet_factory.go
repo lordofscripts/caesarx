@@ -67,3 +67,31 @@ func AlphabetFactory(language string) IAlphabet {
 
 	return na
 }
+
+// When given a string containing an alphabet, it looks
+// up all built-in alphabets and returns the correct
+// alphabet instance. The comparison of alphabet characters
+// is case-insensitive but the order of the characters
+// must be the same.
+func IdentifyAlphabet(alphaStr string) *Alphabet {
+	var all = []*Alphabet{
+		ALPHA_DISK,
+		ALPHA_DISK_LATIN,
+		ALPHA_DISK_GERMAN,
+		ALPHA_DISK_GREEK,
+		ALPHA_DISK_CYRILLIC,
+		NUMBERS_DISK,
+		NUMBERS_DISK_EXT,
+		NUMBERS_EASTERN_DISK,
+		SYMBOL_DISK,
+		PUNCTUATION_DISK,
+	}
+
+	for _, candidate := range all {
+		if strings.EqualFold(candidate.Chars, alphaStr) {
+			return candidate
+		}
+	}
+
+	return nil
+}

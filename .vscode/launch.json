@@ -12,7 +12,25 @@
             "program": "${workspaceRoot}/cmd/affine/",
             "args": ["-alpha", "latin", "-A", "7", "-B", "13", "-num", "E", "Mañana 2025 será otro día"],
             "envFile": "${workspaceRoot}/.env"
-        },        
+        }, 
+        {
+            "name": "CodeBook (help)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/codebook/",
+            "args": ["-alpha", "english", "-help"],
+            "envFile": "${workspaceRoot}/.env"
+        },          
+        {
+            "name": "CodeBook (year)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/codebook/",
+            "args": ["-alpha", "english", "-date", "2025"],
+            "envFile": "${workspaceRoot}/.env"
+        },          
         {
             "name": "Bellaso (ES)",
             "type": "go",

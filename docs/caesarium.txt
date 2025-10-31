@@ -1,0 +1,59 @@
+//    ┏━╸┏━┓┏━╸┏━┓┏━┓┏━┓╻╻ ╻┏┳┓
+//    ┃  ┣━┫┣╸ ┗━┓┣━┫┣┳┛┃┃ ┃┃┃┃
+//    ┗━╸╹ ╹┗━╸┗━┛╹ ╹╹┗╸╹┗━┛╹ ╹
+//      .oooooo.                                                    o8o                                
+//     d8P'  `Y8b                                                   `"'                                
+//    888           .oooo.    .ooooo.   .oooo.o  .oooo.   oooo d8b oooo  oooo  oooo  ooo. .oo.  .oo.   
+//    888          `P  )88b  d88' `88b d88(  "8 `P  )88b  `888""8P `888  `888  `888  `888P"Y88bP"Y88b  
+//    888           .oP"888  888ooo888 `"Y88b.   .oP"888   888      888   888   888   888   888   888  
+//    `88b    ooo  d8(  888  888    .o o.  )88b d8(  888   888      888   888   888   888   888   888  
+//     `Y8bood8P'  `Y888""8o `Y8bod8P' 8""888P' `Y888""8o d888b    o888o  `V88V"V8P' o888o o888o o888o 
+//    
+//       .aMMMb  .aMMMb  dMMMMMP .dMMMb  .aMMMb  dMMMMb  dMP dMP dMP dMMMMMMMMb 
+//      dMP"VMP dMP"dMP dMP     dMP" VP dMP"dMP dMP.dMP amr dMP dMP dMP"dMP"dMP 
+//     dMP     dMMMMMP dMMMP    VMMMb  dMMMMMP dMMMMK" dMP dMP dMP dMP dMP dMP  
+//    dMP.aMP dMP dMP dMP     dP .dMP dMP dMP dMP"AMF dMP dMP.aMP dMP dMP dMP   
+//    VMMMP" dMP dMP dMMMMMP  VMMMP" dMP dMP dMP dMP dMP  VMMMP" dMP dMP dMP    
+//   
+//     __        ___  __        __               
+//    /  `  /\  |__  /__`  /\  |__) | |  |  |\/| 
+//    \__, /~~\ |___ .__/ /~~\ |  \ | \__/  |  | 
+//   
+//                                             
+//    ,---.                         o          
+//    |    ,---.,---.,---.,---.,---...   .,-.-.
+//    |    ,---||---'`---.,---||    ||   || | |
+//    `---'`---^`---'`---'`---^`    ``---'` ' '
+//   
+//         dBBBP dBBBBBb     dBBBP.dBBBBP dBBBBBb   dBBBBBb    dBP dBP dBP dBBBBBBb
+//                    BB          BP           BB       dBP                     dBP
+//       dBP      dBP BB   dBBP   `BBBBb   dBP BB   dBBBBK   dBP dBP dBP dBPdBPdBP 
+//      dBP      dBP  BB  dBP        dBP  dBP  BB  dBP  BB  dBP dBP_dBP dBPdBPdBP  
+//     dBBBBP   dBBBBBBB dBBBBP dBBBBP'  dBBBBBBB dBP  dB' dBP dBBBBBP dBPdBPdBP  
+/**
+ *                                                                                                                                                                     
+ *                                                                                                                                                                     
+ *            CCCCCCCCCCCCC                                                                                            iiii                                            
+ *         CCC::::::::::::C                                                                                           i::::i                                           
+ *       CC:::::::::::::::C                                                                                            iiii                                            
+ *      C:::::CCCCCCCC::::C                                                                                                                                            
+ *     C:::::C       CCCCCC  aaaaaaaaaaaaa      eeeeeeeeeeee        ssssssssss     aaaaaaaaaaaaa  rrrrr   rrrrrrrrr  iiiiiii uuuuuu    uuuuuu     mmmmmmm    mmmmmmm   
+ *    C:::::C                a::::::::::::a   ee::::::::::::ee    ss::::::::::s    a::::::::::::a r::::rrr:::::::::r i:::::i u::::u    u::::u   mm:::::::m  m:::::::mm 
+ *    C:::::C                aaaaaaaaa:::::a e::::::eeeee:::::eess:::::::::::::s   aaaaaaaaa:::::ar:::::::::::::::::r i::::i u::::u    u::::u  m::::::::::mm::::::::::m
+ *    C:::::C                         a::::ae::::::e     e:::::es::::::ssss:::::s           a::::arr::::::rrrrr::::::ri::::i u::::u    u::::u  m::::::::::::::::::::::m
+ *    C:::::C                  aaaaaaa:::::ae:::::::eeeee::::::e s:::::s  ssssss     aaaaaaa:::::a r:::::r     r:::::ri::::i u::::u    u::::u  m:::::mmm::::::mmm:::::m
+ *    C:::::C                aa::::::::::::ae:::::::::::::::::e    s::::::s        aa::::::::::::a r:::::r     rrrrrrri::::i u::::u    u::::u  m::::m   m::::m   m::::m
+ *    C:::::C               a::::aaaa::::::ae::::::eeeeeeeeeee        s::::::s    a::::aaaa::::::a r:::::r            i::::i u::::u    u::::u  m::::m   m::::m   m::::m
+ *     C:::::C       CCCCCCa::::a    a:::::ae:::::::e           ssssss   s:::::s a::::a    a:::::a r:::::r            i::::i u:::::uuuu:::::u  m::::m   m::::m   m::::m
+ *      C:::::CCCCCCCC::::Ca::::a    a:::::ae::::::::e          s:::::ssss::::::sa::::a    a:::::a r:::::r           i::::::iu:::::::::::::::uum::::m   m::::m   m::::m
+ *       CC:::::::::::::::Ca:::::aaaa::::::a e::::::::eeeeeeee  s::::::::::::::s a:::::aaaa::::::a r:::::r           i::::::i u:::::::::::::::um::::m   m::::m   m::::m
+ *         CCC::::::::::::C a::::::::::aa:::a ee:::::::::::::e   s:::::::::::ss   a::::::::::aa:::ar:::::r           i::::::i  uu::::::::uu:::um::::m   m::::m   m::::m
+ *            CCCCCCCCCCCCC  aaaaaaaaaa  aaaa   eeeeeeeeeeeeee    sssssssssss      aaaaaaaaaa  aaaarrrrrrr           iiiiiiii    uuuuuuuu  uuuummmmmm   mmmmmm   mmmmmm
+ *                                                                                                                                                                     
+ *                                                                                                                                                                     
+ *                                                                                                                                                                     
+ *                                                                                                                                                                     
+ *                                                                                                                                                                     
+ *                                                                                                                                                                     
+ *                                                                                                                                                                     
+ */

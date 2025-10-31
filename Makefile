@@ -43,6 +43,9 @@ BIN_OUT_2=$(GO_PROJ_BIN)/$(EXEC_CAESAR)$(EXE_EXT)
 EXEC_AFFINE=affine
 MAIN_AFFINE=cmd/affine/*go
 BIN_OUT_3=$(GO_PROJ_BIN)/$(EXEC_AFFINE)$(EXE_EXT)
+EXEC_CODEBOOK=codebook
+MAIN_CODEBOOK=cmd/codebook/*go
+BIN_OUT_4=$(GO_PROJ_BIN)/$(EXEC_CODEBOOK)$(EXE_EXT)
 
 # - Main Targets
 .PHONY: clean build
@@ -50,14 +53,16 @@ BIN_OUT_3=$(GO_PROJ_BIN)/$(EXEC_AFFINE)$(EXE_EXT)
 all: tabula, caesar, affine
 	
 allwin:
-	$(GO) build $(GO_TAGS) mlog $(GOFLAGS) -o ${BIN_OUT_2}.exe ${MAIN_CAESAR}
+	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_2}.exe ${MAIN_CAESAR}
 	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_3}.exe ${MAIN_AFFINE}
 	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_1}.exe ${MAIN_TABULA}
+	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_4}.exe ${MAIN_CODEBOOK}
 
 release:
 	strip --strip-unneeded ${BIN_OUT_1}
 	strip --strip-unneeded ${BIN_OUT_2}
 	strip --strip-unneeded ${BIN_OUT_3}
+	strip --strip-unneeded ${BIN_OUT_4}
 
 version:
 	@echo $(PKG_FULL_VERSION)
@@ -72,6 +77,9 @@ caesar:
 
 affine:
 	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_3} ${MAIN_AFFINE}
+
+codebook:
+	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_4} ${MAIN_CODEBOOK}
 
 # - Secondary Targets
 

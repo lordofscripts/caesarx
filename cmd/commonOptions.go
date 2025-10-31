@@ -112,53 +112,11 @@ func (c *CommonOptions) EncodeSpaces() bool { // @audit deprecate
 	return c.encodeSpace
 }
 
+// get the built-in alphabet represented by the CLI option -alpha
 func (c *CommonOptions) Alphabet() *cmn.Alphabet {
-	var alphabet *cmn.Alphabet
-
-	switch strings.ToLower(c.alpha) {
-	case cmn.ALPHA_NAME_ENGLISH:
-		alphabet = cmn.ALPHA_DISK
-		c.DefaultPhrase = "I love cryptography"
-
-	case cmn.ALPHA_NAME_SPANISH:
-		fallthrough
-	case cmn.ALPHA_NAME_LATIN:
-		alphabet = cmn.ALPHA_DISK_LATIN
-		c.DefaultPhrase = "Amo la criptografía"
-
-	case cmn.ALPHA_NAME_GREEK:
-		alphabet = cmn.ALPHA_DISK_GREEK
-		c.DefaultPhrase = "Λατρεύω την κρυπτογραφία"
-
-	case cmn.ALPHA_NAME_GERMAN:
-		alphabet = cmn.ALPHA_DISK_GERMAN
-		c.DefaultPhrase = "Daß liebe hübschen Mädchen"
-
-	case cmn.ALPHA_NAME_UKRAINIAN:
-		fallthrough
-	case cmn.ALPHA_NAME_RUSSIAN:
-		fallthrough
-	case cmn.ALPHA_NAME_CYRILLIC:
-		alphabet = cmn.ALPHA_DISK_CYRILLIC
-		c.DefaultPhrase = "Я люблю криптографию"
-
-	case cmn.ALPHA_NAME_BINARY:
-		alphabet = cmn.BINARY_DISK
-		c.DefaultPhrase = "love ántaño Λατρ Daß люблю"
-
-	case "custom":
-		if flag.NArg() == 1 {
-			alphabet = cmn.NewAlphabet("Custom", flag.Arg(0), false, false)
-		} else {
-			app.Die("With '-alpha custom' specify strings of characters as custom alphabet", caesarx.ERR_NO_ALPHABET)
-		}
-
-	default:
-		msg := fmt.Sprintf("Valid alphabets are: %s", supportedAlphabets)
-		app.Die(msg, caesarx.ERR_PARAMETER)
-	}
-
-	return alphabet
+	alpha, phrase := SelectAlphabet(c.alpha)
+	c.DefaultPhrase = phrase
+	return alpha
 }
 
 // the selected alphabet is Binary
@@ -268,3 +226,53 @@ func (c *CommonOptions) initialize() {
 /* ----------------------------------------------------------------
  *							F u n c t i o n s
  *-----------------------------------------------------------------*/
+
+func SelectAlphabet(name string) (*cmn.Alphabet, string) {
+	var alphabet *cmn.Alphabet
+	var phrase string
+
+	switch strings.ToLower(name) {
+	case cmn.ALPHA_NAME_ENGLISH:
+		alphabet = cmn.ALPHA_DISK
+		phrase = "I love cryptography"
+
+	case cmn.ALPHA_NAME_SPANISH:
+		fallthrough
+	case cmn.ALPHA_NAME_LATIN:
+		alphabet = cmn.ALPHA_DISK_LATIN
+		phrase = "Amo la criptografía"
+
+	case cmn.ALPHA_NAME_GREEK:
+		alphabet = cmn.ALPHA_DISK_GREEK
+		phrase = "Λατρεύω την κρυπτογραφία"
+
+	case cmn.ALPHA_NAME_GERMAN:
+		alphabet = cmn.ALPHA_DISK_GERMAN
+		phrase = "Daß liebe hübschen Mädchen"
+
+	case cmn.ALPHA_NAME_UKRAINIAN:
+		fallthrough
+	case cmn.ALPHA_NAME_RUSSIAN:
+		fallthrough
+	case cmn.ALPHA_NAME_CYRILLIC:
+		alphabet = cmn.ALPHA_DISK_CYRILLIC
+		phrase = "Я люблю криптографию"
+
+	case cmn.ALPHA_NAME_BINARY:
+		alphabet = cmn.BINARY_DISK
+		phrase = "love ántaño Λατρ Daß люблю"
+
+	case "custom":
+		if flag.NArg() == 1 {
+			alphabet = cmn.NewAlphabet("Custom", flag.Arg(0), false, false)
+		} else {
+			app.Die("With '-alpha custom' specify strings of characters as custom alphabet", caesarx.ERR_NO_ALPHABET)
+		}
+
+	default:
+		msg := fmt.Sprintf("Valid alphabets are: %s", supportedAlphabets)
+		app.Die(msg, caesarx.ERR_PARAMETER)
+	}
+
+	return alphabet, phrase
+}

@@ -15,7 +15,8 @@ import "fmt"
 
 const (
 	// v1.20 due to the nature of the math.Rand generator, and mingo
-	GO_MIN_REQUIRED = "1.22"
+	// v1.24 crypto/rand.Text()
+	GO_MIN_REQUIRED = "1.24"
 
 	EXIT_CODE_SUCCESS = 0
 	ERR_PARAMETER     = 1
@@ -24,6 +25,7 @@ const (
 	ERR_GO_VERSION    = 4
 	ERR_DEMO_ERROR    = 9
 	ERR_BAD_ALPHABET  = 10
+	ERR_BAD_CIPHER    = 11
 	ERR_SEQUENCER     = 50
 	ERR_CIPHER        = 51
 	ERR_INTERNAL      = 126

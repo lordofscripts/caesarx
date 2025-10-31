@@ -1,5 +1,5 @@
 Package: caesarx
-Version: 1.0.0
+Version: 1.2.0
 Architecture: amd64
 Depends: 
 Section: utils

@@ -95,7 +95,7 @@ func (h *AffineHelper) ValidCoprimesUpTo(n uint) []int {
 }
 
 /**
- * Calculate the modular inverse A' of A
+ * Calculate the modular/multiplicative inverse A' of A
  */
 func (h *AffineHelper) ModularInverse(a, m int) (int, error) {
 	A := big.NewInt(int64(a))

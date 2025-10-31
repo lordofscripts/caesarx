@@ -43,6 +43,7 @@ type IAlphabet interface {
 	WithSpecialCase(handlers *SpecialCaseHandler) *Alphabet
 	BorrowSpecialCase() *SpecialCaseHandler
 	Size() uint
+	SizeExt() (int, int)
 	ToUpper() *Alphabet
 	ToLower() *Alphabet
 	PositionOf(rune) int
@@ -156,6 +157,15 @@ func (a *Alphabet) BorrowSpecialCase() *SpecialCaseHandler {
  */
 func (a *Alphabet) Size() uint {
 	return uint(utf8.RuneCountInString(a.Chars))
+}
+
+// Contrary to Size() this extended version returns two results:
+// the alphabet size in number of runes (characters) and the
+// number of bytes needed to represent that alphabet. For English
+// which uses plain ASCII, both values are the same, all other
+// languages contain multi-byte Unicode characters.
+func (a *Alphabet) SizeExt() (int, int) {
+	return utf8.RuneCountInString(a.Chars), len(a.Chars)
 }
 
 func (a *Alphabet) ToUpper() *Alphabet {
@@ -325,3 +335,105 @@ func (a *Alphabet) Check() bool {
 func (a *Alphabet) Clone() *Alphabet {
 	return NewAlphabet(a.Name, a.Chars, !a.Foreign, a.OnlySymbols).WithSpecialCase(a.specialCase)
 }
+
+/* ----------------------------------------------------------------
+ *							F u n c t i o n s
+ *-----------------------------------------------------------------*/
+
+/*
+	  For alphabet transformations, it is possible if both alphabets
+	have the same number of runes. For example Latin to Cyrillic.
+
+	  For text transformation from one alphabet (source) to another (target),
+	the transformation is possible if both alphabets have the same
+	rune count (Latin <-> Cyrillic).
+	  But this text transform is also possible when the source alphabet,
+	the language of the	text to be transformed, is smaller than the target
+	alphabet. For example, the following are possible TRANSFORMS:
+		GR -> EN,DE,ES,RU/UA
+		EN -> DE,ES,RU/UA
+		DE -> ES,RU/UA
+		ES -> RU/UA
+
+				ISO	Runes	Bytes
+		Greek	GR	24		48
+		English	EN	26		26
+		German	DE	30		34
+		Latin	ES	33		40
+		Russian	RU	33		66
+
+	Why this explanation? Because the CodeBook app generates random strings
+	for use in Bellaso & Vigenere codebooks. Using the mappings above via
+	the function below we can use random strings (text) from a source
+	alphabet to a target alphabet by transliteration without having to
+	go again through expensive random generation.
+*/
+
+// Transforms or transliterates the source alphabet into the target
+// alphabet. Ideally both have the same number of runes.
+func TransformCharacterSet(source, target string) (map[rune]rune, error) {
+	switch {
+	case utf8.RuneCountInString(source) > utf8.RuneCountInString(target):
+		return nil, fmt.Errorf("source alphabet is longer than target")
+	case utf8.RuneCountInString(source) < utf8.RuneCountInString(target):
+		fmt.Println(fmt.Errorf("WARN target alphabet is longer than source"))
+	}
+
+	targetR := []rune(target)
+	mapper := make(map[rune]rune)
+	for pos, srcR := range source {
+		mapper[srcR] = targetR[pos]
+	}
+
+	return mapper, nil
+}
+
+// Transforms text between alphabets using the mapper obtained from
+// TransformCharacterSet(). The enableSkip parameter, when set, enables
+// passing-through missing characters to the output, else they are skipped
+// and the output string is shorter than the text.
+func TransformText(mapper map[rune]rune, text string, enableSkip bool) (string, error) {
+	result := make([]rune, utf8.RuneCountInString(text))
+	exceptions := make([]rune, 0)
+	for pos, v := range text {
+		if mappedChar, exists := mapper[v]; exists {
+			result[pos] = mappedChar
+		} else if !enableSkip {
+			result[pos] = v
+			exceptions = append(exceptions, v)
+		}
+	}
+
+	var err error = nil
+	if len(exceptions) != 0 {
+		err = fmt.Errorf("some characters could not be mapped at %v", exceptions)
+	}
+
+	return string(result), err
+}
+
+/*
+func transformCharacterSetFor(source, target, text string) (string, error) {
+	switch {
+	case utf8.RuneCountInString(source) > utf8.RuneCountInString(target):
+		return "", fmt.Errorf("source alphabet is longer than target")
+	case utf8.RuneCountInString(source) < utf8.RuneCountInString(target):
+		fmt.Println(fmt.Errorf("WARN target alphabet is longer than source"))
+	}
+
+	targetR := []rune(target)
+	mapper := make(map[rune]rune)
+	for pos, srcR := range source {
+		mapper[srcR] = targetR[pos]
+	}
+
+	result := make([]rune, utf8.RuneCountInString(text))
+	for pos, v := range text {
+		if mappedChar, exists := mapper[v]; exists {
+			result[pos] = mappedChar
+		}
+	}
+
+	return string(result), nil
+}
+*/

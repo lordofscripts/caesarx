@@ -18,7 +18,7 @@ import (
  *							G l o b a l s
  *-----------------------------------------------------------------*/
 const (
-	MANUAL_VERSION string = "1.1.2" // in case vcsVersion not injected during link phase
+	MANUAL_VERSION string = "1.2" // in case vcsVersion not injected during link phase
 
 	// Useful Unicode Characters
 	CHR_COPYRIGHT       = '\u00a9'      // ©
@@ -59,7 +59,7 @@ var (
 
 var (
 	// NOTE: Change these values accordingly
-	appVersion version = version{NAME, MANUAL_VERSION, statusReleased, 0}
+	appVersion version = version{NAME, MANUAL_VERSION, statusBeta, 0}
 
 	// DO NOT CHANGE THESE!
 	Version      string = appVersion.String()
