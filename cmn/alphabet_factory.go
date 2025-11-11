@@ -11,6 +11,11 @@ import (
 	"strings"
 )
 
+const (
+	// CLI alphabet composer concatenation operator
+	ALPHA_COMPOSER_SEP string = "+"
+)
+
 /* ----------------------------------------------------------------
  *							F u n c t i o n s
  *-----------------------------------------------------------------*/
@@ -32,6 +37,12 @@ func AlphabetFactory(language string) IAlphabet {
 	case ALPHA_NAME_SPANISH:
 		na = ALPHA_DISK_LATIN.Clone().WithSpecialCase(ALPHA_DISK_LATIN.specialCase)
 
+	case ALPHA_NAME_ITALIAN: // Italian 28 runes 35 bytes
+		na = ALPHA_DISK_ITALIAN.Clone().WithSpecialCase(ALPHA_DISK.specialCase)
+
+	case ALPHA_NAME_PORTUGUESE: // Portuguese 38 runes 50 bytes
+		na = ALPHA_DISK_PORTUGUESE.Clone().WithSpecialCase(ALPHA_DISK.specialCase)
+
 	case ALPHA_NAME_GERMAN: // German 30 runes 34 bytes
 		na = ALPHA_DISK_GERMAN.Clone().WithSpecialCase(ALPHA_DISK_GERMAN.specialCase)
 
@@ -44,6 +55,9 @@ func AlphabetFactory(language string) IAlphabet {
 		fallthrough
 	case ALPHA_NAME_RUSSIAN:
 		na = ALPHA_DISK_CYRILLIC.Clone().WithSpecialCase(ALPHA_DISK_CYRILLIC.specialCase)
+
+	case ALPHA_NAME_CZECH:
+		na = ALPHA_DISK_CZECH.Clone().WithSpecialCase(ALPHA_DISK.specialCase)
 
 	case ALPHA_NAME_NUMBERS_ARABIC: // Numbers 10 runes 10 bytes
 		na = NUMBERS_DISK
@@ -79,7 +93,10 @@ func IdentifyAlphabet(alphaStr string) *Alphabet {
 		ALPHA_DISK_LATIN,
 		ALPHA_DISK_GERMAN,
 		ALPHA_DISK_GREEK,
+		ALPHA_DISK_ITALIAN,
+		ALPHA_DISK_PORTUGUESE,
 		ALPHA_DISK_CYRILLIC,
+		ALPHA_DISK_CZECH,
 		NUMBERS_DISK,
 		NUMBERS_DISK_EXT,
 		NUMBERS_EASTERN_DISK,
@@ -94,4 +111,42 @@ func IdentifyAlphabet(alphaStr string) *Alphabet {
 	}
 
 	return nil
+}
+
+// the spec contains a list of built-in alphabet names separated by "+"
+// which are then used to compose a single alphabet. If there is just one
+// then that is used. It verifies the composition has no duplicates.
+func AlphabetComposer(spec string) IAlphabet {
+	var alpha IAlphabet = nil
+
+	if strings.Contains(spec, ALPHA_COMPOSER_SEP) {
+		// get all valid alphabet names in user input
+		alphabet_names := strings.Split(spec, ALPHA_COMPOSER_SEP)
+		var allRunes, name, iso string = "", "", ""
+		for _, nameS := range alphabet_names {
+			candidate := AlphabetFactory(nameS)
+			if candidate != nil {
+				// collect individual runes in a single alphabet
+				allRunes = allRunes + candidate.Clone().Chars
+				isoCode := candidate.LangCodeISO()
+				if isoCode != "" {
+					name = candidate.Clone().Name + " (Composed)"
+					iso = isoCode
+				}
+			}
+		}
+
+		// check there are no duplicate runes
+		if !HasUniqueRunes(allRunes) {
+			mlog.Error("There are duplicate runes in the concatenation of ", mlog.String("Alphas", spec))
+		} else {
+			alpha = NewAlphabet("Custom", allRunes, false, false)
+			alpha.WithLangCode(iso)
+			alpha.Rename(name)
+		}
+	} else {
+		alpha = AlphabetFactory(spec)
+	}
+
+	return alpha
 }

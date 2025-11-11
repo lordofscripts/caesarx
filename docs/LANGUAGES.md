@@ -123,6 +123,29 @@ are used (some, maybe not all) in the Serbian language.
 
 Say "Я люблю криптографию!" just don't tell Puttin about it! Here is the corresponding [Tabula Recta](./data/cyrillic_tabula.txt).
 
+### Italian
+
+**Alphabet:** ABCDEFGHILMNOPQRSTUVZÉÓÀÈÌÒÙ
+**Number of items:** 28 runes (35 bytes)
+**Type:** UTF8 (multi-byte per character)
+**Special casing rules:** None.
+
+Just say "Amo la crittografia" to entice the beautiful Italian geek women!
+
+### Portuguese
+
+**Alphabet:** ABCÇDEFGHIJKLMNOPQRSTUVWXYZÁÉÍÓÚÀÂÊÔÃÕ
+**Number of items:** 38 runes (50 bytes)
+**Type:** UTF8 (multi-byte per character)
+**Special casing rules:** None.
+
+### Czech
+
+**Alphabet:** ABCČDĎEFGHIJKLMNŇOPQRŘSŠTŤUVWXYÝZŽÁÉÍÓÚĚŮ
+**Number of items:** 41 runes (56 bytes)
+**Type:** UTF8 (multi-byte per character)
+**Special casing rules:** None.
+
 ### Numbers & Punctuation
 
 There are several built-in alternate alphabets that contain important characters for
@@ -131,7 +154,7 @@ letter alphabets introduced above (English, Spanish, etc.)
 
 * Standard numbers `0123456789` identified by the `numbers` alphabet handle.
 * Eastern numbers `٠١٢٣٤٥٦٧٨٩`  which are used in the Hindi language. It is a right-to-left system though. It goes by the `numbers_east` alphabet handle.
-* Extended numeric `0123456789 #$%+-@` goes by the `numbers+` handle. It has the commonly used arabic numbers used in most of the world, plus an essential list of symbols that would make your encrypted messages more difficult to figure out, thus leaving no tell-tale signs of what kind of information is encrypted in the message. This library was meant for modern-day usage. It also includes the SPACE character, thus making it difficult to know where the word boundaries of the encrypted text are.
+* Extended numeric `0123456789 #$%+-@` goes by the `numbers_ext` handle. It has the commonly used arabic numbers used in most of the world, plus an essential list of symbols that would make your encrypted messages more difficult to figure out, thus leaving no tell-tale signs of what kind of information is encrypted in the message. This library was meant for modern-day usage. It also includes the SPACE character, thus making it difficult to know where the word boundaries of the encrypted text are.
 * Symbols/Punctuation disk `¡!\"#$%&'()*+,-./0123456789:;<=>¿?@[]` contains most symbols for common languages. It may be a useful slave disk.
 
  Here is the corresponding [Tabula Recta](./data/numeric_tabula.txt).

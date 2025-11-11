@@ -44,6 +44,34 @@ More odd stuff:
 
 * `Makefile` get absolute path of current makefile to get project's BIN dir   
 
+## Built-in Languages
+
+CaesarX comes with several [predefined alphabets](./LANGUAGES.md) that are suited for most
+commonly used languages.
+
+When defining new *built-in* alphabets keep in mind that the same structure
+should be used in all of them. Each alphabet knows about *letters* such as
+A..Z in English, and *vowels* such as AEIOU in English.
+
+Many non-English languages have special characters, some are letters with 
+special adornments, and others are *vowels with diacriticals*.
+
+When we define a built-in language, the alphabet string first contains the
+letters and letters with adornments followed by the vowels with diacriticals.
+
+In the letter section we place a letter with adornment right next to the
+corresponding letter without adornment, i.e. "MNÑO" as you can see there
+there is an "N" followed by a "N tilde".
+
+At the end of the alphabet string we find all vowels with diacriticals. The
+normal vowels are in the letter section.
+
+A clear example can be appreciated with the Czech alphabet: `ABCČDĎEFGHIJKLMNŇOPQRŘSŠTŤUVWXYÝZŽÁÉÍÓÚĚŮ` 
+where you can see that the letters C,D,N,R,S,T,Y and Z have both a regular
+and adorned version next to each other, in the *same order* as the **official
+language**. And the last part contains the vowels with diacriticals grouped
+by diacritical form (acute, grave, etc.)
+
 ### Languages/Alphabets and dealing with Files
 
 As of `v1.0` CaesarX supports file encryption for both *text* files (v1.1.0-RC1)

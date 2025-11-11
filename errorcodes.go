@@ -26,6 +26,8 @@ const (
 	ERR_DEMO_ERROR    = 9
 	ERR_BAD_ALPHABET  = 10
 	ERR_BAD_CIPHER    = 11
+	ERR_FILE_IO       = 12
+	ERR_POST_CMD      = 13
 	ERR_SEQUENCER     = 50
 	ERR_CIPHER        = 51
 	ERR_INTERNAL      = 126

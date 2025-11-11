@@ -23,6 +23,7 @@ CaesarX is a collection of modernized Caesar ciphers (caesar, didimus, fibonacci
 %build
 [ -d bin ] || mkdir bin
 go build -tags logx -v -buildmode=pie -o bin/caesarx cmd/caesar/*.go
+go build -tags logx -v -buildmode=pie -o bin/caesar cmd/lite/*.go
 go build -tags logx -v -buildmode=pie -o bin/affine cmd/affine/*go
 go build -tags logx -v -buildmode=pie -o bin/tabularecta cmd/tabularecta/*go
 go build -tags logx -v -buildmode=pie -o bin/codebook cmd/codebook/*go
@@ -31,6 +32,7 @@ go build -tags logx -v -buildmode=pie -o bin/codebook cmd/codebook/*go
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT/%{_bindir}
 install -m 0755  bin/%{name} $RPM_BUILD_ROOT/%{_bindir}
+install -m 0755  bin/caesar $RPM_BUILD_ROOT/%{_bindir}
 install -m 0755  bin/affine $RPM_BUILD_ROOT/%{_bindir}
 install -m 0755  bin/tabularecta $RPM_BUILD_ROOT/%{_bindir}
 install -m 0755  bin/codebook $RPM_BUILD_ROOT/%{_bindir}
@@ -50,6 +52,7 @@ install distrib/manpages/man1/vigenere.1 $RPM_BUILD_ROOT/%{_mandir}/man1/
 
 %postun
 rm -f $RPM_BUILD_ROOT/%{_bindir}/caesarx
+rm -f $RPM_BUILD_ROOT/%{_bindir}/caesar
 rm -f $RPM_BUILD_ROOT/%{_bindir}/didimus
 rm -f $RPM_BUILD_ROOT/%{_bindir}/fibonacci
 rm -f $RPM_BUILD_ROOT/%{_bindir}/bellaso
@@ -69,6 +72,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %{_bindir}/%{name}
+%{_bindir}/caesar
 %{_bindir}/affine
 %{_bindir}/codebook
 %{_bindir}/tabularecta
@@ -88,6 +92,9 @@ rm -rf $RPM_BUILD_ROOT
 %license LICENSE.md
 
 %changelog
+* Tue Nov 11 2025 lordofscripts
+- added Caesar Lite (caesar)
+
 * Mon Oct 31 2025 lordofscripts
 - added codebook
 

@@ -23,7 +23,7 @@ import (
 
 const (
 	defaultLanguage    string = "english"
-	supportedAlphabets string = "english|latin|spanish|german|greek|cyrillic|custom|binary"
+	supportedAlphabets string = "english|latin|spanish|german|greek|cyrillic|italian|portuguese|czech|custom|binary"
 	supportedNumbers   string = "(N)one (A)rabic (E)xtended (H)indi"
 )
 
@@ -257,6 +257,18 @@ func SelectAlphabet(name string) (*cmn.Alphabet, string) {
 	case cmn.ALPHA_NAME_CYRILLIC:
 		alphabet = cmn.ALPHA_DISK_CYRILLIC
 		phrase = "Я люблю криптографию"
+
+	case cmn.ALPHA_NAME_ITALIAN:
+		alphabet = cmn.ALPHA_DISK_ITALIAN
+		phrase = "Amo la crittografia"
+
+	case cmn.ALPHA_NAME_PORTUGUESE:
+		alphabet = cmn.ALPHA_DISK_PORTUGUESE
+		phrase = "Eu amo criptografia"
+
+	case cmn.ALPHA_NAME_CZECH:
+		alphabet = cmn.ALPHA_DISK_CZECH
+		phrase = "Miluji kryptografii"
 
 	case cmn.ALPHA_NAME_BINARY:
 		alphabet = cmn.BINARY_DISK
