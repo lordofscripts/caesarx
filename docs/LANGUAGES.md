@@ -131,7 +131,7 @@ letter alphabets introduced above (English, Spanish, etc.)
 
 * Standard numbers `0123456789` identified by the `numbers` alphabet handle.
 * Eastern numbers `٠١٢٣٤٥٦٧٨٩`  which are used in the Hindi language. It is a right-to-left system though. It goes by the `numbers_east` alphabet handle.
-* Extended numeric `0123456789 #$%+-@` goes by the `numbers+` handle. It has the commonly used arabic numbers used in most of the world, plus an essential list of symbols that would make your encrypted messages more difficult to figure out, thus leaving no tell-tale signs of what kind of information is encrypted in the message. This library was meant for modern-day usage. It also includes the SPACE character, thus making it difficult to know where the word boundaries of the encrypted text are.
+* Extended numeric `0123456789 #$%+-@` goes by the `numbers_ext` handle. It has the commonly used arabic numbers used in most of the world, plus an essential list of symbols that would make your encrypted messages more difficult to figure out, thus leaving no tell-tale signs of what kind of information is encrypted in the message. This library was meant for modern-day usage. It also includes the SPACE character, thus making it difficult to know where the word boundaries of the encrypted text are.
 * Symbols/Punctuation disk `¡!\"#$%&'()*+,-./0123456789:;<=>¿?@[]` contains most symbols for common languages. It may be a useful slave disk.
 
  Here is the corresponding [Tabula Recta](./data/numeric_tabula.txt).

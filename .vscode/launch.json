@@ -5,6 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Caesar Lite (EN)",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceRoot}/cmd/lite/",
+            "args": ["-alpha", "english", "-key", "L", "Plain text"],
+            "envFile": "${workspaceRoot}/.env"
+        },         
+        {
             "name": "Affine (ES)",
             "type": "go",
             "request": "launch",

@@ -1,7 +1,8 @@
 go-carousel (1.2) UNRELEASED; urgency=low
 
-* #22 Caesarium codebook
+* #22 Caesarium codebook (codebook)
 * #20 User profiles in YAML resource file
+* Closed #25 Caesar Lite (caesar)
 
 -- Lord of Scripts <lordofscripts@users.noreply.github.com>  Fri, 31 Oct 2025 14:28:00 -0500
 

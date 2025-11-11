@@ -14,7 +14,7 @@ package cmn
 const (
 	ALPHA_NAME_NUMBERS_ARABIC          = "numbers"
 	ALPHA_NAME_NUMBERS_EASTERN         = "numbers_east"
-	ALPHA_NAME_NUMBERS_ARABIC_EXTENDED = "numbers+"
+	ALPHA_NAME_NUMBERS_ARABIC_EXTENDED = "numbers_ext"
 
 	numbers_DISK         string = "0123456789" // Western Arabic Numerals 10 runes 10 bytes
 	numbers_DISK_EASTERN string = "٠١٢٣٤٥٦٧٨٩" // Eastern Arabic Numerals 10 runes 20 bytes

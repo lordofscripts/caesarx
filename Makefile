@@ -46,23 +46,28 @@ BIN_OUT_3=$(GO_PROJ_BIN)/$(EXEC_AFFINE)$(EXE_EXT)
 EXEC_CODEBOOK=codebook
 MAIN_CODEBOOK=cmd/codebook/*go
 BIN_OUT_4=$(GO_PROJ_BIN)/$(EXEC_CODEBOOK)$(EXE_EXT)
+EXEC_LITE=caesar
+MAIN_LITE=cmd/lite/*go
+BIN_OUT_5=$(GO_PROJ_BIN)/$(EXEC_LITE)$(EXE_EXT)
 
 # - Main Targets
 .PHONY: clean build
 
-all: tabula, caesar, affine
+all: tabula, caesar, affine, lite
 	
 allwin:
 	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_2}.exe ${MAIN_CAESAR}
 	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_3}.exe ${MAIN_AFFINE}
 	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_1}.exe ${MAIN_TABULA}
 	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_4}.exe ${MAIN_CODEBOOK}
+	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_5}.exe ${MAIN_LITE}
 
 release:
 	strip --strip-unneeded ${BIN_OUT_1}
 	strip --strip-unneeded ${BIN_OUT_2}
 	strip --strip-unneeded ${BIN_OUT_3}
 	strip --strip-unneeded ${BIN_OUT_4}
+	strip --strip-unneeded ${BIN_OUT_5}
 
 version:
 	@echo $(PKG_FULL_VERSION)
@@ -74,6 +79,9 @@ tabula:
 
 caesar:
 	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_2} ${MAIN_CAESAR}
+
+lite:	
+	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_5} ${MAIN_LITE}
 
 affine:
 	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_3} ${MAIN_AFFINE}
@@ -139,6 +147,10 @@ debian:
 	cp ${BIN_OUT_2} ${PKG_BUILD_DIR}/usr/bin
 	strip --strip-unneeded ${BIN_OUT_3}
 	cp ${BIN_OUT_3} ${PKG_BUILD_DIR}/usr/bin	
+	strip --strip-unneeded ${BIN_OUT_4}
+	cp ${BIN_OUT_4} ${PKG_BUILD_DIR}/usr/bin
+	strip --strip-unneeded ${BIN_OUT_5}
+	cp ${BIN_OUT_5} ${PKG_BUILD_DIR}/usr/bin
 	cp distrib/DEBIAN/copyright ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
 	cp docs/README.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
 	cp LICENSE.md ${PKG_BUILD_DIR}/usr/share/doc/${PKG_NAME}
