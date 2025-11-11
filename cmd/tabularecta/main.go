@@ -311,14 +311,20 @@ func main() {
 		var numerics *cmn.Alphabet = nil
 		if optNumbers.IsSet {
 			switch unicode.ToUpper(optNumbers.Value) {
-			case 'A': // Arabic Numbers only
+			case cmd.OPT_SLAVE_ARABIC: // Arabic Numbers only
 				numerics = cmn.NUMBERS_DISK.Clone()
 
-			case 'H': // Hindi Numbers only
+			case cmd.OPT_SLAVE_HINDI: // Hindi Numbers only
 				numerics = cmn.NUMBERS_EASTERN_DISK.Clone()
 
-			case 'E': // Arabic numbers, space and number-related chars
+			case cmd.OPT_SLAVE_EXTENDED: // Arabic numbers, space and number-related chars
 				numerics = cmn.NUMBERS_DISK_EXT.Clone()
+
+			case cmd.OPT_SLAVE_PUNCT:
+				numerics = cmn.PUNCTUATION_DISK.Clone()
+
+			case cmd.OPT_SLAVE_SYMBL:
+				numerics = cmn.SYMBOL_DISK.Clone()
 
 			default:
 			}

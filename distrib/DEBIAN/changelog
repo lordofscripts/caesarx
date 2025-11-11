@@ -1,12 +1,14 @@
-go-carousel (1.2) UNRELEASED; urgency=low
+caesarx (1.2) UNRELEASED; urgency=low
 
 * #22 Caesarium codebook (codebook)
 * #20 User profiles in YAML resource file
 * Closed #25 Caesar Lite (caesar)
+* Closes #26 added Italian, Portuguese & Czech built-in alphabets
+* Fixes #27 -num option to accept (P)unctuation and (S)ymbols
 
 -- Lord of Scripts <lordofscripts@users.noreply.github.com>  Fri, 31 Oct 2025 14:28:00 -0500
 
-go-carousel (1.1.3) UNRELEASED; urgency=low
+caesarx (1.1.3) UNRELEASED; urgency=low
 
 * Closed #17 Automated DEB & RPM package creation with GitHub workflow
 * Closed #18 privileged logging removed from release builds (packages)
@@ -14,7 +16,7 @@ go-carousel (1.1.3) UNRELEASED; urgency=low
 
 -- Lord of Scripts <lordofscripts@users.noreply.github.com>  Sun, 26 Oct 2025 14:28:00 -0500
 
-go-carousel (1.1.2) UNRELEASED; urgency=low
+caesarx (1.1.2) UNRELEASED; urgency=low
 
 * Fixed #10 Vigenere binary encryption failed for data > buffer size
 * Fixed #13 Affine Encode/Decode yielding negative numbers
@@ -24,7 +26,7 @@ go-carousel (1.1.2) UNRELEASED; urgency=low
 
 -- Lord of Scripts <lordofscripts@users.noreply.github.com>  Sat, 25 Oct 2025 11:30:00 -0500
 
-go-carousel (1.1.0-RC5) UNRELEASED; urgency=low
+caesarx (1.1.0-RC5) UNRELEASED; urgency=low
 
 * Check for minimum GO version. CaesarX needs v1.20+
 * Some code beautification
@@ -32,7 +34,7 @@ go-carousel (1.1.0-RC5) UNRELEASED; urgency=low
 
 -- Lord of Scripts <lordofscripts@users.noreply.github.com>  Sat, 17 Oct 2025 14:30:00 -0500
 
-go-carousel (1.1.0-RC4) UNRELEASED; urgency=low
+caesarx (1.1.0-RC4) UNRELEASED; urgency=low
 
  * GH-007 Refactored AffineHelper, IKeySequencer and AffineSequencer in order to
    add binary file encryption support for Affine cipher.
@@ -43,7 +45,7 @@ go-carousel (1.1.0-RC4) UNRELEASED; urgency=low
 
 -- Lord of Scripts <lordofscripts@users.noreply.github.com>  Sat, 16 Oct 2025 10:47:00 -0500
 
-go-carousel (1.1.0-RC3) UNRELEASED; urgency=low
+caesarx (1.1.0-RC3) UNRELEASED; urgency=low
 
 ## Improvements
   * GH-003 Debian package build support (Makefile)
@@ -71,7 +73,7 @@ go-carousel (1.1.0-RC3) UNRELEASED; urgency=low
 
  -- Lord of Scripts <lordofscripts@users.noreply.github.com>  Sat, 14 Oct 2025 18:35:00 -0500
 
-go-carousel (1.0.0) UNRELEASED; urgency=low
+caesarx (1.0.0) UNRELEASED; urgency=low
 
   * Initial release.
 

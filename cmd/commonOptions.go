@@ -22,6 +22,13 @@ import (
  *-----------------------------------------------------------------*/
 
 const (
+	OPT_SLAVE_NONE     rune = 'N'
+	OPT_SLAVE_ARABIC   rune = 'A'
+	OPT_SLAVE_HINDI    rune = 'H'
+	OPT_SLAVE_EXTENDED rune = 'E'
+	OPT_SLAVE_PUNCT    rune = 'P'
+	OPT_SLAVE_SYMBL    rune = 'S'
+
 	defaultLanguage    string = "english"
 	supportedAlphabets string = "english|latin|spanish|german|greek|cyrillic|italian|portuguese|czech|custom|binary"
 	supportedNumbers   string = "(N)one (A)rabic (E)xtended (H)indi"
@@ -130,16 +137,22 @@ func (c *CommonOptions) WantsSlave() (string, bool) {
 
 	if c.numeric.IsSet {
 		switch c.numeric.Value { // converted to uppercase in Validate()
-		case 'A': // Arabic Numbers only
+		case OPT_SLAVE_ARABIC: // Arabic Numbers only
 			slaveName = cmn.NUMBERS_DISK.Name
 
-		case 'H': // Hindi Numbers only
+		case OPT_SLAVE_HINDI: // Hindi Numbers only
 			slaveName = cmn.NUMBERS_EASTERN_DISK.Name
 
-		case 'E': // Arabic numbers, space and number-related chars
+		case OPT_SLAVE_EXTENDED: // Arabic numbers, space and number-related chars
 			slaveName = cmn.NUMBERS_DISK_EXT.Name
 
-		case 'N':
+		case OPT_SLAVE_PUNCT: // Punctuation according to UTF8
+			slaveName = cmn.PUNCTUATION_DISK.Name
+
+		case OPT_SLAVE_SYMBL: // Symbols according to UTF8
+			slaveName = cmn.SYMBOL_DISK.Name
+
+		case OPT_SLAVE_NONE:
 			slaveName = "(None)"
 			fallthrough
 
@@ -155,16 +168,22 @@ func (c *CommonOptions) Numbers() *cmn.Alphabet {
 	var numerics *cmn.Alphabet = nil
 	if c.numeric.IsSet {
 		switch c.numeric.Value { // converted to uppercase in Validate()
-		case 'A': // Arabic Numbers only
+		case OPT_SLAVE_ARABIC: // Arabic Numbers only
 			numerics = cmn.NUMBERS_DISK.Clone()
 
-		case 'H': // Hindi Numbers only
+		case OPT_SLAVE_HINDI: // Hindi Numbers only
 			numerics = cmn.NUMBERS_EASTERN_DISK.Clone()
 
-		case 'E': // Arabic numbers, space and number-related chars
+		case OPT_SLAVE_EXTENDED: // Arabic numbers, space and number-related chars
 			numerics = cmn.NUMBERS_DISK_EXT.Clone()
 
-		case 'N':
+		case OPT_SLAVE_PUNCT:
+			numerics = cmn.PUNCTUATION_DISK.Clone()
+
+		case OPT_SLAVE_SYMBL:
+			numerics = cmn.SYMBOL_DISK.Clone()
+
+		case OPT_SLAVE_NONE:
 
 		default:
 			msg := fmt.Sprintf("Valid Number tables are: %s", supportedNumbers)
@@ -186,6 +205,7 @@ func (c *CommonOptions) FileExt() string {
 	return ""
 }
 
+// Validates -num option to any of N|A|E|H|P|S
 func (c *CommonOptions) Validate() (int, error) {
 	// for these options no further validation is needed
 	if c.NeedsDemo() || c.NeedsHelp() || c.NeedsList() || c.NeedsVersion() {
@@ -193,7 +213,14 @@ func (c *CommonOptions) Validate() (int, error) {
 		return caesarx.EXIT_CODE_SUCCESS, nil
 	}
 
-	validNumberIDs := []rune{'N', 'A', 'H', 'E'}
+	validNumberIDs := []rune{
+		OPT_SLAVE_NONE,
+		OPT_SLAVE_ARABIC,
+		OPT_SLAVE_HINDI,
+		OPT_SLAVE_EXTENDED,
+		OPT_SLAVE_PUNCT,
+		OPT_SLAVE_SYMBL,
+	}
 	c.numeric.Value = unicode.ToUpper(c.numeric.Value)
 
 	if c.numeric.IsSet && !slices.Contains(validNumberIDs, c.numeric.Value) {
