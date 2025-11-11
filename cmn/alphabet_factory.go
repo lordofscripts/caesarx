@@ -11,6 +11,11 @@ import (
 	"strings"
 )
 
+const (
+	// CLI alphabet composer concatenation operator
+	ALPHA_COMPOSER_SEP string = "+"
+)
+
 /* ----------------------------------------------------------------
  *							F u n c t i o n s
  *-----------------------------------------------------------------*/
@@ -106,4 +111,42 @@ func IdentifyAlphabet(alphaStr string) *Alphabet {
 	}
 
 	return nil
+}
+
+// the spec contains a list of built-in alphabet names separated by "+"
+// which are then used to compose a single alphabet. If there is just one
+// then that is used. It verifies the composition has no duplicates.
+func AlphabetComposer(spec string) IAlphabet {
+	var alpha IAlphabet = nil
+
+	if strings.Contains(spec, ALPHA_COMPOSER_SEP) {
+		// get all valid alphabet names in user input
+		alphabet_names := strings.Split(spec, ALPHA_COMPOSER_SEP)
+		var allRunes, name, iso string = "", "", ""
+		for _, nameS := range alphabet_names {
+			candidate := AlphabetFactory(nameS)
+			if candidate != nil {
+				// collect individual runes in a single alphabet
+				allRunes = allRunes + candidate.Clone().Chars
+				isoCode := candidate.LangCodeISO()
+				if isoCode != "" {
+					name = candidate.Clone().Name + " (Composed)"
+					iso = isoCode
+				}
+			}
+		}
+
+		// check there are no duplicate runes
+		if !HasUniqueRunes(allRunes) {
+			mlog.Error("There are duplicate runes in the concatenation of ", mlog.String("Alphas", spec))
+		} else {
+			alpha = NewAlphabet("Custom", allRunes, false, false)
+			alpha.WithLangCode(iso)
+			alpha.Rename(name)
+		}
+	} else {
+		alpha = AlphabetFactory(spec)
+	}
+
+	return alpha
 }
