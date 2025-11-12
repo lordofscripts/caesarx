@@ -28,5 +28,5 @@ const (
 var (
 	// The Symbols disk contains Decimal numerals, some punctuation and some symbols.
 	// It is a more complete version of the Western Numerals Extended disk.
-	SYMBOL_DISK *Alphabet = &Alphabet{"Symbols", symbol_DISK, false, false, true, nil, false, ""}
+	SYMBOL_DISK *Alphabet = &Alphabet{"Symbols", symbol_DISK, false, false, true, nil, false, PSO_PUNCT_DEC}
 )

@@ -23,11 +23,11 @@ import (
 
 const (
 	OPT_SLAVE_NONE     rune = 'N'
-	OPT_SLAVE_ARABIC   rune = 'A'
-	OPT_SLAVE_HINDI    rune = 'H'
-	OPT_SLAVE_EXTENDED rune = 'E'
-	OPT_SLAVE_PUNCT    rune = 'P'
-	OPT_SLAVE_SYMBL    rune = 'S'
+	OPT_SLAVE_ARABIC   rune = 'A' // id:PSO_NUM_DEC name:ALPHA_NAME_NUMBERS_ARABIC
+	OPT_SLAVE_HINDI    rune = 'H' // id:PSO_NUM_HIN name:ALPHA_NAME_NUMBERS_EASTERN
+	OPT_SLAVE_EXTENDED rune = 'E' // id:PSO_NUM_DEC_EXT name:ALPHA_NAME_NUMBERS_ARABIC_EXTENDED
+	OPT_SLAVE_PUNCT    rune = 'P' // id:PSO_PUNCT name:ALPHA_NAME_PUNCTUATION
+	OPT_SLAVE_SYMBL    rune = 'S' // id:PSO_PUNCT_DEC name:ALPHA_NAME_SYMBOLS
 
 	defaultLanguage    string = "english"
 	supportedAlphabets string = "english|latin|spanish|german|greek|cyrillic|italian|portuguese|czech|custom|binary"

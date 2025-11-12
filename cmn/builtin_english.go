@@ -24,5 +24,5 @@ const (
 )
 
 var (
-	ALPHA_DISK *Alphabet = &Alphabet{"English", alpha_DISK, false, false, false, nil, false, "EN"}
+	ALPHA_DISK *Alphabet = &Alphabet{"English", alpha_DISK, false, false, false, nil, false, ISO_EN}
 )

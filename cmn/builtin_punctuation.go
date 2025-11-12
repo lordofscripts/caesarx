@@ -23,5 +23,5 @@ const (
 var (
 	// The Punctuation disk only contains the most common punctuation characters.
 	// It does not contain any numerals.
-	PUNCTUATION_DISK *Alphabet = &Alphabet{"Punctuation", punctuation_DISK, false, false, true, nil, false, ""}
+	PUNCTUATION_DISK *Alphabet = &Alphabet{"Punctuation", punctuation_DISK, false, false, true, nil, false, PSO_PUNCT}
 )
