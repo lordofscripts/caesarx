@@ -39,6 +39,9 @@ that beyond the basic, may be worth noting:
   the CLI application exit value test cannot be resolved on GitHub server
   because I don't know where the executable is in that server build.
   See `tabularecta_vigenere_test.go, tabularecta_caesar_test.go, go.yml
+* Custom YAML/v3 (de)  serialization.
+* Using YAML to properly serialize an enumeration `caesarx.CipherVariant`
+  and a rune as a character instead of number `prefs.Rune`
   
 More odd stuff:
 

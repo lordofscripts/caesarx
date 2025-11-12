@@ -126,7 +126,7 @@ func NewCaesarxOptions(common *cmd.CommonOptions) *CaesarxOptions {
 
 func (c *CaesarxOptions) initialize() {
 	// user-defined configuration defaults
-	var defaultNGram int = -1
+	var defaultNGram int = cmd.DEFAULT_UNSET_NGRAM
 	if cmd.AppConfig.IsGood() {
 		defaultNGram = cmd.AppConfig.Configuration.Defaults.NGramSize
 	}
@@ -330,9 +330,8 @@ func (c *CaesarxOptions) Validate() (int, error) {
 // checked for Encoding operations provided it has been set
 // via the CLI
 func (c *CaesarxOptions) isValidNGram() bool {
-	const NOT_SET = 0
 	valid := true
-	if !c.IsDecode && c.NGramSize != NOT_SET {
+	if !c.IsDecode && c.NGramSize != cmd.DEFAULT_UNSET_NGRAM {
 		if c.NGramSize < 2 || c.NGramSize > 5 {
 			valid = false
 		}

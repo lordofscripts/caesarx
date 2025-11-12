@@ -7,9 +7,11 @@
 package cmd
 
 import (
+	"lordofscripts/caesarx"
 	"lordofscripts/caesarx/app"
 	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/cmn"
+	"lordofscripts/caesarx/cmn/prefs"
 	"os"
 	"path"
 
@@ -27,6 +29,10 @@ const (
 	APPLICATION string = "caesarx"
 	// Base name of the configuration file in ~/<user_config>/ORG/APP/
 	CONFIG_BASE_FILENAME string = "caesarx.yaml"
+	// Configuration schema version (for compatibility)
+	CONFIG_SCHEMA_VERSION string = "1.0"
+
+	DEFAULT_UNSET_NGRAM int = 0
 )
 
 /* ----------------------------------------------------------------
@@ -50,7 +56,9 @@ type CaesarxConfig struct {
 
 // configuration model
 type Config struct {
-	Defaults *ConfigDefaults `yaml:"defaults"`
+	Version  string             `yaml:"version"`
+	Defaults *ConfigDefaults    `yaml:"defaults"`
+	Profiles []*prefs.Recipient `yaml:"profiles,omitempty"`
 }
 
 type ConfigDefaults struct {
@@ -73,13 +81,24 @@ func NewConfiguration() *CaesarxConfig {
 }
 
 func newDefaultConfig() *Config {
+	var SampleProfiles []*prefs.Recipient = []*prefs.Recipient{
+		prefs.NewProfileWithCipher("you+c@bitbucket.com", "Sample profile 1", caesarx.CaesarCipher, cmn.ISO_EN, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.CaesarModel{Key: 'C'}),
+		prefs.NewProfileWithCipher("you+d@bitbucket.com", "Sample profile 2", caesarx.DidimusCipher, cmn.ISO_ES, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.CaesarModel{Key: 'D', Offset: 8}),
+		prefs.NewProfileWithCipher("you+f@bitbucket.com", "Sample profile 3", caesarx.FibonacciCipher, cmn.ISO_PT, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.CaesarModel{Key: 'F', Offset: 3}),
+		prefs.NewProfileWithCipher("you+b@bitbucket.com", "Sample profile 4", caesarx.BellasoCipher, cmn.ISO_DE, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.SecretsModel{Secret: "Ein Geheim"}),
+		prefs.NewProfileWithCipher("you+v@bitbucket.com", "Sample profile 5", caesarx.VigenereCipher, cmn.ISO_IT, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.SecretsModel{Secret: "Buongiorno a tutti"}),
+		prefs.NewProfileWithCipher("you+a@bitbucket.com", "Sample profile 6", caesarx.AffineCipher, cmn.ISO_GR, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.AffineModel{A: 7, B: 12, Ap: 21}),
+	}
+
 	return &Config{
+		Version: CONFIG_SCHEMA_VERSION,
 		Defaults: &ConfigDefaults{
 			AlphaName:  cmn.ALPHA_NAME_ENGLISH,
-			SlaveName:  "N",
-			NGramSize:  -1,
-			CipherName: "caesar",
+			SlaveName:  string(OPT_SLAVE_NONE),
+			NGramSize:  DEFAULT_UNSET_NGRAM,
+			CipherName: caesarx.CaesarCipher.String(),
 		},
+		Profiles: SampleProfiles,
 	}
 }
 
