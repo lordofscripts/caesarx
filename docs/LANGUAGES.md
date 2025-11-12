@@ -33,7 +33,7 @@ parameter:
 * `latin` which is the same as `spanish` (UTF8)
 * `german` (UTF8)
 * `greek` (UTF8)
-* `cyrillic` is an alias for `ukranian` and `russian` (UTF8)
+* `cyrillic` is an alias for `ukrainian` and `russian` (UTF8)
 * `binary` a universal alphabet that serves primarily to work with non-text files
   (images, PDF documents, binary files in general, etc.) that uses an *alphabet*
   composed of bytes `0x00` to `0xFF`.
@@ -46,12 +46,21 @@ against the common thieves or casual non-tech bystanders. Why? because a space o
 the encrypted text is NOT a space in the plain message, and the common symbols hide
 tell-tale signs like "a number or email address follows!".
 
+---
+
+## Primary (Master) Alphabets
+
+The primary (master) alphabet that should be used must be one of a human 
+language. That is any of those listed in the following subsections that have
+a corresponding ISO-639-1 two-letter language code.
+
 ### English
 
 **Alphabet:** ABCDEFGHIJKLMNOPQRSTUVWXYZ
 **Number of items:** 26 runes (26 bytes)
 **Type:** ASCII (single-byte per character)
 **Special casing rules:** None.
+**Code:** `ISO_EN`
 
 Say "I love cryptography!". Here is the corresponding [Tabula Recta](./data/english_tabula.txt).
 
@@ -61,6 +70,7 @@ Say "I love cryptography!". Here is the corresponding [Tabula Recta](./data/engl
 **Number of items:** 33 runes (40 bytes)
 **Type:** UTF8 (multi-byte per character)
 **Special casing rules:** None.
+**Code:** `ISO_ES`
 
 It is like the English alphabet but contains accute-accented
 vocals á, é, í, ó and ú, the umlauted ü ("vergüenza") and the
@@ -79,6 +89,7 @@ Now say "Amo la criptografía!". Here is the corresponding [Tabula Recta](./data
 **Number of items:** 30 runes (34 bytes) 
 **Type:** UTF8 (multi-byte per character)
 **Special casing rules:** Yes.
+**Code:** `ISO_DE`
 
 It has several characters with umlaut and the *eszet* symbol that **looks like**
 the Greek *lowercase beta* but it is not the same Unicode code point/value!
@@ -108,6 +119,7 @@ lost practice with German declinations.  Here is the corresponding [Tabula Recta
 **Number of items:** 24 runes (48 bytes)
 **Type:** UTF8 (multi-byte per character)
 **Special casing rules:** None.
+**Code:** `ISO_GR`
 
 Say "Λατρεύω την κρυπτογραφία!". Here is the corresponding [Tabula Recta](./data/greek_tabula.txt).
 
@@ -117,8 +129,9 @@ Say "Λατρεύω την κρυπτογραφία!". Here is the corresponding
 **Number of items:** 33 runes (66 bytes)
 **Type:** UTF8 (multi-byte per character)
 **Special casing rules:** None.
+**Code:** `ISO_UA` or `ISO_RU`
 
-The letters in the cyrillic alphabet are shared by the Ukranian and Russian languages and
+The letters in the cyrillic alphabet are shared by the Ukrainian and Russian languages and
 are used (some, maybe not all) in the Serbian language.
 
 Say "Я люблю криптографию!" just don't tell Puttin about it! Here is the corresponding [Tabula Recta](./data/cyrillic_tabula.txt).
@@ -129,6 +142,7 @@ Say "Я люблю криптографию!" just don't tell Puttin about it! H
 **Number of items:** 28 runes (35 bytes)
 **Type:** UTF8 (multi-byte per character)
 **Special casing rules:** None.
+**Code:** `ISO_IT`
 
 Just say "Amo la crittografia" to entice the beautiful Italian geek women!
 
@@ -138,6 +152,7 @@ Just say "Amo la crittografia" to entice the beautiful Italian geek women!
 **Number of items:** 38 runes (50 bytes)
 **Type:** UTF8 (multi-byte per character)
 **Special casing rules:** None.
+**Code:** `ISO_PT`
 
 ### Czech
 
@@ -145,6 +160,13 @@ Just say "Amo la crittografia" to entice the beautiful Italian geek women!
 **Number of items:** 41 runes (56 bytes)
 **Type:** UTF8 (multi-byte per character)
 **Special casing rules:** None.
+**Code:** `ISO_CZ`
+
+## Secondary (Slave) Alphabets
+
+The following alphabets, comparable to Enigma disks, should only be used as
+chained/slave/secondary alphabets. Any single one of these can be combined
+with a primary/master alphabet.
 
 ### Numbers & Punctuation
 
@@ -152,12 +174,14 @@ There are several built-in alternate alphabets that contain important characters
 modern-day communications. These are suitable as *Slave Discs* to extend the basic
 letter alphabets introduced above (English, Spanish, etc.)
 
-* Standard numbers `0123456789` identified by the `numbers` alphabet handle.
-* Eastern numbers `٠١٢٣٤٥٦٧٨٩`  which are used in the Hindi language. It is a right-to-left system though. It goes by the `numbers_east` alphabet handle.
-* Extended numeric `0123456789 #$%+-@` goes by the `numbers_ext` handle. It has the commonly used arabic numbers used in most of the world, plus an essential list of symbols that would make your encrypted messages more difficult to figure out, thus leaving no tell-tale signs of what kind of information is encrypted in the message. This library was meant for modern-day usage. It also includes the SPACE character, thus making it difficult to know where the word boundaries of the encrypted text are.
-* Symbols/Punctuation disk `¡!\"#$%&'()*+,-./0123456789:;<=>¿?@[]` contains most symbols for common languages. It may be a useful slave disk.
+* Standard numbers `0123456789` identified by the `numbers` alphabet handle. **Code** `PSO_NUM_DEC`.
+* Eastern numbers `٠١٢٣٤٥٦٧٨٩`  which are used in the Hindi language. It is a right-to-left system though. It goes by the `numbers_east` alphabet handle. **Code** `PSO_NUM_HIN`.
+* Extended numeric `0123456789 #$%+-@` goes by the `numbers_ext` handle. It has the commonly used arabic numbers used in most of the world, plus an essential list of symbols that would make your encrypted messages more difficult to figure out, thus leaving no tell-tale signs of what kind of information is encrypted in the message. This library was meant for modern-day usage. It also includes the SPACE character, thus making it difficult to know where the word boundaries of the encrypted text are. **Code** `PSO_NUM_DEC_EXT`.
+* Punctuation disk `¡!\"#$%&'()*+,-./:;<=>¿?@[]` contains most symbols for common languages. It may be a useful slave disk. **Code** `PSO_PUNCT`.
+* Symbols disk `¡!\"#$%&'()*+,-./0123456789:;<=>¿?@[]` contains most symbols for common languages and the
+decimal numbers in the middle (ordered by the ASCII code). **Code** `PSO_PUNCT_DEC`.
 
- Here is the corresponding [Tabula Recta](./data/numeric_tabula.txt).
+Here is the corresponding [Tabula Recta](./data/numeric_tabula.txt).
 
 ### Binary
 

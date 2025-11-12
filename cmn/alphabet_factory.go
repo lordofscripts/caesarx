@@ -14,6 +14,30 @@ import (
 const (
 	// CLI alphabet composer concatenation operator
 	ALPHA_COMPOSER_SEP string = "+"
+
+	// ISO 2-letter language codes for use in Alphabet.LangISO and factory
+	// These should be used as Primary/Master alphabet. They can be mixed
+	// with any of the PSO_* Secondary/Slave alphabets.
+	ISO_EN string = "EN" // ALPHA_NAME_ENGLISH
+	ISO_ES string = "ES" // ALPHA_NAME_SPANISH | ALPHA_NAME_LATIN
+	ISO_IT string = "IT" // ALPHA_NAME_ITALIAN
+	ISO_DE string = "DE" // ALPHA_NAME_GERMAN
+	ISO_GR string = "GR" // ALPHA_NAME_GREEK
+	ISO_RU string = "RU" // ALPHA_NAME_RUSSIAN | ALPHA_NAME_CYRILLIC
+	ISO_UA string = "UA" // ALPHA_NAME_UKRAINIAN | ALPHA_NAME_CYRILLIC
+	ISO_PT string = "PT" // ALPHA_NAME_PORTUGUESE
+	ISO_CZ string = "CZ" // ALPHA_NAME_CZECH
+
+	// PSO (Private Standards Organization) strictly numerals
+	PSO_NUM_DEC string = "NUMD" // ALPHA_NAME_NUMBERS_ARABIC
+	PSO_NUM_HIN string = "NUMH" // ALPHA_NAME_NUMBERS_EASTERN
+
+	// PSO strictly punctuation
+	PSO_PUNCT string = "PUNC" // ALPHA_NAME_PUNCTUATION
+
+	// PSO mixed @audit re-evaluate suitability
+	PSO_NUM_DEC_EXT string = "NUMDX" // ALPHA_NAME_NUMBERS_ARABIC_EXTENDED
+	PSO_PUNCT_DEC   string = "PUNCX" // ALPHA_NAME_SYMBOLS
 )
 
 /* ----------------------------------------------------------------
@@ -76,6 +100,61 @@ func AlphabetFactory(language string) IAlphabet {
 
 	default:
 		mlog.ErrorT("unknown alphabet name", mlog.String("Language", language))
+		panic("Bad language in factory")
+	}
+
+	return na
+}
+
+// Same alphabet factory but instead of the language name from the ALPHA_NAME_*
+// it seeks by the language code in the ISO_* and PSO_* lists.
+func AlphabetFactoryByISO(langCode string) IAlphabet {
+	var na IAlphabet = nil
+
+	switch strings.ToUpper(langCode) {
+	case ISO_EN: // English  26 runes 26 bytes
+		na = ALPHA_DISK.Clone().WithSpecialCase(ALPHA_DISK.specialCase)
+
+	case ISO_ES: // Latin 33 runes 40 bytes
+		na = ALPHA_DISK_LATIN.Clone().WithSpecialCase(ALPHA_DISK_LATIN.specialCase)
+
+	case ISO_IT: // Italian 28 runes 35 bytes
+		na = ALPHA_DISK_ITALIAN.Clone().WithSpecialCase(ALPHA_DISK.specialCase)
+
+	case ISO_PT: // Portuguese 38 runes 50 bytes
+		na = ALPHA_DISK_PORTUGUESE.Clone().WithSpecialCase(ALPHA_DISK.specialCase)
+
+	case ISO_DE: // German 30 runes 34 bytes
+		na = ALPHA_DISK_GERMAN.Clone().WithSpecialCase(ALPHA_DISK_GERMAN.specialCase)
+
+	case ISO_GR: // Greek 24 runes 48 bytes
+		na = ALPHA_DISK_GREEK.Clone().WithSpecialCase(ALPHA_DISK_GREEK.specialCase)
+
+	case ISO_RU: // Cyrillic 33 runes 66 bytes
+		fallthrough
+	case ISO_UA:
+		na = ALPHA_DISK_CYRILLIC.Clone().WithSpecialCase(ALPHA_DISK_CYRILLIC.specialCase)
+
+	case ISO_CZ:
+		na = ALPHA_DISK_CZECH.Clone().WithSpecialCase(ALPHA_DISK.specialCase)
+
+	case PSO_NUM_DEC: // Numbers 10 runes 10 bytes
+		na = NUMBERS_DISK
+
+	case PSO_NUM_HIN: // Eastern Numbers 10 runes 20 bytes
+		na = NUMBERS_EASTERN_DISK
+
+	case PSO_NUM_DEC_EXT: // Numbers Extended 17 runes 17 bytes
+		na = NUMBERS_DISK_EXT
+
+	case PSO_PUNCT_DEC: // Symbols 36 runes 38 bytes
+		na = SYMBOL_DISK
+
+	case PSO_PUNCT: // Punctuation 26 runes 28 bytes
+		na = PUNCTUATION_DISK
+
+	default:
+		mlog.ErrorT("unknown alphabet name not in ISO/PSO", mlog.String("Language", langCode))
 		panic("Bad language in factory")
 	}
 

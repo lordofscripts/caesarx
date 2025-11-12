@@ -20,7 +20,7 @@ const (
 
 const (
 	ALPHA_NAME_CYRILLIC  = "cyrillic"
-	ALPHA_NAME_UKRAINIAN = "ukranian"
+	ALPHA_NAME_UKRAINIAN = "ukrainian"
 	ALPHA_NAME_RUSSIAN   = "russian"
 )
 
