@@ -30,16 +30,7 @@ import (
  *-----------------------------------------------------------------*/
 const (
 	APP_VERSION = "1.1"
-
-	VariantCaesar CaesarVariant = iota
-	VariantDidimus
-	VariantFibonacci
-	VariantBellaso
-	VariantVigenere
-	VariantAffine
 )
-
-type CaesarVariant uint8
 
 /* ----------------------------------------------------------------
  *				M o d u l e   I n i t i a l i z a t i o n
@@ -59,22 +50,22 @@ func init() {
 func Demo(copts *cmd.CommonOptions, aopts *CaesarxOptions) (int, error) {
 	var passed bool // the demos return whether the Round-trip Encode/Decode was good
 	switch aopts.VariantID {
-	case VariantCaesar: // -variant caesar -alpha <ALPHABET_NAME> -key <LETTER>
+	case z.CaesarCipher: // -variant caesar -alpha <ALPHABET_NAME> -key <LETTER>
 		passed = commands.DemoCaesarCommand(copts.Alphabet(), copts.Numbers(), copts.DefaultPhrase)
 
-	case VariantDidimus: // -variant didimus -alpha <ALPHABET_NAME> -key <LETTER> -offset <NUMBER>
+	case z.DidimusCipher: // -variant didimus -alpha <ALPHABET_NAME> -key <LETTER> -offset <NUMBER>
 		passed = commands.DemoDidimusCommand(copts.Alphabet(), copts.Numbers(), copts.DefaultPhrase)
 
-	case VariantFibonacci: // -variant fibonacci -alpha <ALPHABET_NAME> -key <LETTER>
+	case z.FibonacciCipher: // -variant fibonacci -alpha <ALPHABET_NAME> -key <LETTER>
 		passed = commands.DemoFibonacciCommand(copts.Alphabet(), copts.Numbers(), copts.DefaultPhrase)
 
-	case VariantBellaso: // -variant bellaso -alpha <ALPHABET_NAME> -secret <SECRET_WORD>
+	case z.BellasoCipher: // -variant bellaso -alpha <ALPHABET_NAME> -secret <SECRET_WORD>
 		passed = commands.DemoBellasoCommand(copts.Alphabet(), copts.Numbers(), copts.DefaultPhrase)
 
-	case VariantVigenere: // -variant vigenere -alpha <ALPHABET_NAME> -secret <SECRET_WORD>
+	case z.VigenereCipher: // -variant vigenere -alpha <ALPHABET_NAME> -secret <SECRET_WORD>
 		passed = commands.DemoVigenereCommand(copts.Alphabet(), copts.Numbers(), copts.DefaultPhrase)
 
-	case VariantAffine:
+	case z.AffineCipher:
 		passed = affine.DemoAffine()
 	}
 
@@ -95,27 +86,27 @@ func DoCrypto(co *cmd.CommonOptions, ao *CaesarxOptions) (int, error) {
 	// These commands implement IPipe, ICipherCommand & ICommand
 	var cmdCipher ciphers.ICipherCommand
 	switch ao.VariantID {
-	case VariantCaesar:
+	case z.CaesarCipher:
 		// single key, space not included
 		cmdCipher = commands.NewCaesarCommand(co.Alphabet(), ao.MainKey.Value)
 
-	case VariantDidimus:
+	case z.DidimusCipher:
 		// double alternating key, space, numbers and number-related symbols included
 		cmdCipher = commands.NewDidimusCommand(co.Alphabet(), ao.MainKey.Value, uint8(ao.Offset))
 
-	case VariantFibonacci:
+	case z.FibonacciCipher:
 		// key plus 10-term Fibonacci offsets, space, numbers and number-related symbols included
 		cmdCipher = commands.NewFibonacciCommand(co.Alphabet(), ao.MainKey.Value)
 
-	case VariantBellaso:
+	case z.BellasoCipher:
 		// multi-letter secret, space, numbers and number-related symbols included
 		cmdCipher = commands.NewBellasoCommand(co.Alphabet(), ao.Secret)
 
-	case VariantVigenere:
+	case z.VigenereCipher:
 		// multi-letter secret & autokey, space, numbers and number-related symbols included
 		cmdCipher = commands.NewVigenereCommand(co.Alphabet(), ao.Secret)
 
-	case VariantAffine:
+	case z.AffineCipher:
 		fmt.Println("Please use the affine (affine.exe) application.")
 		fallthrough
 

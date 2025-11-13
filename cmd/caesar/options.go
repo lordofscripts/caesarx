@@ -85,7 +85,7 @@ type CaesarxOptions struct {
 	OptVerify      bool // ignored unless -F is used
 	// derived values
 	ItNeeds   Needs
-	VariantID CaesarVariant
+	VariantID z.CipherVariant
 	Files     *cmd.FileOptions
 	fileExt   string
 	isReady   bool
@@ -107,7 +107,7 @@ type Needs uint
 func NewCaesarxOptions(common *cmd.CommonOptions) *CaesarxOptions {
 	opts := &CaesarxOptions{
 		ItNeeds:        NeedNone,
-		VariantID:      VariantCaesar,
+		VariantID:      z.CaesarCipher,
 		VariantVersion: "",
 		UseFiles:       false,
 		OptVerify:      false,
@@ -138,7 +138,7 @@ func (c *CaesarxOptions) initialize() {
 	flag.BoolVar(&c.UseFiles, FLAG_FILE, false, "Free argument(s) are/is filename(s)")
 	flag.BoolVar(&c.OptVerify, FLAG_VERIFY, false, "Verify operation (only if -F is used)")
 	flag.Var(&c.MainKey, FLAG_KEY, "Main key")
-	flag.StringVar(&c.Secret, "secret", "", "Secret word/phrase used in Bellaso & Vigenere variants")
+	flag.StringVar(&c.Secret, FLAG_SECRET, "", "Secret word/phrase used in Bellaso & Vigenere variants")
 	flag.Parse()
 }
 
@@ -147,27 +147,27 @@ func (c *CaesarxOptions) initialize() {
 func (c *CaesarxOptions) checkAlterEgo() {
 	switch os.Args[0] {
 	case APP_NAME_ALT1:
-		c.VariantID = VariantBellaso
+		c.VariantID = z.BellasoCipher
 		c.ItNeeds = NeedsSecret
 		c.VariantVersion = bellaso.Info.String()
 
 	case APP_NAME_ALT2:
-		c.VariantID = VariantVigenere
+		c.VariantID = z.VigenereCipher
 		c.ItNeeds = NeedsSecret
 		c.VariantVersion = vigenere.Info.String()
 
 	case APP_NAME_ALT3:
-		c.VariantID = VariantDidimus
+		c.VariantID = z.DidimusCipher
 		c.ItNeeds = NeedCompositeKey
 		c.VariantVersion = caesar.InfoDidimus.String()
 
 	case APP_NAME_ALT4:
-		c.VariantID = VariantFibonacci
+		c.VariantID = z.FibonacciCipher
 		c.ItNeeds = NeedKey
 		c.VariantVersion = caesar.InfoFibonacci.String()
 
 	case APP_NAME:
-		c.VariantID = VariantCaesar
+		c.VariantID = z.CaesarCipher
 		c.ItNeeds = NeedKey
 		c.VariantVersion = caesar.Info.String()
 		fallthrough
@@ -175,32 +175,32 @@ func (c *CaesarxOptions) checkAlterEgo() {
 	default:
 		switch strings.ToLower(c.VariantTag) {
 		case strings.ToLower(crypto.ALG_NAME_CAESAR):
-			c.VariantID = VariantCaesar
+			c.VariantID = z.CaesarCipher
 			c.fileExt = commands.FILE_EXT_CAESAR
 			c.ItNeeds = NeedKey
 
 		case strings.ToLower(crypto.ALG_NAME_DIDIMUS):
-			c.VariantID = VariantDidimus
+			c.VariantID = z.DidimusCipher
 			c.fileExt = commands.FILE_EXT_DIDIMUS
 			c.ItNeeds = NeedCompositeKey
 
 		case strings.ToLower(crypto.ALG_NAME_FIBONACCI):
-			c.VariantID = VariantFibonacci
+			c.VariantID = z.FibonacciCipher
 			c.fileExt = commands.FILE_EXT_FIBONACCI
 			c.ItNeeds = NeedKey
 
 		case strings.ToLower(crypto.ALG_NAME_BELLASO):
-			c.VariantID = VariantBellaso
+			c.VariantID = z.BellasoCipher
 			c.fileExt = commands.FILE_EXT_BELLASO
 			c.ItNeeds = NeedsSecret
 
 		case strings.ToLower(cmn.RemoveAccents(crypto.ALG_NAME_VIGENERE)):
-			c.VariantID = VariantVigenere
+			c.VariantID = z.VigenereCipher
 			c.fileExt = commands.FILE_EXT_VIGENERE
 			c.ItNeeds = NeedsSecret
 
 		case strings.ToLower(crypto.ALG_NAME_AFFINE):
-			c.VariantID = VariantAffine
+			c.VariantID = z.AffineCipher
 			c.fileExt = commands.FILE_EXT_AFFINE
 			c.ItNeeds = NeedNone
 		}
@@ -233,7 +233,7 @@ func (c *CaesarxOptions) Validate() (int, error) {
 	var exitCode int = z.EXIT_CODE_SUCCESS
 
 	// firewall
-	if c.VariantID == VariantAffine {
+	if c.VariantID == z.AffineCipher {
 		// Affine not supported by caesarx executable but by its own affine program
 		return z.ERR_CLI_OPTIONS, fmt.Errorf("please use the 'affine' program instead")
 	} else {
