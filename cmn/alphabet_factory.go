@@ -44,6 +44,40 @@ const (
  *							F u n c t i o n s
  *-----------------------------------------------------------------*/
 
+// Retrieve the alphabet and its full name given its ISO/PSO code.
+func AlphabetNameByPISO(piso string) (*Alphabet, string) {
+	type Entry struct {
+		Name  string
+		Alpha *Alphabet
+	}
+
+	mapper := map[string]Entry{
+		// Primary alphabets
+		ISO_EN: {ALPHA_NAME_ENGLISH, ALPHA_DISK},
+		ISO_ES: {ALPHA_NAME_SPANISH, ALPHA_DISK_LATIN},
+		ISO_IT: {ALPHA_NAME_ITALIAN, ALPHA_DISK_ITALIAN},
+		ISO_DE: {ALPHA_NAME_GERMAN, ALPHA_DISK_GERMAN},
+		ISO_GR: {ALPHA_NAME_GREEK, ALPHA_DISK_GREEK},
+		ISO_RU: {ALPHA_NAME_RUSSIAN, ALPHA_DISK_CYRILLIC},
+		ISO_UA: {ALPHA_NAME_UKRAINIAN, ALPHA_DISK_CYRILLIC},
+		ISO_PT: {ALPHA_NAME_PORTUGUESE, ALPHA_DISK_PORTUGUESE},
+		ISO_CZ: {ALPHA_NAME_CZECH, ALPHA_DISK_CZECH},
+		// Secondary alphabets (for slave)
+		PSO_NUM_DEC:     {ALPHA_NAME_NUMBERS_ARABIC, NUMBERS_DISK},
+		PSO_NUM_HIN:     {ALPHA_NAME_NUMBERS_EASTERN, NUMBERS_EASTERN_DISK},
+		PSO_PUNCT:       {ALPHA_NAME_PUNCTUATION, PUNCTUATION_DISK},
+		PSO_NUM_DEC_EXT: {ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, NUMBERS_DISK_EXT},
+		PSO_PUNCT_DEC:   {ALPHA_NAME_SYMBOLS, SYMBOL_DISK}, //@note deprecate
+	}
+
+	if entry, ok := mapper[piso]; ok {
+		return entry.Alpha, entry.Name
+	}
+
+	mlog.Warn("couldn't find alphabet by PISO", mlog.String("ISO", piso))
+	return nil, ""
+}
+
 // An alphabet factory that given an alphabet name *_NAME_* it returns
 // the appropriate alphabet if there is a match. It supports all
 // built-in alphabets: English, Latin (Spanish), German, Greek,

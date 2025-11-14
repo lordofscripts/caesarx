@@ -9,11 +9,14 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	z "lordofscripts/caesarx"
 	"lordofscripts/caesarx/app"
+	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers/commands"
 	"lordofscripts/caesarx/cmd"
 	"lordofscripts/caesarx/cmn"
+	"lordofscripts/caesarx/cmn/prefs"
 )
 
 /* ----------------------------------------------------------------
@@ -118,6 +121,44 @@ func (c *AffineCliOptions) initialize() {
 	flag.BoolVar(&c.ActListCoprimes, FLAG_COPRIMES, false, "List coprimes for 'A' for the chosen alphabet")
 	flag.BoolVar(&c.ActPrintTabula, FLAG_TABULA, false, "Print Tabula for chosen parameters")
 	flag.Parse()
+
+	// check that user is requesting presets from a profile and that the profile exists. @note perhaps move elsewhere
+	if cmd.AppConfig.IsGood() && c.Common.RequestsProfile() {
+		profileID := c.Common.GetRequestedProfile()
+		if target := cmd.AppConfig.FindProfile(profileID); target != nil {
+			fmt.Println("PRsetting from", profileID)
+			mlog.InfoT("Presets from ", mlog.String("ProfileID", profileID))
+			// Preset cipher variant should be fixed to Affine, else abort
+			if target.Variant != z.AffineCipher {
+				mlog.Fatalf(z.ERR_PROFILE_CONFIG, "preset specifies %s cipher and this app is Affine-specific", target.Variant)
+			}
+
+			// Preset primary alphabet
+			if alpha, handle := cmn.AlphabetNameByPISO(target.LangCode); alpha != nil {
+				c.Common.PresetPrimaryAlphabet(handle)
+			}
+			// Preset slave (optional) alphabet
+			c.Common.PresetSecondaryAlphabet(target.Chained)
+			// Preset cipher-specific parameters
+			switch v := target.Params.Item.(type) {
+			case *prefs.AffineModel:
+				c.CoefficientA = int(v.A)
+				c.CoefficientB = int(v.B)
+
+			case *prefs.SecretsModel, *prefs.CaesarModel:
+				mlog.Fatalf(z.ERR_PROFILE_CONFIG, "found non-Affine parameter model in configuration profile")
+
+			default:
+				msg := fmt.Sprintf("unknown polymorphic parameter type %T on profile %s", v, profileID)
+				mlog.Fatal(z.ERR_PROFILE_CONFIG, msg)
+			}
+		} else {
+			msg := fmt.Sprintf("couldn't find requested profile '%s'", profileID)
+			warn := z.NewWarning(msg, z.CommandPCode, 1)
+			mlog.Warn(warn, mlog.At())
+			fmt.Println(warn)
+		}
+	}
 }
 
 func (c *AffineCliOptions) ShowUsage(name string) {

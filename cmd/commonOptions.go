@@ -2,7 +2,10 @@
  *					L o r d  O f   S c r i p t s (tm)
  *				  Copyright (C)2025 Dídimo Grimaldo T.
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- *
+ * Command-Line option processor for flags that are common to all
+ * the cmd/* applications. However, it allows the possibility to
+ * exclude the flags on an individual basis by passing the black list
+ * in the constructor.
  *-----------------------------------------------------------------*/
 package cmd
 
@@ -11,6 +14,7 @@ import (
 	"fmt"
 	"lordofscripts/caesarx"
 	"lordofscripts/caesarx/app"
+	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/cmn"
 	"slices"
 	"strings"
@@ -32,6 +36,17 @@ const (
 	defaultLanguage    string = "english"
 	supportedAlphabets string = "english|latin|spanish|german|greek|cyrillic|italian|portuguese|czech|custom|binary"
 	supportedNumbers   string = "(N)one (A)rabic (E)xtended (H)indi"
+)
+
+const (
+	// Common CLI flags. Each may be excluded on an app basis
+	FLAG_HELP    string = "help"
+	FLAG_DEMO    string = "demo"
+	FLAG_LIST    string = "list"
+	FLAG_VERSION string = "version"
+	FLAG_ALPHA   string = "alpha"
+	FLAG_NUM     string = "num"
+	FLAG_PROFILE string = "profile" // (optional) Select profile
 )
 
 var AppConfig = NewConfiguration()
@@ -59,6 +74,7 @@ var _ IAppOptions = (*CommonOptions)(nil)
 
 type CommonOptions struct {
 	DefaultPhrase string
+	optProfile    string
 	demo          bool
 	help          bool
 	list          bool
@@ -83,10 +99,11 @@ type FileOptions struct {
  * methods to access them.
  * NOTE: Requires flag.Parse()
  */
-func NewCommonOptions() *CommonOptions {
+func NewCommonOptions(skipFlags ...string) *CommonOptions {
 	copts := &CommonOptions{}
+	copts.optProfile = ""
 	copts.DefaultPhrase = "Let's encrypt!"
-	copts.initialize()
+	copts.initialize(skipFlags...)
 	AppConfig.InitConfiguration()
 	return copts
 }
@@ -99,20 +116,36 @@ func NewFileOptions(inp, out string) *FileOptions {
  *							M e t h o d s
  *-----------------------------------------------------------------*/
 
+// The -help CLI flag is given
 func (c *CommonOptions) NeedsHelp() bool {
 	return c.help
 }
 
+// The -demo CLI flag is given
 func (c *CommonOptions) NeedsDemo() bool {
 	return c.demo
 }
 
+// The -list CLI flag is given
 func (c *CommonOptions) NeedsList() bool {
 	return c.list
 }
 
+// the -version CLI flag is given
 func (c *CommonOptions) NeedsVersion() bool {
 	return c.version
+}
+
+// The -profile CLI flag is given.
+// The user requests encryption presets from a user profile.
+// See also GetProfileID()
+func (c *CommonOptions) RequestsProfile() bool {
+	return len(c.optProfile) != 0
+}
+
+// The requested profile ID if -profile was given
+func (c *CommonOptions) GetRequestedProfile() string {
+	return c.optProfile
 }
 
 func (c *CommonOptions) EncodeSpaces() bool { // @audit deprecate
@@ -234,19 +267,81 @@ func (c *CommonOptions) IsReady() bool {
 	return c.isReady
 }
 
-func (c *CommonOptions) initialize() {
+// Used for presetting the primary alphabet (from Profile config).
+// The name must be any of the ALPHA_NAME_*
+func (c *CommonOptions) PresetPrimaryAlphabet(name string) {
+	c.alpha = name
+}
+
+// Used for presetting the secondary alphabet (from Profile config).
+// The name must be any of the
+func (c *CommonOptions) PresetSecondaryAlphabet(name string) {
+	c.numeric.IsSet = true
+	switch name { // converted to uppercase in Validate()
+	case cmn.ALPHA_NAME_NUMBERS_ARABIC: // Arabic Numbers only
+		c.numeric.Value = OPT_SLAVE_ARABIC
+
+	case cmn.ALPHA_NAME_NUMBERS_EASTERN: // Hindi Numbers only
+		c.numeric.Value = OPT_SLAVE_HINDI
+
+	case cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED: // Arabic numbers, space and number-related chars
+		c.numeric.Value = OPT_SLAVE_EXTENDED
+
+	case cmn.ALPHA_NAME_PUNCTUATION:
+		c.numeric.Value = OPT_SLAVE_PUNCT
+
+	case cmn.ALPHA_NAME_SYMBOLS:
+		c.numeric.Value = OPT_SLAVE_SYMBL
+
+	case "":
+		c.numeric.Value = OPT_SLAVE_NONE
+
+	default:
+		c.numeric.IsSet = false
+		mlog.Error("unable to preset slave alphabet", mlog.String("Name", name), mlog.At())
+	}
+}
+
+/* ----------------------------------------------------------------
+ *				P r i v a t e	M e t h o d s
+ *-----------------------------------------------------------------*/
+
+// initializes common options by registering the CLI flags that are
+// not present in the skip list
+func (c *CommonOptions) initialize(skipFlags ...string) {
 	// user-configuration overrides: Primary alphabet
 	defLang := defaultLanguage
 	if AppConfig.IsGood() {
 		defLang = AppConfig.Configuration.Defaults.AlphaName
 	}
 
-	flag.BoolVar(&c.help, "help", false, "Show help")
-	flag.BoolVar(&c.demo, "demo", false, "Demonstration mode")
-	flag.BoolVar(&c.list, "list", false, "List all cipher variants")
-	flag.BoolVar(&c.version, "version", false, "Show version number")
-	flag.StringVar(&c.alpha, "alpha", defLang, "Choose alphabet")
-	flag.Var(&c.numeric, "num", "Include Numbers disk: (N)one, (A)rabic, (H)indi (E)xtended")
+	// register Common flags that are NOT in the skip list
+	if skipFlags == nil {
+		skipFlags = make([]string, 0)
+	}
+
+	if !slices.Contains(skipFlags, FLAG_HELP) {
+		flag.BoolVar(&c.help, FLAG_HELP, false, "Show help")
+	}
+	if !slices.Contains(skipFlags, FLAG_DEMO) {
+		flag.BoolVar(&c.demo, FLAG_DEMO, false, "Demonstration mode")
+	}
+	if !slices.Contains(skipFlags, FLAG_LIST) {
+		flag.BoolVar(&c.list, FLAG_LIST, false, "List all cipher variants")
+	}
+	if !slices.Contains(skipFlags, FLAG_VERSION) {
+		flag.BoolVar(&c.version, FLAG_VERSION, false, "Show version number")
+	}
+	if !slices.Contains(skipFlags, FLAG_ALPHA) {
+		flag.StringVar(&c.alpha, FLAG_ALPHA, defLang, "Choose alphabet")
+	}
+	if !slices.Contains(skipFlags, FLAG_NUM) {
+		flag.Var(&c.numeric, FLAG_NUM, "Include Numbers disk: (N)one, (A)rabic, (H)indi (E)xtended")
+	}
+	if !slices.Contains(skipFlags, FLAG_PROFILE) {
+		flag.StringVar(&c.optProfile, FLAG_PROFILE, "", "Profile selector for cipher presets")
+	}
+
 	c.isReady = false
 }
 

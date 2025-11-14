@@ -18,19 +18,20 @@ const (
 	// v1.24 crypto/rand.Text()
 	GO_MIN_REQUIRED = "1.24"
 
-	EXIT_CODE_SUCCESS = 0
-	ERR_PARAMETER     = 1
-	ERR_NO_ALPHABET   = 2
-	ERR_CLI_OPTIONS   = 3
-	ERR_GO_VERSION    = 4
-	ERR_DEMO_ERROR    = 9
-	ERR_BAD_ALPHABET  = 10
-	ERR_BAD_CIPHER    = 11
-	ERR_FILE_IO       = 12
-	ERR_POST_CMD      = 13
-	ERR_SEQUENCER     = 50
-	ERR_CIPHER        = 51
-	ERR_INTERNAL      = 126
+	EXIT_CODE_SUCCESS  = 0
+	ERR_PARAMETER      = 1
+	ERR_NO_ALPHABET    = 2
+	ERR_CLI_OPTIONS    = 3
+	ERR_GO_VERSION     = 4
+	ERR_DEMO_ERROR     = 9
+	ERR_BAD_ALPHABET   = 10
+	ERR_BAD_CIPHER     = 11
+	ERR_FILE_IO        = 12
+	ERR_POST_CMD       = 13
+	ERR_PROFILE_CONFIG = 14
+	ERR_SEQUENCER      = 50
+	ERR_CIPHER         = 51
+	ERR_INTERNAL       = 126
 )
 
 /* ----------------------------------------------------------------

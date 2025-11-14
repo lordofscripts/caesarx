@@ -12,12 +12,14 @@ import (
 	"fmt"
 	z "lordofscripts/caesarx"
 	"lordofscripts/caesarx/app"
+	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers/bellaso"
 	"lordofscripts/caesarx/ciphers/caesar"
 	"lordofscripts/caesarx/ciphers/commands"
 	"lordofscripts/caesarx/ciphers/vigenere"
 	"lordofscripts/caesarx/cmd"
 	"lordofscripts/caesarx/cmn"
+	"lordofscripts/caesarx/cmn/prefs"
 	"lordofscripts/caesarx/internal/crypto"
 	"os"
 	"strings"
@@ -140,6 +142,92 @@ func (c *CaesarxOptions) initialize() {
 	flag.Var(&c.MainKey, FLAG_KEY, "Main key")
 	flag.StringVar(&c.Secret, FLAG_SECRET, "", "Secret word/phrase used in Bellaso & Vigenere variants")
 	flag.Parse()
+
+	// check that user is requesting presets from a profile and that the profile exists. @note perhaps move elsewhere
+	if cmd.AppConfig.IsGood() && c.Common.RequestsProfile() {
+		profileID := c.Common.GetRequestedProfile()
+		if target := cmd.AppConfig.FindProfile(profileID); target != nil {
+			mlog.InfoT("Presets from ", mlog.String("ProfileID", profileID))
+			// Preset cipher variant
+			c.VariantID = target.Variant
+			// Preset primary alphabet
+			if alpha, handle := cmn.AlphabetNameByPISO(target.LangCode); alpha != nil {
+				c.Common.PresetPrimaryAlphabet(handle)
+			}
+			// Preset slave (optional) alphabet
+			c.Common.PresetSecondaryAlphabet(target.Chained)
+			println("user-profile", "slave", target.Chained)
+			// Preset cipher-specific parameters
+			switch v := target.Params.Item.(type) {
+			case *prefs.CaesarModel:
+				c.MainKey.Value = rune(v.Key)
+				c.MainKey.IsSet = true
+				if c.VariantID == z.DidimusCipher || c.VariantID == z.FibonacciCipher {
+					c.Offset = int(v.Offset)
+					c.ItNeeds = NeedCompositeKey
+				} else {
+					c.ItNeeds = NeedKey
+				}
+
+			case *prefs.SecretsModel:
+				c.Secret = v.Secret
+				c.ItNeeds = NeedsSecret
+
+			case *prefs.AffineModel:
+				mlog.Fatal(z.ERR_PROFILE_CONFIG, "cannot use caesarx app with Affine parameters. Use affine app instead.")
+
+			default:
+				msg := fmt.Sprintf("unknown polymorphic parameter type %T on profile %s", v, profileID)
+				mlog.Fatal(z.ERR_PROFILE_CONFIG, msg)
+			}
+			c.setVersion(target.Variant)
+		} else {
+			msg := fmt.Sprintf("couldn't find requested profile '%s'", profileID)
+			warn := z.NewWarning(msg, z.CommandPCode, 1)
+			mlog.Warn(warn, mlog.At())
+			fmt.Println(warn)
+		}
+	}
+}
+
+func (c *CaesarxOptions) setVersion(variant z.CipherVariant) {
+	switch variant {
+	case z.CaesarCipher:
+		c.VariantID = z.CaesarCipher
+		c.VariantTag = crypto.ALG_NAME_CAESAR
+		c.fileExt = commands.FILE_EXT_CAESAR
+		c.ItNeeds = NeedKey
+
+	case z.DidimusCipher:
+		c.VariantID = z.DidimusCipher
+		c.VariantTag = crypto.ALG_NAME_DIDIMUS
+		c.fileExt = commands.FILE_EXT_DIDIMUS
+		c.ItNeeds = NeedCompositeKey
+
+	case z.FibonacciCipher:
+		c.VariantID = z.FibonacciCipher
+		c.VariantTag = crypto.ALG_NAME_FIBONACCI
+		c.fileExt = commands.FILE_EXT_FIBONACCI
+		c.ItNeeds = NeedKey
+
+	case z.BellasoCipher:
+		c.VariantID = z.BellasoCipher
+		c.VariantTag = crypto.ALG_NAME_BELLASO
+		c.fileExt = commands.FILE_EXT_BELLASO
+		c.ItNeeds = NeedsSecret
+
+	case z.VigenereCipher:
+		c.VariantID = z.VigenereCipher
+		c.VariantTag = crypto.ALG_NAME_VIGENERE
+		c.fileExt = commands.FILE_EXT_VIGENERE
+		c.ItNeeds = NeedsSecret
+
+	case z.AffineCipher:
+		c.VariantID = z.AffineCipher
+		c.VariantTag = crypto.ALG_NAME_AFFINE
+		c.fileExt = commands.FILE_EXT_AFFINE
+		c.ItNeeds = NeedNone
+	}
 }
 
 // the executable MAY have various names that would pre-configure
@@ -228,7 +316,6 @@ func (c *CaesarxOptions) FileExt() string {
 
 func (c *CaesarxOptions) Validate() (int, error) {
 	c.checkAlterEgo()
-
 	var err error = nil
 	var exitCode int = z.EXIT_CODE_SUCCESS
 

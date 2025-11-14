@@ -5,6 +5,7 @@ caesarx (1.2) UNRELEASED; urgency=low
 * Closed #25 Caesar Lite (caesar)
 * Closes #26 added Italian, Portuguese & Czech built-in alphabets
 * Fixes #27 -num option to accept (P)unctuation and (S)ymbols
+* Closes #28 Preset user profiles for encoding/decoding via -profile flag
 
 -- Lord of Scripts <lordofscripts@users.noreply.github.com>  Fri, 31 Oct 2025 14:28:00 -0500
 

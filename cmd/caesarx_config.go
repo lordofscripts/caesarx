@@ -14,6 +14,7 @@ import (
 	"lordofscripts/caesarx/cmn/prefs"
 	"os"
 	"path"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -85,8 +86,8 @@ func newDefaultConfig() *Config {
 		prefs.NewProfileWithCipher("you+c@bitbucket.com", "Sample profile 1", caesarx.CaesarCipher, cmn.ISO_EN, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.CaesarModel{Key: 'C'}),
 		prefs.NewProfileWithCipher("you+d@bitbucket.com", "Sample profile 2", caesarx.DidimusCipher, cmn.ISO_ES, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.CaesarModel{Key: 'D', Offset: 8}),
 		prefs.NewProfileWithCipher("you+f@bitbucket.com", "Sample profile 3", caesarx.FibonacciCipher, cmn.ISO_PT, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.CaesarModel{Key: 'F', Offset: 3}),
-		prefs.NewProfileWithCipher("you+b@bitbucket.com", "Sample profile 4", caesarx.BellasoCipher, cmn.ISO_DE, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.SecretsModel{Secret: "Ein Geheim"}),
-		prefs.NewProfileWithCipher("you+v@bitbucket.com", "Sample profile 5", caesarx.VigenereCipher, cmn.ISO_IT, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.SecretsModel{Secret: "Buongiorno a tutti"}),
+		prefs.NewProfileWithCipher("you+b@bitbucket.com", "Sample profile 4", caesarx.BellasoCipher, cmn.ISO_DE, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.SecretsModel{Secret: "EinGeheim"}),
+		prefs.NewProfileWithCipher("you+v@bitbucket.com", "Sample profile 5", caesarx.VigenereCipher, cmn.ISO_IT, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.SecretsModel{Secret: "BuongiornoaTutti"}),
 		prefs.NewProfileWithCipher("you+a@bitbucket.com", "Sample profile 6", caesarx.AffineCipher, cmn.ISO_GR, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.AffineModel{A: 7, B: 12, Ap: 21}),
 	}
 
@@ -133,6 +134,22 @@ func (c *CaesarxConfig) InitConfiguration() error {
 // it is false if it was created on the spot.
 func (c *CaesarxConfig) IsGood() bool {
 	return c.isGood
+}
+
+// looks up the configuration profiles section for a matching profile.
+// If found then return it else returns nil.
+func (c *CaesarxConfig) FindProfile(id string) *prefs.Recipient {
+	var profile *prefs.Recipient = nil
+	if len(c.Configuration.Profiles) != 0 {
+		for _, p := range c.Configuration.Profiles {
+			if strings.EqualFold(id, p.Email) {
+				profile = p
+				break
+			}
+		}
+	}
+
+	return profile
 }
 
 // reads the user configuration file

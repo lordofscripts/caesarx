@@ -361,7 +361,7 @@ func setupAffineCrypto(alpha, numbers *cmn.Alphabet, opts *AffineCliOptions) *co
 func main() {
 	defer mlog.CloseLogFiles()
 	// -------	CLI FLAGS ------
-	copts := cmd.NewCommonOptions() // -help|-demo|-alpha ALPHA|-num N
+	copts := cmd.NewCommonOptions(cmd.FLAG_LIST) // -help|-demo|-alpha ALPHA|-num N
 	aopts := NewAffineOptions(copts)
 
 	// -------	CLI VALIDATION ------

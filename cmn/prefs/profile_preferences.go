@@ -9,6 +9,8 @@ package prefs
 import (
 	"fmt"
 	"lordofscripts/caesarx"
+
+	"gopkg.in/yaml.v3"
 )
 
 /* ----------------------------------------------------------------
@@ -16,6 +18,7 @@ import (
  *-----------------------------------------------------------------*/
 
 const (
+	// @note changing these require updating user YAML profiles!
 	itemTypeKey          string = "withKey"
 	itemTypeSecret       string = "withSecret"
 	itemTypeCoefficients string = "withCoefficients"
@@ -120,16 +123,28 @@ func (cm *CaesarModel) ItemType() string {
 	return itemTypeKey
 }
 
+func (cm *CaesarModel) String() string {
+	return fmt.Sprintf("CaesarModel Key:%c (optional)Offset:%d", cm.Key, cm.Offset)
+}
+
 func (am *AffineModel) ItemType() string {
 	return itemTypeCoefficients
+}
+
+func (am *AffineModel) String() string {
+	return fmt.Sprintf("AffineModel A:%d B:%d Ap:%d", am.A, am.B, am.Ap)
 }
 
 func (sm *SecretsModel) ItemType() string {
 	return itemTypeSecret
 }
 
+func (sm *SecretsModel) String() string {
+	return fmt.Sprintf("SecretsModel Secret:%s", sm.Secret)
+}
+
 // implements yaml.Marshaler interface
-func (c CipherItemContainer) MarshalYAML() (interface{}, error) {
+func (c CipherItemContainer) MarshalYAML() (any, error) {
 	return map[string]any{
 		"type": c.Item.ItemType(),
 		"data": c.Item,
@@ -139,8 +154,8 @@ func (c CipherItemContainer) MarshalYAML() (interface{}, error) {
 // implements yaml.Unmarshaler interface
 func (c *CipherItemContainer) UnmarshalYAML(unmarshal func(any) error) error {
 	var item struct {
-		Type string `yaml:"type"`
-		Data any    `yaml:"data"`
+		Type string    `yaml:"type"`
+		Data yaml.Node `yaml:"data"`
 	}
 
 	if err := unmarshal(&item); err != nil {
@@ -150,21 +165,21 @@ func (c *CipherItemContainer) UnmarshalYAML(unmarshal func(any) error) error {
 	switch item.Type {
 	case itemTypeKey:
 		var params CaesarModel
-		if err := unmarshal(item.Data); err != nil {
+		if err := item.Data.Decode(&params); err != nil {
 			return err
 		}
 		c.Item = &params
 
 	case itemTypeCoefficients:
 		var params AffineModel
-		if err := unmarshal(item.Data); err != nil {
+		if err := item.Data.Decode(&params); err != nil {
 			return err
 		}
 		c.Item = &params
 
 	case itemTypeSecret:
 		var params SecretsModel
-		if err := unmarshal(item.Data); err != nil {
+		if err := item.Data.Decode(&params); err != nil {
 			return err
 		}
 		c.Item = &params

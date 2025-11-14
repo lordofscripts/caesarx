@@ -93,12 +93,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %changelog
 * Tue Nov 11 2025 lordofscripts
+- added -profile CLI flag and support for user encryption profiles
 - added Caesar Lite (caesar)
-
-* Mon Oct 31 2025 lordofscripts
 - added codebook
-
-* Mon Oct 27 2025 lordofscripts
 - added missing manual pages to the install
 
 * Thu Oct 23 2025 lordofscripts
