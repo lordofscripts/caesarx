@@ -45,7 +45,7 @@ func NewBellasoSequencer(secret string, alpha *cmn.Alphabet) *BellasoSequencer {
 	bellaso := &BellasoSequencer{nil, 0, 0}
 	secret = alpha.ToUpperString(secret)
 	if newSecret, err := bellaso.VerifySecret(secret, alpha); err != nil {
-		mlog.Errorf("invalid secret for Bellaso sequencer: %v", "Error", err.Error())
+		mlog.ErrorT("invalid secret for Bellaso sequencer", mlog.Err(err))
 		return nil
 	} else {
 		bellaso.secret = []rune(newSecret)
@@ -138,7 +138,7 @@ func (cs *BellasoSequencer) VerifySecret(s string, alpha *cmn.Alphabet) (string,
 	s = strings.Trim(s, " \t")
 	for _, char := range s {
 		if !alpha.Contains(char, true) {
-			return "", fmt.Errorf("subkey %c not present in %s alphabet for Bellaso", char, alpha.Name)
+			return "", fmt.Errorf("subkey '%c' not present in %s alphabet for Bellaso", char, alpha.Name)
 		}
 	}
 

@@ -52,7 +52,7 @@ func NewVigenereSequencer(secret string, alpha *cmn.Alphabet) *VigenereSequencer
 
 	secret = alpha.ToUpperString(secret)
 	if newSecret, err := vg.VerifySecret(secret, alpha); err != nil {
-		mlog.Errorf("invalid secret for Vigenère sequencer: %v", "Error", err.Error())
+		mlog.ErrorT("invalid secret for Vigenère sequencer", mlog.Err(err))
 		vg = nil
 	} else {
 		baseKeyRunes := []rune(newSecret)
