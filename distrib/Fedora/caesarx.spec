@@ -3,7 +3,7 @@
 %define __cp %{__cp} -r
 
 Name:           caesarx
-Version:        1.1.1
+Version:        1.2
 Release:        1%{?dist}
 Summary:        CaesarX is a collection of modernized Caesar ciphers for the real world.
 
