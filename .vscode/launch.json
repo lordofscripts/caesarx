@@ -163,6 +163,13 @@
             "program": "${workspaceRoot}/cmd/gui/",
             "args": ["-help"]
         },
-
+        {
+            "name": "BIP39 Reverse",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceRoot}/cmd/bip39/",
+            "args": ["prepare detect crater card dose endless bag captain gun want random antenna"]
+        },
     ]
 }
