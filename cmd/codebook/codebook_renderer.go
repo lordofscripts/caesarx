@@ -93,7 +93,7 @@ func NewConsoleCodebookRenderer(year uint, alpha *cmn.Alphabet, title, recovery 
 
 	dateY := time.Date(int(year), time.January, 1, 0, 0, 0, 0, time.Local)
 	genZ := sched.NewCaesarium(title, alpha, dateY, 0)
-	// is recoverability requested? @todo Use Bip39
+	// is recoverability requested? @note preferred to use a BIP39 mnemonic list as recovery parameter value
 	if len(recovery) != 0 {
 		genZ.MakeRecoverable(recovery)
 	}

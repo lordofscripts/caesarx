@@ -157,6 +157,21 @@ which currently lists:
 /usr/share/man/man1/caesarx.1.gz
 ```
 
+## BIP39 Support
+
+The module includes a `bip39` application to generate and verify BIP39 mnemonic
+sentences of valid lengths (12,15,18,21,24 words).
+
+>
+> bip39 -help
+>
+
+It is advisable to use these BIP39 mnemonics as *Caesarium codebook recovery phrases*.
+One could use the phrase as-is which will generate the 64-bit pseudo random seed,
+or use the `Bip30.ToSeed()` method to get the 64-byte seed, and then subsequently
+reduce it to an `int64` internal seed (for the Caesarium seed) using the common library
+`cmn.CalculateCRC64()` function.
+
 ## Other 
 
 ### Debugging

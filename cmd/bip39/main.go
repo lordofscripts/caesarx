@@ -2,14 +2,18 @@
  *					L o r d  O f   S c r i p t s (tm)
  *				  Copyright (C)2025 Dídimo Grimaldo T.
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
- * Command-line utility to generate BIP39 recovery phrases.
+ * Command-line utility to generate BIP39 recovery phrases. It uses
+ * the internal BIP39 String Renderer. To enhance with PDF or HTML
+ * output, simply implement your own bip39.IBip39Renderer.
  *-----------------------------------------------------------------*/
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"lordofscripts/caesarx/app"
+	"lordofscripts/caesarx/cmn"
 	"lordofscripts/caesarx/internal/bip39"
 	"os"
 	"strings"
@@ -20,105 +24,107 @@ import (
  *-----------------------------------------------------------------*/
 
 const (
-	// The number of words in the BIP39 mnemonic sentence
-	Bip39Words12 Bip39Length = iota
-	Bip39Words15
-	Bip39Words18
-	Bip39Words21
-	Bip39Words24
-)
-
-const (
 	WORD_SEP rune = ' '
 )
 
-var (
-	RenderMap = map[Bip39Length]Renderer{ // E-BitSize E-ByteSize
-		Bip39Words12: {Table{4, 3}, Table{4, 4}}, // 128	16
-		Bip39Words15: {Table{5, 3}, Table{5, 4}}, // 160 20
-		Bip39Words18: {Table{6, 3}, Table{6, 4}}, // 192 24
-		Bip39Words21: {Table{7, 3}, Table{7, 4}}, // 224 28
-		Bip39Words24: {Table{6, 4}, Table{8, 4}}, // 256 32
-	}
+const (
+	EXITCODE_EXCLUSIVE            int = 1
+	EXITCODE_MISSING_ACTION       int = 2
+	EXITCODE_NO_MNEMONIC_SENTENCE int = 3
+	EXITCODE_BIP_LENGTH           int = 4
+	EXITCODE_VERIFY               int = 20
+	EXITCODE_GENERATE             int = 30
 )
 
 /* ----------------------------------------------------------------
  *							T y p e s
  *-----------------------------------------------------------------*/
 
-type Bip39Length int
-
-type Table struct {
-	Rows int
-	Cols int
-}
-type Renderer struct {
-	Sentence Table
-	Entropy  Table
-}
-
 /* ----------------------------------------------------------------
  *							F u n c t i o n s
  *-----------------------------------------------------------------*/
 
 // get the BIP sentence length
-func getBipLength(size int) Bip39Length {
-	var result Bip39Length
-	switch size {
-	case 12:
-		result = Bip39Words12
-
-	case 15:
-		result = Bip39Words15
-
-	case 18:
-		result = Bip39Words18
-
-	case 21:
-		result = Bip39Words21
-
-	case 24:
-		result = Bip39Words24
-
-	default:
+func getBipLength(size int) bip39.Bip39Length {
+	var dummy bip39.Bip39Length
+	result, err := dummy.Convert(size)
+	if err != nil {
 		msg := fmt.Sprintf("not a valid BIP sentence size: %d", size)
-		app.Die(msg, 10)
+		app.Die(msg, EXITCODE_BIP_LENGTH)
 	}
 
 	return result
 }
 
-// renders the mnemonic sentence as a table
-func renderMnemonic(mnemonic []string) {
-	bipLen := getBipLength(len(mnemonic))
-	table := RenderMap[bipLen].Sentence
+// Given a list of mnemonics it validates it and shows its entropy.
+func Verify(mnemonics []string) error {
+	bipSize := len(mnemonics)
+	modeBIP := getBipLength(bipSize)
 
-	fmt.Println("M n e m o n i c s:")
-	for row := range table.Rows {
-		fmt.Print("\t")
-		for col := range table.Cols {
-			// In BIP39 English the maximum word length is 8
-			offset := table.Cols * row
-			fmt.Printf("%-10s", mnemonic[offset+col])
+	var err error = nil
+	bip := bip39.NewBip39(modeBIP, WORD_SEP)
+	if bip == nil {
+		err = errors.New("invalid BIP size")
+	} else if err = bip.ValidateMnemonics(mnemonics); err == nil {
+		var entropy []byte
+		if entropy, err = bip.EntropyFromMnemonic(mnemonics); err == nil {
+			renderBIP := bip39.NewBip39StringRenderer(modeBIP)
+			fmt.Print(renderBIP.FormatMnemonic(mnemonics))
+			fmt.Println("E n t r o p y:")
+			fmt.Print(renderBIP.FormatEntropy(entropy))
+			//renderMnemonic(mnemonics, false)
+			//renderEntropy(modeBIP, entropy)
 		}
-		fmt.Println()
 	}
+
+	return err
 }
 
-// render the entropy as a table
-func renderEntropy(modeBIP Bip39Length, entropy []byte) {
-	table := RenderMap[modeBIP].Sentence
+func Generate(length int, showSeed bool, withPassphrase string, showPlainList bool) error {
+	var err error = nil
 
-	fmt.Println("E n t r o p y:")
-	for row := range table.Rows {
-		fmt.Print("\t")
-		for col := range table.Cols {
-			// In BIP39 English the maximum word length is 8
-			offset := table.Cols * row
-			fmt.Printf("%5d", entropy[offset+col])
+	modeBIP := getBipLength(length)
+	bip := bip39.NewBip39(modeBIP, WORD_SEP)
+
+	var mnemonics []string
+	if mnemonics, err = bip.GenerateMnemonic(); err == nil {
+		renderBIP := bip39.NewBip39StringRenderer(modeBIP)
+
+		mnemonicStr := bip.String()
+		fmt.Println("BIP-39 M n e m o n i c:")
+		if showPlainList {
+			fmt.Println("\t", bip.String())
+		} else {
+			fmt.Print(renderBIP.FormatMnemonic(mnemonics))
+			//renderMnemonic(mnemonics, true)
 		}
-		fmt.Println()
+		//renderEntropy(modeBIP, bip.GetEntropy())
+		fmt.Println("E n t r o p y:")
+		fmt.Print(renderBIP.FormatEntropy(bip.GetEntropy()))
+
+		if showSeed {
+			fmt.Println("BIP-39 S e e d:")
+			bip39Seed := bip.ToSeed(mnemonicStr, withPassphrase)
+			reducedSeed := cmn.CalculateCRC64(bip39Seed)
+			fmt.Printf("\tReduced Seed: %16x (%d)\n", reducedSeed, reducedSeed)
+			fmt.Printf("\tSeed Passphrase: '%s'\n", withPassphrase)
+			if showPlainList {
+				fmt.Println("\t", bip.ToSeedHex(mnemonicStr, withPassphrase))
+			} else {
+				fmt.Println("BIP-39 Hex Seed:")
+				fmt.Print(renderBIP.FormatSeed(bip39Seed))
+			}
+		}
 	}
+
+	return err
+}
+
+func Help() {
+	flag.Usage()
+	fmt.Println("Examples:")
+	fmt.Println("\tbip39 -generate {12|15|18|21|24} [-seed [-passphrase 'TEXT']] [-plain]")
+	fmt.Println("\tbip39 -verify 'MNEMONIC LIST'")
 }
 
 /* ----------------------------------------------------------------
@@ -141,20 +147,19 @@ func main() {
 	flag.Parse()
 
 	if flgHelp {
-		flag.Usage()
+		Help()
 		os.Exit(0)
 	}
 
-	var modeBIP Bip39Length
 	if flgSize != 0 && flgVerify {
-		app.Die("generate and verify are mutually exclusive", 1)
+		app.Die("generate and verify are mutually exclusive", EXITCODE_EXCLUSIVE)
 	}
 	if flgSize == 0 && !flgVerify {
-		app.Die("generate OR verify must be given", 2)
+		app.Die("generate OR verify must be given", EXITCODE_MISSING_ACTION)
 	}
 	if flgVerify {
 		if flag.NArg() != 1 {
-			app.Die("mnemonic sentence must be given as argument", 3)
+			app.Die("mnemonic sentence must be given as argument", EXITCODE_NO_MNEMONIC_SENTENCE)
 		}
 		if len(flgPassphrase) > 0 {
 			println("ignoring -passphrase")
@@ -164,37 +169,12 @@ func main() {
 		}
 
 		words := strings.Split(flag.Arg(0), string(WORD_SEP))
-		bipSize := len(words)
-		modeBIP = getBipLength(bipSize)
-
-		bip := bip39.NewBip39(bipSize, WORD_SEP)
-		if entropy, err := bip.EntropyFromMnemonic(words); err != nil {
-			app.DieWithError(err, 22)
-		} else {
-			renderMnemonic(words)
-			renderEntropy(modeBIP, entropy)
+		if err := Verify(words); err != nil {
+			app.DieWithError(err, EXITCODE_VERIFY)
 		}
 	} else if flgSize > 0 {
-		modeBIP = getBipLength(flgSize)
-		bip := bip39.NewBip39(flgSize, WORD_SEP)
-		if mnemonics, err := bip.GenerateMnemonic(); err != nil {
-			app.DieWithError(err, 20)
-		} else {
-			mnemonicStr := bip.String()
-			fmt.Println("BIP-39 Mnemonic:")
-			if flgPlain {
-				fmt.Println("\t", bip.String())
-			} else {
-				renderMnemonic(mnemonics)
-			}
-			renderEntropy(modeBIP, bip.GetEntropy())
-
-			if flgSeed {
-				fmt.Println("BIP-39 Seed Passphrase:")
-				fmt.Println("\tPassphrase:", flgPassphrase)
-				fmt.Println("BIP-39 Hex Seed:")
-				fmt.Println("\t", bip.ToSeedHex(mnemonicStr, flgPassphrase))
-			}
+		if err := Generate(flgSize, flgSeed, flgPassphrase, flgPlain); err != nil {
+			app.DieWithError(err, EXITCODE_GENERATE)
 		}
 	}
 }

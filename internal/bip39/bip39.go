@@ -77,7 +77,7 @@ const (
 
 // BIP39 Mnemonic Sentence Generator (12/15/18/21/24 words).
 type Bip39 struct {
-	SentenceLength int // size of Mnemonic sentence length (12|24)
+	SentenceLength Bip39Length
 	Entropy        uint16
 	ChecksumBits   uint8
 	separator      rune
@@ -90,37 +90,43 @@ type Bip39 struct {
  *-----------------------------------------------------------------*/
 
 // (Constructor) instantiates a BIP39 Mnemonic Sentence Generator
-func NewBip39(length int, separator rune) *Bip39 {
-	var ent uint16
-	var cs uint8
-	switch length {
-	case 12:
-		ent = 128
-		cs = 4
-	case 15:
-		ent = 160
-		cs = 5
-	case 18:
-		ent = 192
-		cs = 6
-	case 21:
-		ent = 224
-		cs = 7
-	case 24:
-		ent = 256
-		cs = 8
-	default:
-		return nil
+func NewBip39(length Bip39Length, separator rune) *Bip39 {
+	var instance *Bip39 = nil
+	if length.IsValid() {
+		ent, cs := getSizes(length)
+
+		instance = &Bip39{
+			SentenceLength: length,
+			Entropy:        ent,
+			ChecksumBits:   cs,
+			separator:      separator,
+			mnemonic:       nil,
+			entropy:        nil,
+		}
 	}
 
-	return &Bip39{
-		SentenceLength: length,
-		Entropy:        ent,
-		ChecksumBits:   cs,
-		separator:      separator,
-		mnemonic:       nil,
-		entropy:        nil,
+	return instance
+}
+
+// (Constructor) instantiates a BIP39 Mnemonic Sentence Generator
+func NewBip39Raw(length int, separator rune) *Bip39 {
+	var dummy Bip39Length
+	var instance *Bip39 = nil
+
+	bLen, err := dummy.Convert(length)
+	if err == nil {
+		ent, cs := getSizes(bLen)
+		instance = &Bip39{
+			SentenceLength: bLen,
+			Entropy:        ent,
+			ChecksumBits:   cs,
+			separator:      separator,
+			mnemonic:       nil,
+			entropy:        nil,
+		}
 	}
+
+	return instance
 }
 
 /* ----------------------------------------------------------------
@@ -155,14 +161,33 @@ func (b *Bip39) GenerateMnemonicFromEntropy(entropy []byte) ([]string, error) {
 	return b.generateMnemonic(entropy)
 }
 
+// Takes a list of mnemonics and validates it by checking it has the correct
+// number of mnemonics and that they all exist in the (English) BIP39 word list.
+func (b *Bip39) ValidateMnemonics(mnemonics []string) error {
+	vbl := []int{12, 15, 18, 21, 24}
+	size := len(mnemonics)
+	var err error = nil
+
+	if !slices.Contains(vbl, size) {
+		err = fmt.Errorf("invalid mnemonic sentence length: %d", size)
+	} else {
+		for _, word := range mnemonics {
+			word = norm.NFKD.String(word)
+			if !strings.Contains(BIP39_WORDS, word) {
+				err = fmt.Errorf("word '%s' is not a valid English BIP39 mnemonic", word)
+				break
+			}
+		}
+	}
+
+	return err
+}
+
 // find out the entropy value used to generate the provided mnemonic sentence
 func (b *Bip39) EntropyFromMnemonic(sentence []string) ([]byte, error) {
-	// validate sentence length
-	vbl := []int{12, 15, 18, 21, 24}
-	csl := []int{4, 5, 6, 7, 8}
-	size := len(sentence)
-	if !slices.Contains(vbl, size) {
-		return nil, fmt.Errorf("invalid mnemonic sentence length: %d", size)
+	// validate sentence length (internal normalization on a word-by-word basis)
+	if err := b.ValidateMnemonics(sentence); err != nil {
+		return nil, err
 	}
 
 	// official English word list
@@ -173,12 +198,17 @@ func (b *Bip39) EntropyFromMnemonic(sentence []string) ([]byte, error) {
 	var bitStream string = ""
 	// generate indices
 	for _, word := range sentence {
+		// NFKD normalization
+		word = norm.NFKD.String(word)
 		// find the word index in the BIP39 English word list
 		index := slices.Index(wordList, word)
 		// update the binary representation of ENT+CS
 		bitStream = bitStream + fmt.Sprintf("%.11b", index)
 	}
 	// remove CS
+	vbl := []int{12, 15, 18, 21, 24}
+	csl := []int{4, 5, 6, 7, 8}
+	size := len(sentence)
 	csIdx := slices.Index(vbl, size)
 	csLen := csl[csIdx]
 	// ENT
@@ -256,16 +286,17 @@ func (b *Bip39) generateMnemonic(entropy []byte) ([]string, error) {
 	// generate indexes of 0..2047
 	groupsSlice := strings.Split(bitStream, string(GROUP_SEP))
 	// prepare the wordlist
-	b.mnemonic = make([]string, b.SentenceLength)
+	mnemonic := make([]string, b.SentenceLength.ToSize())
 	for i, groupStr := range groupsSlice {
 		// convert the group (in binary number base) to integer
 		if num, err := strconv.ParseInt(groupStr, 2, 0); err != nil {
 			return nil, err
 		} else {
-			b.mnemonic[i] = wordList[num]
+			mnemonic[i] = wordList[num]
 		}
 	}
 
+	b.mnemonic = mnemonic
 	b.entropy = entropy
 	return b.mnemonic, nil
 }
@@ -301,6 +332,32 @@ func (b *Bip39) generateHash(entropy []byte) []byte {
 /* ----------------------------------------------------------------
  *							F u n c t i o n s
  *-----------------------------------------------------------------*/
+
+// get the ENT & CS sizes in bits for any given l
+func getSizes(l Bip39Length) (ent uint16, cs uint8) {
+	switch l {
+	case Bip39Words12:
+		ent = 128
+		cs = 4
+	case Bip39Words15:
+		ent = 160
+		cs = 5
+	case Bip39Words18:
+		ent = 192
+		cs = 6
+	case Bip39Words21:
+		ent = 224
+		cs = 7
+	case Bip39Words24:
+		ent = 256
+		cs = 8
+	default:
+		ent = 0
+		cs = 0
+	}
+
+	return
+}
 
 // Convert the specified byte slice to a binary string.
 func bytesToBinaryString(slice []byte) string {

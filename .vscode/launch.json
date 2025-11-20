@@ -164,12 +164,20 @@
             "args": ["-help"]
         },
         {
-            "name": "BIP39 Reverse",
+            "name": "BIP39 Generate",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceRoot}/cmd/bip39/",
-            "args": ["prepare detect crater card dose endless bag captain gun want random antenna"]
+            "args": ["-generate", "12", "-seed", "-passphrase", "secret_text"]
+        },
+        {
+            "name": "BIP39 Verify",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceRoot}/cmd/bip39/",
+            "args": ["-verify", "prepare detect crater card dose endless bag captain gun want random antenna"]
         },
     ]
 }

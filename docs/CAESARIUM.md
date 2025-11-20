@@ -9,6 +9,7 @@ enhanced algorithms of *CaesarX* but also through the addition of the
 - **Built-in Alphabets**: Can build a codebook for any built-in language.
 - **Renderers**: Can support multiple output renderers such as console, HTML, etc.
 - **Recoverable**: When necessary, it can generate recoverable codebooks
+- **BIP39 support**: You can use 12-word mnemonic phrases following BIP39 specifications.
 - **Fully random**: By default generates fully random one-use codebooks
 - **User Profiles**: Supports user-profiles (recipients)
 - **Monthy schedule**: Generate a random codebook for any month
@@ -46,6 +47,11 @@ the secret you left for them 15 years after your departure (as an
 example). However, to ensure codebooks can be recovered, the internal
 codebook generation algorithm use a random number generator that is NOT
 cryptographically secure: `math/rand`.
+
+However, rather than using your own made-up recovery phrase/password, I
+advise the user to instead of the `-recovery "PHRASE"` option to use the 
+`-bip39` option which automatically generates a 12-word BIP39 mnemonic
+recovery phrase.
 
 ---
 
@@ -156,12 +162,16 @@ lordofscrips@bitbucket:$ codebook -date 2026 -full
 ## 📌 Other CLI options for the Caesarium 
 
 
-- `-recovery STRING` a recovery phrase to generate a recoverable Caesarium.  
+- `-recovery STRING` a recovery phrase to generate a recoverable Caesarium. (to be deprecated)
+- `-bip39` generates and use a self-generated random mnemonic recovery phrase 
+   according to BIP39
 - `-title STRING` The title (defaults to "Caesarium")
 - `-variant STRING` Select the cipher variant (defaults to "caesar").
 - `-for STRING` the recipient (default to "you@bitbucket.com")
-- `-date DATE` the date in ISO format, it is either a 4-digit year `2025`, or the year followed by the month number `2025-03`.
-- `-alpha STRING` Primary built-in alphabet name (defaults to "english"). See [Languages](./LANGUAGES.md).
+- `-date DATE` the date in ISO format, it is either a 4-digit year `2025`, or 
+  the year followed by the month number `2025-03`.
+- `-alpha STRING` Primary built-in alphabet name (defaults to "english"). 
+  See [Languages](./LANGUAGES.md).
 
 ---
-Updated 11 November 2025.
+Updated 20 November 2025.

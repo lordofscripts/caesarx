@@ -14,6 +14,7 @@ import (
 	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/ciphers"
 	"lordofscripts/caesarx/cmd"
+	"lordofscripts/caesarx/internal/bip39"
 	"os"
 	"strings"
 	"time"
@@ -270,17 +271,18 @@ func main() {
 	defer mlog.CloseLogFiles()
 
 	// -------	CLI FLAGS ------
-	var flgHelp, flgFullBook bool
+	var flgHelp, flgFullBook, flgBip39 bool
 	var flgDate *cmd.DateFlag = cmd.NewDateVar("2006-01", "2006", "2006-Jan")
 	var flgTitle, flgVariant, flgAlphabet, flgRecovery, flgRecipient, flgOutFormat string
 
 	flgOutFormat = OUT_TEXT_PLAIN
 	flag.BoolVar(&flgHelp, "help", false, "This help")
 	flag.BoolVar(&flgFullBook, "full", false, "Produce entire book when date is a year alone")
+	flag.BoolVar(&flgBip39, "bip39", false, "Generate BIP39 mnemonic (use i.s.o. -recovery)")
 	flag.StringVar(&flgTitle, "title", "Caesarium", "Codebook Title")
 	flag.StringVar(&flgAlphabet, "alpha", "english", "Primary alphabet name")
 	flag.StringVar(&flgVariant, "variant", "caesar", "Cipher variant")
-	flag.StringVar(&flgRecovery, "recovery", "", "Recovery phrase to generate a recoverable Caesarium")
+	flag.StringVar(&flgRecovery, "recovery", "", "Recovery phrase to generate a recoverable Caesarium (else use -bip39)")
 	flag.StringVar(&flgRecipient, "for", "you@bitbucket.com", "The recipient of messages from this codebook")
 	flag.Var(flgDate, "date", "now|today|ahora|hoy| date format such as 2006-01-02")
 	flag.Parse()
@@ -297,6 +299,23 @@ func main() {
 	selectedCipher, err := caesarx.NoCipher.Parse(flgVariant)
 	if err != nil {
 		app.DieWithError(err, caesarx.ERR_BAD_CIPHER)
+	}
+	// .3 Mnemonic recovery
+	if flgBip39 && len(flgRecovery) != 0 {
+		app.Die("options -bip39 and -recovery are mutually exclusive", caesarx.ERR_PARAMETER)
+	}
+
+	// .4 Recovery & Mnemonic
+	var mnemonics string = ""
+	if flgBip39 { // use BIP39 as recovery phrase instead of user-provided
+		bip := bip39.NewBip39(bip39.Bip39Words12, ' ')
+		if words, err := bip.GenerateMnemonic(); err != nil {
+			app.DieWithError(err, caesarx.ERR_INTERNAL)
+		} else {
+			mnemonics = strings.Join(words, " ")
+		}
+	} else {
+		mnemonics = flgRecovery
 	}
 
 	// .3 retrieve the built-in alphabet requested by the user
@@ -323,7 +342,7 @@ func main() {
 	var renderer ICodebookRenderer = nil
 	switch strings.ToLower(flgOutFormat) {
 	case OUT_TEXT_PLAIN:
-		renderer = NewConsoleCodebookRenderer(uint(bookDate.Year()), alphabet, flgTitle, flgRecovery)
+		renderer = NewConsoleCodebookRenderer(uint(bookDate.Year()), alphabet, flgTitle, mnemonics)
 
 	case OUT_TEXT_HTML:
 
