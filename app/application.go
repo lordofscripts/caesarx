@@ -95,10 +95,10 @@ func GetConfigDir(orgName, appName string) string {
 }
 
 // Ensures a directory and all its parents exist and create them if necessary.
-// Default permissions is 0755.
+// Default permissions is 0750.
 func EnsureConfigDir(path string) error {
 	// Create the config directory if it doesn't exist
-	err := os.MkdirAll(path, 0755) // 0755 permissions: rwxr-xr-x
+	err := os.MkdirAll(path, 0750) // 0755 permissions: rwxr-x---
 	if err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
