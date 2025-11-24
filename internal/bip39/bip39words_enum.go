@@ -7,7 +7,9 @@
 package bip39
 
 import (
+	"encoding/hex"
 	"fmt"
+	"lordofscripts/caesarx/app/mlog"
 	"strconv"
 	"strings"
 
@@ -26,6 +28,9 @@ const (
 	Bip39Words21
 	Bip39Words24
 )
+
+// a value to indicate the Bip39 mode is invalid
+const Bip39WordsInvalid Bip39Length = Bip39Length(255)
 
 /* ----------------------------------------------------------------
  *							L o c a l s
@@ -108,7 +113,9 @@ func (c Bip39Length) IsValid() bool {
 }
 
 // Convert takes any integer and tries to convert it to a Bip39Length
-// enumeration value if it is within the range.
+// enumeration value if it is within the range. The v value could be
+// any of the Bip39Length enumeration values OR the number of words
+// in the mnemonic list
 func (c Bip39Length) Convert(v int) (Bip39Length, error) {
 	if val, ok := toEnum[strconv.Itoa(v)]; !ok {
 		return 0, fmt.Errorf("cannot convert '%d' as Bip39Length", v)
@@ -163,4 +170,59 @@ func (c *Bip39Length) UnmarshalYAML(value *yaml.Node) error {
 // Custom YAML marshalling of enumeration, otherwise it appears as integer.
 func (c Bip39Length) MarshalYAML() (any, error) {
 	return toString[c], nil
+}
+
+/* ----------------------------------------------------------------
+ *							F u n c t i o n s
+ *-----------------------------------------------------------------*/
+
+// Similar to BipWordCountFromEntropy which is called internally but it
+// first cleans up the hex string from whitespace, gets the entropy and
+// then derives the corresponding BIP mode.
+func BipWordCountFromHexEntropy(entropyHex string) ([]byte, Bip39Length) {
+	var entropy []byte
+	var wcl Bip39Length
+	var err error = nil
+	if entropy, err = hex.DecodeString(entropyHex); err != nil {
+		wcl = Bip39WordsInvalid
+	} else {
+		wcl = BipWordCountFromEntropy(entropy)
+	}
+
+	return entropy, wcl
+}
+
+// given an entropy slice, determine whether it can be used to
+// generate a BIP39 of the resulting length. Returns Bip39WordsInvalid on error.
+func BipWordCountFromEntropy(entropy []byte) Bip39Length {
+	var bwl Bip39Length
+	size := len(entropy)
+	switch size {
+	case 16:
+		bwl = Bip39Words12
+	case 20:
+		bwl = Bip39Words15
+	case 24:
+		bwl = Bip39Words18
+	case 28:
+		bwl = Bip39Words21
+	case 32:
+		bwl = Bip39Words24
+	default:
+		bwl = Bip39WordsInvalid // an invalid value, thus enum.IsValid() is false
+		mlog.Error("invalid entropy slice size", size, mlog.At())
+	}
+
+	return bwl
+}
+
+// Determine the BIP39 word list length from the number of supposed
+// mnemonics. Returns Bip39WordsInvalid on error.
+func BipWordCountFromMnemonics(mnemonics string) Bip39Length {
+	mnemonicsList := strings.Fields(mnemonics)
+	if val, ok := toEnum[strconv.Itoa(len(mnemonicsList))]; !ok {
+		return Bip39WordsInvalid
+	} else {
+		return val
+	}
 }

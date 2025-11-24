@@ -7,6 +7,7 @@
 package bip39
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strings"
 )
@@ -19,9 +20,9 @@ type IBip39Renderer interface {
 	// formats the mnemonic sentence as a matrix
 	FormatMnemonic(mnemonic []string) string
 	// formats the mnemonic entropy as a matrix
-	FormatEntropy(entropy []byte) string
+	FormatEntropy(entropy []byte, asHex bool) string
 	// formats the seed as a hex string matrix
-	FormatSeed(seed []byte) string
+	FormatSeed(seed []byte, asHex bool) string
 }
 
 var _ IBip39Renderer = (*Bip39StringRenderer)(nil)
@@ -118,12 +119,15 @@ func (r *Bip39StringRenderer) FormatMnemonic(mnemonic []string) string {
 }
 
 // render the entropy as a table
-func (r *Bip39StringRenderer) FormatEntropy(entropy []byte) string {
+func (r *Bip39StringRenderer) FormatEntropy(entropy []byte, asHex bool) string {
 	var sb strings.Builder
 	const CR rune = '\n'
 
 	if len(entropy) != r.rowsEnt*r.colsEnt {
-		sb.WriteString(fmt.Sprintln(entropy))
+		sb.WriteString(fmt.Sprintln(string(entropy)))
+		sb.WriteRune(CR)
+	} else if asHex {
+		sb.WriteString(hex.EncodeToString(entropy))
 		sb.WriteRune(CR)
 	} else {
 		for row := range r.rowsEnt {
@@ -140,19 +144,25 @@ func (r *Bip39StringRenderer) FormatEntropy(entropy []byte) string {
 	return sb.String()
 }
 
-func (r *Bip39StringRenderer) FormatSeed(seed []byte) string {
+func (r *Bip39StringRenderer) FormatSeed(seed []byte, asHex bool) string {
 	const CR rune = '\n'
 	var sb strings.Builder
 	var rows int = 4
 	var cols int = 16
 
-	for row := range rows {
-		sb.WriteRune('\t')
-		for col := range cols {
-			offset := cols * row
-			sb.WriteString(fmt.Sprintf("%02x", seed[offset+col]))
-		}
+	if asHex {
+		sb.WriteString(hex.EncodeToString(seed))
 		sb.WriteRune(CR)
+	} else {
+		for row := range rows {
+			sb.WriteRune('\t')
+			for col := range cols {
+				offset := cols * row
+				sb.WriteString(fmt.Sprintf("%02x", seed[offset+col]))
+			}
+			sb.WriteRune(CR)
+		}
+
 	}
 
 	return sb.String()

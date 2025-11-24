@@ -116,12 +116,12 @@
             "args": ["-mode=2", "-key=5", "-tape", "This año is 1920 áéíóú +-*/"]
         },
         {
-            "name": "Caesar Augustus",
+            "name": "Caesarium Profile",
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceRoot}/cmd/cli/",
-            "args": ["-mode=3", "-key=5", "-altkey=3", "This año is 1920 áéíóú +-*/"]
+            "program": "${workspaceRoot}/cmd/caesar/",
+            "args": ["-profile", "you+y@bitbucket.com", "Como te llamas"]
         },
         {
             "name": "Caesar Tiberius",
@@ -172,12 +172,20 @@
             "args": ["-generate", "12", "-seed", "-passphrase", "secret_text"]
         },
         {
-            "name": "BIP39 Verify",
+            "name": "BIP39 Verify MNE",
             "type": "go",
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceRoot}/cmd/bip39/",
             "args": ["-verify", "prepare detect crater card dose endless bag captain gun want random antenna"]
+        },
+        {
+            "name": "BIP39 Verify ENT",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceRoot}/cmd/bip39/",
+            "args": ["-verify", "8f1c4c796099b574ed1538e7f8a1894e"]
         },
     ]
 }

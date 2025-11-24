@@ -5,17 +5,22 @@
  * Command-line utility to generate BIP39 recovery phrases. It uses
  * the internal BIP39 String Renderer. To enhance with PDF or HTML
  * output, simply implement your own bip39.IBip39Renderer.
+ * It can also verify them using a Mnemonic sentence or a hex Entropy
+ * string as source.
  *-----------------------------------------------------------------*/
 package main
 
 import (
+	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
+	z "lordofscripts/caesarx"
 	"lordofscripts/caesarx/app"
-	"lordofscripts/caesarx/cmn"
+	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/internal/bip39"
 	"os"
+	"path"
 	"strings"
 )
 
@@ -35,6 +40,21 @@ const (
 	EXITCODE_VERIFY               int = 20
 	EXITCODE_GENERATE             int = 30
 )
+
+var (
+	ErrHexDecode = errors.New("cannot decode HEX string")
+)
+
+/* ----------------------------------------------------------------
+ *				M o d u l e   I n i t i a l i z a t i o n
+ *-----------------------------------------------------------------*/
+func init() {
+	if !app.IsPipedInput() {
+		z.Copyright(z.CO1, true)
+		z.BuyMeCoffee()
+		fmt.Println("\t=========================================")
+	}
+}
 
 /* ----------------------------------------------------------------
  *							T y p e s
@@ -56,8 +76,74 @@ func getBipLength(size int) bip39.Bip39Length {
 	return result
 }
 
-// Given a list of mnemonics it validates it and shows its entropy.
-func Verify(mnemonics []string) error {
+// (console output) show all known BIP39 information
+func showBIP39(modeBIP bip39.Bip39Length, mnemonics []string, entropy []byte,
+	renderBIP bip39.IBip39Renderer, optHex, optPlain bool) {
+	fmt.Println("BIP-39 Mode:")
+	fmt.Println("\t", modeBIP)
+	fmt.Println("BIP-39 M n e m o n i c:")
+	if optPlain {
+		fmt.Println("\t", strings.Join(mnemonics, " "))
+	} else {
+		fmt.Print(renderBIP.FormatMnemonic(mnemonics))
+	}
+	fmt.Println("BIP-39 E n t r o p y:")
+	fmt.Print(renderBIP.FormatEntropy(entropy, optHex))
+}
+
+// (console output) show the BIP39 seed generated from the original entropy
+// and the derived reduced seed that could be used for Recoverable Codebooks.
+func showBIPSeed(bip39Seed []byte, reducedSeed uint64, seedPassphrase string,
+	renderBIP bip39.IBip39Renderer, optHex, optPlain bool) {
+	fmt.Println("BIP-39 S e e d:")
+	fmt.Printf("\tReduced Seed: %16x (%d)\n", reducedSeed, reducedSeed)
+	fmt.Printf("\tSeed Passphrase: '%s'\n", seedPassphrase)
+	if optPlain {
+		fmt.Println("\t", hex.EncodeToString(bip39Seed))
+	} else {
+		fmt.Println("BIP-39 Hex Seed:")
+		fmt.Print(renderBIP.FormatSeed(bip39Seed, optHex))
+	}
+}
+
+// It validates the hexadecimal string and if it is valid hex, it converts it
+// to an entropy. From there it generates the list of mnemonics associated with
+// that entropy.
+// Input:
+// · Entropy as a hexadecimal string
+// Output:
+// · Error or nil on success
+func VerifyEntropy(entropyStr string) error {
+	if entropy, err := hex.DecodeString(entropyStr); err != nil {
+		mlog.Err(err)
+		return ErrHexDecode
+	} else {
+		// nr. of bytes in a BIP39 entropy
+		modeBIP := bip39.BipWordCountFromEntropy(entropy)
+		if !modeBIP.IsValid() {
+			return fmt.Errorf("that is not a valid entropy length")
+		}
+
+		bip := bip39.NewBip39(modeBIP, WORD_SEP)
+		if mnemonics, err := bip.GenerateMnemonicFromEntropy(entropy); err != nil {
+			return err
+		} else {
+			renderBIP := bip39.NewBip39StringRenderer(modeBIP)
+			showBIP39(modeBIP, mnemonics, entropy, renderBIP, false, false)
+		}
+	}
+
+	return nil
+}
+
+// Validates the list of mnemonics to ensure the quantity is correct and that
+// they all exist in the reference BIP39 (English) wordlist. From that list
+// it derives the original entropy.
+// Input:
+// · list of mnemonics as a slice of strings
+// Output:
+// · Error or nil on success
+func Verify(mnemonics []string, asHex bool) error {
 	bipSize := len(mnemonics)
 	modeBIP := getBipLength(bipSize)
 
@@ -69,18 +155,14 @@ func Verify(mnemonics []string) error {
 		var entropy []byte
 		if entropy, err = bip.EntropyFromMnemonic(mnemonics); err == nil {
 			renderBIP := bip39.NewBip39StringRenderer(modeBIP)
-			fmt.Print(renderBIP.FormatMnemonic(mnemonics))
-			fmt.Println("E n t r o p y:")
-			fmt.Print(renderBIP.FormatEntropy(entropy))
-			//renderMnemonic(mnemonics, false)
-			//renderEntropy(modeBIP, entropy)
+			showBIP39(modeBIP, mnemonics, entropy, renderBIP, asHex, false)
 		}
 	}
 
 	return err
 }
 
-func Generate(length int, showSeed bool, withPassphrase string, showPlainList bool) error {
+func Generate(length int, showSeed bool, withPassphrase string, showPlainList, asHex bool) error {
 	var err error = nil
 
 	modeBIP := getBipLength(length)
@@ -91,40 +173,31 @@ func Generate(length int, showSeed bool, withPassphrase string, showPlainList bo
 		renderBIP := bip39.NewBip39StringRenderer(modeBIP)
 
 		mnemonicStr := bip.String()
-		fmt.Println("BIP-39 M n e m o n i c:")
-		if showPlainList {
-			fmt.Println("\t", bip.String())
-		} else {
-			fmt.Print(renderBIP.FormatMnemonic(mnemonics))
-			//renderMnemonic(mnemonics, true)
-		}
-		//renderEntropy(modeBIP, bip.GetEntropy())
-		fmt.Println("E n t r o p y:")
-		fmt.Print(renderBIP.FormatEntropy(bip.GetEntropy()))
+		entropy := bip.GetEntropy()
+		showBIP39(modeBIP, mnemonics, entropy, renderBIP, asHex, showPlainList)
 
 		if showSeed {
-			fmt.Println("BIP-39 S e e d:")
-			bip39Seed := bip.ToSeed(mnemonicStr, withPassphrase)
-			reducedSeed := cmn.CalculateCRC64(bip39Seed)
-			fmt.Printf("\tReduced Seed: %16x (%d)\n", reducedSeed, reducedSeed)
-			fmt.Printf("\tSeed Passphrase: '%s'\n", withPassphrase)
-			if showPlainList {
-				fmt.Println("\t", bip.ToSeedHex(mnemonicStr, withPassphrase))
-			} else {
-				fmt.Println("BIP-39 Hex Seed:")
-				fmt.Print(renderBIP.FormatSeed(bip39Seed))
-			}
+			bip39Seed, reducedSeed := bip.ToSeed(mnemonicStr, withPassphrase)
+			showBIPSeed(bip39Seed, reducedSeed, withPassphrase, renderBIP, asHex, showPlainList)
 		}
 	}
 
 	return err
 }
 
+// Usage information in the form of command-line examples.
+func Usage() {
+	name := path.Base(os.Args[0])
+	fmt.Printf("Usage of %s\n", name)
+	fmt.Printf("\t%s [OPTIONS] -generate {12|15|18|21|24} [-seed [-passphrase 'TEXT']]\n", name)
+	fmt.Printf("\t%s [OPTIONS] -verify 'MNEMONIC LIST'\n", name)
+	fmt.Printf("\t%s [OPTIONS] -verify 'HEX_ENTROPY_STRING'\n", name)
+}
+
+// Shows usage information and information about every parameter.
 func Help() {
 	flag.Usage()
-	fmt.Println("Examples:")
-	fmt.Println("\tbip39 -generate {12|15|18|21|24} [-seed [-passphrase 'TEXT']] [-plain]")
-	fmt.Println("\tbip39 -verify 'MNEMONIC LIST'")
+	flag.PrintDefaults()
 }
 
 /* ----------------------------------------------------------------
@@ -132,14 +205,16 @@ func Help() {
  *-----------------------------------------------------------------*/
 
 func main() {
-	var flgHelp, flgVerify, flgSeed, flgPlain bool
+	var flgHelp, flgVerify, flgSeed, flgPlain, flgHex bool
 	var flgSize int
 	var flgPassphrase string
+	flag.Usage = Usage
 	// Global
 	flag.BoolVar(&flgHelp, "help", false, "This help")
 	flag.BoolVar(&flgPlain, "plain", false, "Show mnemonics as one string")
+	flag.BoolVar(&flgHex, "hex", false, "Display entropy as Hex string")
 	// Generate
-	flag.IntVar(&flgSize, "generate", 0, "Mnemonic sentence length (12/15/18/21/24)")
+	flag.IntVar(&flgSize, "generate", 0, "Mnemonic sentence length (12|15|18|21|24)")
 	flag.BoolVar(&flgSeed, "seed", false, "Show seed (for -generate)")
 	flag.StringVar(&flgPassphrase, "passphrase", "", "Passphrase to protect seed (with -generate and -seed)")
 	// Verify
@@ -168,13 +243,23 @@ func main() {
 			println("ignoring -seed")
 		}
 
-		words := strings.Split(flag.Arg(0), string(WORD_SEP))
-		if err := Verify(words); err != nil {
+		if err := VerifyEntropy(flag.Arg(0)); errors.Is(err, ErrHexDecode) {
+			// Argument 0 is not a hex string, thus not an Entropy string.
+			// Proceed as if it is a Mnemonic sentence
+			words := strings.Fields(flag.Arg(0))
+			if err := Verify(words, flgHex); err != nil {
+				app.DieWithError(err, EXITCODE_VERIFY)
+			}
+		} else if err != nil {
 			app.DieWithError(err, EXITCODE_VERIFY)
 		}
 	} else if flgSize > 0 {
-		if err := Generate(flgSize, flgSeed, flgPassphrase, flgPlain); err != nil {
+		if err := Generate(flgSize, flgSeed, flgPassphrase, flgPlain, flgHex); err != nil {
 			app.DieWithError(err, EXITCODE_GENERATE)
 		}
+	}
+
+	if !app.IsPipedInput() {
+		z.BuyMeCoffee()
 	}
 }

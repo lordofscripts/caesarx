@@ -13,6 +13,7 @@ import (
 	z "lordofscripts/caesarx"
 	"lordofscripts/caesarx/app"
 	"lordofscripts/caesarx/app/mlog"
+	"lordofscripts/caesarx/ciphers/affine"
 	"lordofscripts/caesarx/ciphers/bellaso"
 	"lordofscripts/caesarx/ciphers/caesar"
 	"lordofscripts/caesarx/ciphers/commands"
@@ -20,9 +21,12 @@ import (
 	"lordofscripts/caesarx/cmd"
 	"lordofscripts/caesarx/cmn"
 	"lordofscripts/caesarx/cmn/prefs"
+	"lordofscripts/caesarx/internal/bip39"
 	"lordofscripts/caesarx/internal/crypto"
+	"lordofscripts/caesarx/internal/sched"
 	"os"
 	"strings"
+	"time"
 )
 
 /* ----------------------------------------------------------------
@@ -30,14 +34,15 @@ import (
  *-----------------------------------------------------------------*/
 
 const (
-	FLAG_VARIANT = "variant" // select encoding algorithm
-	FLAG_NGRAM   = "ngram"   // (only for ENCODE) format output as NGram
-	FLAG_OFFSET  = "offset"  // (only for Didimus) numeric offset to main key
-	FLAG_DECODE  = "d"       // operation: DECODE, if not given operation is ENCODE
-	FLAG_KEY     = "key"     // (only for Caesar, Didimus & Fibonacci) main encoding key
-	FLAG_SECRET  = "secret"  // (only for Vigenère & Bellaso) secret password/phrase
-	FLAG_FILE    = "F"       // ENCODE or DECODE files, free argument(s) are filenames
-	FLAG_VERIFY  = "verify"  // (optional) ignored unless -F is used
+	FLAG_VARIANT      = "variant" // select encoding algorithm
+	FLAG_NGRAM        = "ngram"   // (only for ENCODE) format output as NGram
+	FLAG_OFFSET       = "offset"  // (only for Didimus) numeric offset to main key
+	FLAG_DECODE       = "d"       // operation: DECODE, if not given operation is ENCODE
+	FLAG_KEY          = "key"     // (only for Caesar, Didimus & Fibonacci) main encoding key
+	FLAG_SECRET       = "secret"  // (only for Vigenère & Bellaso) secret password/phrase
+	FLAG_FILE         = "F"       // ENCODE or DECODE files, free argument(s) are filenames
+	FLAG_VERIFY       = "verify"  // (optional) ignored unless -F is used
+	FLAG_MESSAGE_DATE = "date"    // (optional) Message date, only with both -d -profile
 )
 
 const (
@@ -80,6 +85,7 @@ type CaesarxOptions struct {
 	VariantVersion string
 	MainKey        cmd.RuneFlag
 	Secret         string
+	MessageDate    *cmd.DateFlag
 	NGramSize      int
 	Offset         int
 	IsDecode       bool
@@ -108,6 +114,7 @@ type Needs uint
  */
 func NewCaesarxOptions(common *cmd.CommonOptions) *CaesarxOptions {
 	opts := &CaesarxOptions{
+		MessageDate:    cmd.NewDateVar("2006-01-02", "2006-Jan-02", "2006-January-02"),
 		ItNeeds:        NeedNone,
 		VariantID:      z.CaesarCipher,
 		VariantVersion: "",
@@ -141,46 +148,95 @@ func (c *CaesarxOptions) initialize() {
 	flag.BoolVar(&c.OptVerify, FLAG_VERIFY, false, "Verify operation (only if -F is used)")
 	flag.Var(&c.MainKey, FLAG_KEY, "Main key")
 	flag.StringVar(&c.Secret, FLAG_SECRET, "", "Secret word/phrase used in Bellaso & Vigenere variants")
+	flag.Var(c.MessageDate, "date", "Encrypted message full date. Use with both -profile and -d only.")
 	flag.Parse()
 
 	// check that user is requesting presets from a profile and that the profile exists. @note perhaps move elsewhere
 	if cmd.AppConfig.IsGood() && c.Common.RequestsProfile() {
+		// Decode with Codebook test, we need the exact date the message was
+		// encrypted to get the correct Caesarium parameters
+		if c.IsDecode && !c.MessageDate.IsSet {
+			mlog.Console.Error("when decoding (-d) with a codebook (-profile) you need to set -date\n")
+			return
+		}
+
 		profileID := c.Common.GetRequestedProfile()
 		if target := cmd.AppConfig.FindProfile(profileID); target != nil {
 			mlog.InfoT("Presets from ", mlog.String("ProfileID", profileID))
+			mlog.Console.Info("Requesting profile '%s'\n", target.Email)
 			// Preset cipher variant
 			c.VariantID = target.Variant
 			// Preset primary alphabet
-			if alpha, handle := cmn.AlphabetNameByPISO(target.LangCode); alpha != nil {
+			var alpha *cmn.Alphabet = nil
+			var handle string
+			if alpha, handle = cmn.AlphabetNameByPISO(target.LangCode); alpha != nil {
 				c.Common.PresetPrimaryAlphabet(handle)
+			} else {
+				mlog.Fatal(z.ERR_PROFILE_CONFIG, "could not get Alpha from profile information")
 			}
 			// Preset slave (optional) alphabet
 			c.Common.PresetSecondaryAlphabet(target.Chained)
-			println("user-profile", "slave", target.Chained)
+			//println("user-profile", "slave", target.Chained)
 			// Preset cipher-specific parameters
 			switch v := target.Params.Item.(type) {
 			case *prefs.CaesarModel:
-				c.MainKey.Value = rune(v.Key)
-				c.MainKey.IsSet = true
+				mlog.Console.Info("With cipher %s\n", c.VariantTag)
 				if c.VariantID == z.DidimusCipher || c.VariantID == z.FibonacciCipher {
-					c.Offset = int(v.Offset)
-					c.ItNeeds = NeedCompositeKey
+					presetDidimusFibonacci(c, rune(v.Key), int(v.Offset))
 				} else {
-					c.ItNeeds = NeedKey
+					presetCaesar(c, rune(v.Key))
 				}
 
 			case *prefs.SecretsModel:
-				c.Secret = v.Secret
-				c.ItNeeds = NeedsSecret
+				mlog.Console.Info("With cipher %s\n", c.VariantTag)
+				presetBellasoVigenere(c, v.Secret)
 
 			case *prefs.AffineModel:
 				mlog.Fatal(z.ERR_PROFILE_CONFIG, "cannot use caesarx app with Affine parameters. Use affine app instead.")
+
+			case *prefs.CaesariumModel:
+				const NO_PASSPHRASE string = ""
+				var modeBIP bip39.Bip39Length
+				var mnemonicSlice []string
+				var bip *bip39.Bip39 = nil
+				var bipSeed uint64 = 0
+
+				// check if the Profile entry has BIP39 mnemonics
+				if v.HasMnemonics() {
+					mnemonicSlice = strings.Fields(v.Mnemonics)
+					modeBIP = bip39.BipWordCountFromMnemonics(v.Mnemonics)
+					bip = bip39.NewBip39(modeBIP, ' ')
+					if err := bip.ValidateMnemonics(mnemonicSlice); err != nil {
+						mlog.Fatal(z.ERR_PROFILE_CONFIG, err)
+					}
+					// generate a reduced seed that we can use to recover the Caesarium
+					_, bipSeed = bip.ToSeedAlt(mnemonicSlice, NO_PASSPHRASE)
+				} else {
+					// The Profile entry has BIP39 entropy
+					var entropia []byte
+					entropia, modeBIP = bip39.BipWordCountFromHexEntropy(v.Entropy)
+					if modeBIP == bip39.Bip39WordsInvalid {
+						mlog.Fatal(z.ERR_PROFILE_CONFIG, "Invalid Caesarium entropy", v.Entropy)
+					}
+					bip = bip39.NewBip39(modeBIP, ' ')
+					var err error
+					if mnemonicSlice, err = bip.GenerateMnemonicFromEntropy(entropia); err != nil {
+						mlog.Fatal(z.ERR_PROFILE_CONFIG, err)
+					}
+					// generate a reduced seed that we can use to recover the Caesarium
+					_, bipSeed = bip.ToSeedAlt(mnemonicSlice, NO_PASSPHRASE)
+				}
+				// generate the recovered Caesarium and preset accordingly
+				warn := c.processCaesarium(target, bipSeed, mnemonicSlice, NO_PASSPHRASE, alpha, time.Now())
+				if warn != nil {
+					c.isReady = false
+				}
 
 			default:
 				msg := fmt.Sprintf("unknown polymorphic parameter type %T on profile %s", v, profileID)
 				mlog.Fatal(z.ERR_PROFILE_CONFIG, msg)
 			}
-			c.setVersion(target.Variant)
+			c.setVersion(c.VariantID)
 		} else {
 			msg := fmt.Sprintf("couldn't find requested profile '%s'", profileID)
 			warn := z.NewWarning(msg, z.CommandPCode, 1)
@@ -195,36 +251,42 @@ func (c *CaesarxOptions) setVersion(variant z.CipherVariant) {
 	case z.CaesarCipher:
 		c.VariantID = z.CaesarCipher
 		c.VariantTag = crypto.ALG_NAME_CAESAR
+		c.VariantVersion = caesar.Info.String()
 		c.fileExt = commands.FILE_EXT_CAESAR
 		c.ItNeeds = NeedKey
 
 	case z.DidimusCipher:
 		c.VariantID = z.DidimusCipher
 		c.VariantTag = crypto.ALG_NAME_DIDIMUS
+		c.VariantVersion = caesar.InfoDidimus.String()
 		c.fileExt = commands.FILE_EXT_DIDIMUS
 		c.ItNeeds = NeedCompositeKey
 
 	case z.FibonacciCipher:
 		c.VariantID = z.FibonacciCipher
 		c.VariantTag = crypto.ALG_NAME_FIBONACCI
+		c.VariantVersion = caesar.InfoFibonacci.String()
 		c.fileExt = commands.FILE_EXT_FIBONACCI
 		c.ItNeeds = NeedKey
 
 	case z.BellasoCipher:
 		c.VariantID = z.BellasoCipher
 		c.VariantTag = crypto.ALG_NAME_BELLASO
+		c.VariantVersion = bellaso.Info.String()
 		c.fileExt = commands.FILE_EXT_BELLASO
 		c.ItNeeds = NeedsSecret
 
 	case z.VigenereCipher:
 		c.VariantID = z.VigenereCipher
 		c.VariantTag = crypto.ALG_NAME_VIGENERE
+		c.VariantVersion = vigenere.Info.String()
 		c.fileExt = commands.FILE_EXT_VIGENERE
 		c.ItNeeds = NeedsSecret
 
 	case z.AffineCipher:
 		c.VariantID = z.AffineCipher
 		c.VariantTag = crypto.ALG_NAME_AFFINE
+		c.VariantVersion = affine.Info.String()
 		c.fileExt = commands.FILE_EXT_AFFINE
 		c.ItNeeds = NeedNone
 	}
@@ -425,4 +487,86 @@ func (c *CaesarxOptions) isValidNGram() bool {
 	}
 
 	return valid
+}
+
+func (c *CaesarxOptions) processCaesarium(recipient *prefs.Recipient, seed uint64, mnemonics []string, passphrase string, alpha *cmn.Alphabet, validFor time.Time) error {
+	var warn error = nil
+	// we need a Caesarium codebook to determine the date's encryption parameters
+	csm := sched.NewCaesarium("Caesarium", alpha, validFor, int64(seed))
+	// and it has to be recovered from the provided BIP39 mnemonic list
+	csm.MakeRecoverableFromList(mnemonics, passphrase)
+	// which cipher should be used. Note: time.Month January == 1 therefore adjust offset
+	cipherMode := csm.CompileYearBook()[int(validFor.Month())-1]
+	// depending on the specified cipher, recover the cipher's parameters for the date
+	dayOffset := validFor.Day() - 1
+	c.VariantID = cipherMode
+	switch cipherMode {
+	case z.CaesarCipher:
+		mlog.Console.Info("With %s from Caesarium\n", cipherMode)
+		var key rune = rune(csm.CompileCaesarBook()[dayOffset])
+		presetCaesar(c, key)
+
+	case z.DidimusCipher:
+		fallthrough
+	case z.FibonacciCipher:
+		mlog.Console.Info("With %s from Caesarium\n", cipherMode)
+		// get the composite, it has offsets with reference to the
+		// selected alphabet
+		composite := csm.CompileBiAlphabeticBook()[dayOffset]
+		// derive the key letter from the alphabet given its 0-offset
+		key := alpha.GetRuneAt(composite.A)
+		presetDidimusFibonacci(c, key, composite.B)
+
+	case z.BellasoCipher:
+		fallthrough
+	case z.VigenereCipher:
+		mlog.Console.Info("With %s from Caesarium\n", cipherMode)
+		// get that day's secret word
+		geheim := csm.CompileWordBook(sched.DEFAULT_SECRET_LENGTH)[dayOffset]
+		presetBellasoVigenere(c, geheim)
+
+	case z.AffineCipher: // @audit This won't be able to process Affine codebook entries!
+		mlog.Console.Info("With %s from Caesarium (aborting)\n", cipherMode)
+		msg := "preconfiguration cannot comply with Affine, it is handled by a affine executable"
+		warn = z.NewWarningAsErr(msg, z.ConfigurationPCode, 0001)
+		mlog.Warn(warn)
+
+	default:
+		mlog.Console.Warn("cannot identify that cipher: %s", cipherMode)
+		msg := fmt.Sprintf("cannot identify that cipher: %s", cipherMode)
+		warn = z.NewWarningAsErr(msg, z.ConfigurationPCode, 0002)
+		mlog.Warn(warn)
+	}
+
+	if warn == nil {
+		mlog.Console.Info("Caesarium codebook entry date: %s\n", validFor.Format("2006-Jan-02"))
+	}
+
+	return warn
+}
+
+/* ----------------------------------------------------------------
+ *							F u n c t i o n s
+ *-----------------------------------------------------------------*/
+
+// preset configuration for Caesar handling
+func presetCaesar(c *CaesarxOptions, key rune) {
+	c.MainKey.Value = key
+	c.MainKey.IsSet = true
+	c.ItNeeds = NeedKey
+}
+
+// preset configuration for Didimus or Fibonacci handling
+func presetDidimusFibonacci(c *CaesarxOptions, key rune, offset int) {
+	c.MainKey.Value = key
+	c.MainKey.IsSet = true
+
+	c.Offset = offset
+	c.ItNeeds = NeedCompositeKey
+}
+
+// preset the configuration for Bellaso or Vigenère handling
+func presetBellasoVigenere(c *CaesarxOptions, secret string) {
+	c.Secret = secret
+	c.ItNeeds = NeedsSecret
 }

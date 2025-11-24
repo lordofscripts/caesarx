@@ -20,6 +20,7 @@ const (
 	CommandPCode
 	CommonPCode
 	InternalPCode
+	ConfigurationPCode
 )
 
 /* ----------------------------------------------------------------
@@ -62,11 +63,12 @@ func (w WarningCode) String() string {
 // converts a package enum to its name
 func toPackageName(pkg PackageCode) string { // @note must match iota definition
 	pn := map[PackageCode]string{
-		ApplicationPCode: "Application",
-		CiphersPCode:     "Ciphers",
-		CommandPCode:     "Command",
-		CommonPCode:      "Common",
-		InternalPCode:    "Internal",
+		ApplicationPCode:   "Application",
+		CiphersPCode:       "Ciphers",
+		CommandPCode:       "Command",
+		CommonPCode:        "Common",
+		InternalPCode:      "Internal",
+		ConfigurationPCode: "Configuration",
 	}
 
 	if name, ok := pn[pkg]; ok {

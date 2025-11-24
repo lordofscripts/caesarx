@@ -3,7 +3,7 @@
 %define __cp %{__cp} -r
 
 Name:           caesarx
-Version:        1.2
+Version:        1.3
 Release:        1%{?dist}
 Summary:        CaesarX is a collection of modernized Caesar ciphers for the real world.
 
@@ -27,6 +27,7 @@ go build -tags logx -v -buildmode=pie -o bin/caesar cmd/lite/*.go
 go build -tags logx -v -buildmode=pie -o bin/affine cmd/affine/*go
 go build -tags logx -v -buildmode=pie -o bin/tabularecta cmd/tabularecta/*go
 go build -tags logx -v -buildmode=pie -o bin/codebook cmd/codebook/*go
+go build -tags logx -v -buildmode=pie -o bin/codebook cmd/bip39/*go
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -36,6 +37,7 @@ install -m 0755  bin/caesar $RPM_BUILD_ROOT/%{_bindir}
 install -m 0755  bin/affine $RPM_BUILD_ROOT/%{_bindir}
 install -m 0755  bin/tabularecta $RPM_BUILD_ROOT/%{_bindir}
 install -m 0755  bin/codebook $RPM_BUILD_ROOT/%{_bindir}
+install -m 0755  bin/bip39 $RPM_BUILD_ROOT/%{_bindir}
 ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/didimus
 ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/fibonacci
 ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/bellaso
@@ -60,6 +62,7 @@ rm -f $RPM_BUILD_ROOT/%{_bindir}/vigenere
 rm -f $RPM_BUILD_ROOT/%{_bindir}/affine
 rm -f $RPM_BUILD_ROOT/%{_bindir}/tabularecta
 rm -f $RPM_BUILD_ROOT/%{_bindir}/codebook
+rm -f $RPM_BUILD_ROOT/%{_bindir}/bip39
 rm -f $RPM_BUILD_ROOT/%{_mandir}/man1/%{name}.1.gz
 rm -f $RPM_BUILD_ROOT/%{_mandir}/man1/affine.1.gz
 rm -f $RPM_BUILD_ROOT/%{_mandir}/man1/bellaso.1.gz
@@ -80,6 +83,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/fibonacci
 %{_bindir}/bellaso
 %{_bindir}/vigenere
+%{_bindir}/bip39
 %{_mandir}/man1/%{name}.1.gz
 %{_mandir}/man1/affine.1.gz
 %{_mandir}/man1/bellaso.1.gz
@@ -92,6 +96,9 @@ rm -rf $RPM_BUILD_ROOT
 %license LICENSE.md
 
 %changelog
+* Tue Nov 24 2025 lordofscripts
+- Closed #20 User Profiles now fully supporting Caesarium codebooks
+
 * Tue Nov 11 2025 lordofscripts
 - added -profile CLI flag and support for user encryption profiles
 - added Caesar Lite (caesar)

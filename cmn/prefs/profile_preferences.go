@@ -7,6 +7,7 @@
 package prefs
 
 import (
+	"encoding/hex"
 	"fmt"
 	"lordofscripts/caesarx"
 
@@ -21,6 +22,7 @@ const (
 	// @note changing these require updating user YAML profiles!
 	itemTypeKey          string = "withKey"
 	itemTypeSecret       string = "withSecret"
+	itemTypeCaesarium    string = "withCodebook"
 	itemTypeCoefficients string = "withCoefficients"
 )
 
@@ -85,6 +87,11 @@ type SecretsModel struct {
 	Secret string `yaml:"secret"`
 }
 
+type CaesariumModel struct {
+	Mnemonics string `yaml:"mnemonics,omitempty"`
+	Entropy   string `yaml:"entropy,omitempty"`
+}
+
 /* ----------------------------------------------------------------
  *							C o n s t r u c t o r s
  *-----------------------------------------------------------------*/
@@ -143,6 +150,32 @@ func (sm *SecretsModel) String() string {
 	return fmt.Sprintf("SecretsModel Secret:%s", sm.Secret)
 }
 
+func (csm *CaesariumModel) ItemType() string {
+	return itemTypeCaesarium
+}
+
+func (csm *CaesariumModel) String() string {
+	if len(csm.Entropy) != 0 {
+		return fmt.Sprintf("CodebookModel/E:%s", csm.Entropy)
+	} else {
+		return fmt.Sprintf("CodebookModel/M:%s", csm.Mnemonics)
+	}
+}
+
+// either it has mnemonics or entropy (hex string). It just checks
+// the length as the values are validated when instantiated.
+func (csm *CaesariumModel) HasMnemonics() bool {
+	return len(csm.Mnemonics) != 0
+}
+
+func (csm *CaesariumModel) GetEntropy() []byte {
+	if val, err := hex.DecodeString(csm.Entropy); err == nil {
+		return val
+	} else {
+		return []byte{}
+	}
+}
+
 // implements yaml.Marshaler interface
 func (c CipherItemContainer) MarshalYAML() (any, error) {
 	return map[string]any{
@@ -179,6 +212,13 @@ func (c *CipherItemContainer) UnmarshalYAML(unmarshal func(any) error) error {
 
 	case itemTypeSecret:
 		var params SecretsModel
+		if err := item.Data.Decode(&params); err != nil {
+			return err
+		}
+		c.Item = &params
+
+	case itemTypeCaesarium:
+		var params CaesariumModel
 		if err := item.Data.Decode(&params); err != nil {
 			return err
 		}

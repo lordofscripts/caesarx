@@ -237,9 +237,16 @@ func (b *Bip39) GetEntropy() []byte {
 	return b.entropy
 }
 
+// Same as ToSeed() except it accepts the mnemonics as a slice.
+func (b *Bip39) ToSeedAlt(mnemonics []string, passphrase string) ([]byte, uint64) {
+	mnemonicStr := strings.Join(mnemonics, " ")
+	return b.ToSeed(mnemonicStr, passphrase)
+}
+
 // Generate a cryptographic seed based on the Mnemonic Sentence
-// and Passphrase strings.
-func (b *Bip39) ToSeed(mnemonic, passphrase string) []byte {
+// and Passphrase strings. The 2nd return value is a non-cryptographical
+// reduced seed which is only 64-bits long based on the XXHash64.
+func (b *Bip39) ToSeed(mnemonic, passphrase string) ([]byte, uint64) {
 	// normalize mnemonic
 	mnemonic = norm.NFKD.String(mnemonic)
 	// normalize passphrase
@@ -251,13 +258,19 @@ func (b *Bip39) ToSeed(mnemonic, passphrase string) []byte {
 	// PBKDF2
 	const KEY_LEN_BYTES = 64
 	seed := DeriveKey(mnemonicBytes, passphraseBytes, 2048, KEY_LEN_BYTES)
-	return seed
+
+	// A reduced Seed (64-bit)
+	hasher := NewXXH64(0)
+	hasher.Update(seed)
+	reducedSeed := hasher.Digest()
+
+	return seed, reducedSeed
 }
 
 // Generate a cryptographic seed based on the Mnemonic Sentence
 // and Passphrase strings and return the seed as a Hexadecimal string.
 func (b *Bip39) ToSeedHex(mnemonic, passphrase string) string {
-	binSeed := b.ToSeed(mnemonic, passphrase)
+	binSeed, _ := b.ToSeed(mnemonic, passphrase)
 	return hex.EncodeToString(binSeed)
 }
 

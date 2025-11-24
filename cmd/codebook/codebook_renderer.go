@@ -95,7 +95,7 @@ func NewConsoleCodebookRenderer(year uint, alpha *cmn.Alphabet, title, recovery 
 	genZ := sched.NewCaesarium(title, alpha, dateY, 0)
 	// is recoverability requested? @note preferred to use a BIP39 mnemonic list as recovery parameter value
 	if len(recovery) != 0 {
-		genZ.MakeRecoverable(recovery)
+		genZ.MakeRecoverable(recovery, "") // @audit let user provide a passphrase?
 	}
 
 	return &ConsoleCodebookRenderer{
@@ -303,7 +303,7 @@ func (r *ConsoleCodebookRenderer) RenderMonthPage(cipher caesarx.CipherVariant, 
 		cellDividers = []int{9, 38}
 		fmt.Fprintf(r.sb, "%-16s%s%c\n", "Secret", centerString("Notes", remnant-12), VERT)
 		fmt.Fprintf(r.sb, "%s", boxLineCell(MIDLEFT, MIDRIGHT, HORIZ, HORIZ_CROSS, cellDividers, LEADER_LEN, LINE_WIDTH))
-		keysBV := r.hlp.CompileWordBook(26)
+		keysBV := r.hlp.CompileWordBook(sched.DEFAULT_SECRET_LENGTH)
 		for i := range lastDay {
 			// %Day% %Weekday% │
 			weekday := date.Weekday().String()[0:3] // 1st three letters of the Weekday

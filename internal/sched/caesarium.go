@@ -15,7 +15,9 @@ import (
 	"lordofscripts/caesarx"
 	"lordofscripts/caesarx/app/mlog"
 	"lordofscripts/caesarx/cmn"
+	"lordofscripts/caesarx/internal/bip39"
 	"lordofscripts/caesarx/internal/crypto"
+	"strings"
 	"time"
 )
 
@@ -24,6 +26,9 @@ import (
  *-----------------------------------------------------------------*/
 
 const (
+	// The default Codebook secret word length for Bellaso & Vigenère
+	DEFAULT_SECRET_LENGTH int = 26
+
 	extraOffsetSeed int64 = 98254762
 )
 
@@ -99,9 +104,22 @@ func (c *Caesarium) String() string {
 // a valid use case!), then use this method so that given the same
 // recovery secret, the Caesarium will generate the same codebook
 // as the original.
-func (c *Caesarium) MakeRecoverable(recovery string) *Caesarium {
-	c.userSeed = Hash64(recovery)
-	c.repeatable = true
+func (c *Caesarium) MakeRecoverable(recovery, passphrase string) *Caesarium {
+	mnemonics := strings.Fields(recovery)
+
+	return c.MakeRecoverableFromList(mnemonics, passphrase)
+}
+
+func (c *Caesarium) MakeRecoverableFromList(recovery []string, passphrase string) *Caesarium {
+	if modeBIP, err := bip39.Bip39Words12.Convert(len(recovery)); err == nil {
+		bip := bip39.NewBip39(modeBIP, ' ')
+		_, reducedSeed := bip.ToSeedAlt(recovery, passphrase)
+		c.userSeed = int64(reducedSeed)
+		c.repeatable = true
+	} else {
+		mlog.Error("cannot make recoverable, not a proper BIP39 recovery length", mlog.At())
+	}
+
 	return c
 }
 

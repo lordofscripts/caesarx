@@ -41,17 +41,14 @@ ensure the codebook can be generated at any time by the recipients
 
 Recoverable codebooks can be re-generated through the application or
 website at any time provided that the user specifies the same *recovery
-phrase* used during the genesis (the `-recovery` CLI flag). So, 
+phrase* used during the genesis (the `-bip39` CLI flag). So, 
 provided the application or website exists, your survivor can reveal
 the secret you left for them 15 years after your departure (as an
 example). However, to ensure codebooks can be recovered, the internal
 codebook generation algorithm use a random number generator that is NOT
-cryptographically secure: `math/rand`.
-
-However, rather than using your own made-up recovery phrase/password, I
-advise the user to instead of the `-recovery "PHRASE"` option to use the 
-`-bip39` option which automatically generates a 12-word BIP39 mnemonic
-recovery phrase.
+cryptographically secure: `math/rand`. This alternative uses the same
+BIP39 specification to generate recovery mnemonic sentences used to
+create cryptocurrency wallets, except here it is for the codebook.
 
 ---
 
@@ -162,7 +159,6 @@ lordofscrips@bitbucket:$ codebook -date 2026 -full
 ## 📌 Other CLI options for the Caesarium 
 
 
-- `-recovery STRING` a recovery phrase to generate a recoverable Caesarium. (to be deprecated)
 - `-bip39` generates and use a self-generated random mnemonic recovery phrase 
    according to BIP39
 - `-title STRING` The title (defaults to "Caesarium")

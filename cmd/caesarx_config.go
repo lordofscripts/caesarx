@@ -89,6 +89,7 @@ func newDefaultConfig() *Config {
 		prefs.NewProfileWithCipher("you+b@bitbucket.com", "Sample profile 4", caesarx.BellasoCipher, cmn.ISO_DE, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.SecretsModel{Secret: "EinGeheim"}),
 		prefs.NewProfileWithCipher("you+v@bitbucket.com", "Sample profile 5", caesarx.VigenereCipher, cmn.ISO_IT, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.SecretsModel{Secret: "BuongiornoaTutti"}),
 		prefs.NewProfileWithCipher("you+a@bitbucket.com", "Sample profile 6", caesarx.AffineCipher, cmn.ISO_GR, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.AffineModel{A: 7, B: 12, Ap: 21}),
+		prefs.NewProfileWithCipher("you+y@bitbucket.com", "Sample profile 7", caesarx.NoCipher, cmn.ISO_EN, cmn.ALPHA_NAME_NUMBERS_ARABIC_EXTENDED, &prefs.CaesariumModel{Entropy: "4a4e5e0d41c05d34f9a1dca8efc0c0d8aa34f8b4ecf1ffd5b08fff7c53530662"}),
 	}
 
 	return &Config{
