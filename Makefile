@@ -56,7 +56,7 @@ BIN_OUT_6=$(GO_PROJ_BIN)/$(EXEC_BIP)$(EXE_EXT)
 # - Main Targets
 .PHONY: clean build
 
-all: tabula, caesar, affine, lite, bip39
+all: tabula caesar affine lite bip39
 	
 allwin:
 	$(GO) build $(GO_TAGS) $(GOFLAGS) -o ${BIN_OUT_2}.exe ${MAIN_CAESAR}
