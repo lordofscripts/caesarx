@@ -38,10 +38,10 @@ install -m 0755  bin/affine $RPM_BUILD_ROOT/%{_bindir}
 install -m 0755  bin/tabularecta $RPM_BUILD_ROOT/%{_bindir}
 install -m 0755  bin/codebook $RPM_BUILD_ROOT/%{_bindir}
 install -m 0755  bin/bip39 $RPM_BUILD_ROOT/%{_bindir}
-ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/didimus
-ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/fibonacci
-ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/bellaso
-ln -s %{_bindir}/%{name} %{buildroot}%{_bindir}/vigenere
+ln -s -r %{_bindir}/%{name} %{buildroot}%{_bindir}/didimus
+ln -s -r %{_bindir}/%{name} %{buildroot}%{_bindir}/fibonacci
+ln -s -r %{_bindir}/%{name} %{buildroot}%{_bindir}/bellaso
+ln -s -r %{_bindir}/%{name} %{buildroot}%{_bindir}/vigenere
 #mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}
 #install %{name}rc $RPM_BUILD_ROOT/%{_sysconfdir}
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1/
@@ -91,12 +91,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_mandir}/man1/fibonacci.1.gz
 %{_mandir}/man1/vigenere.1.gz
 #%{_sysconfdir}/%{name}rc
-%doc %{_mandir}/man1/%{name}.1.*
-%doc %{_mandir}/man1/affine.1.*
 %license LICENSE.md
 
 %changelog
-* Tue Nov 24 2025 lordofscripts
+* Mon Nov 24 2025 lordofscripts
 - Closed #20 User Profiles now fully supporting Caesarium codebooks
 
 * Tue Nov 11 2025 lordofscripts
