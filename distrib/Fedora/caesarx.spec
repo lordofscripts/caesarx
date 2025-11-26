@@ -27,7 +27,7 @@ go build -tags logx -v -buildmode=pie -o bin/caesar cmd/lite/*.go
 go build -tags logx -v -buildmode=pie -o bin/affine cmd/affine/*go
 go build -tags logx -v -buildmode=pie -o bin/tabularecta cmd/tabularecta/*go
 go build -tags logx -v -buildmode=pie -o bin/codebook cmd/codebook/*go
-go build -tags logx -v -buildmode=pie -o bin/codebook cmd/bip39/*go
+go build -tags logx -v -buildmode=pie -o bin/bip39 cmd/bip39/*go
 
 %install
 rm -rf $RPM_BUILD_ROOT
