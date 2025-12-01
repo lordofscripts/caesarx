@@ -108,8 +108,7 @@ jobs:
       - name: Get Latest Release
         id: get_release
         run: |
-          RELEASE_JSON=$(gh release list --repo ${{ github.repository }} --limit 1 --json name,id)
-          echo "::set-output name=release_id::$(echo $RELEASE_JSON | jq -r '.[0].id')"
+          RELEASE_JSON=$(gh release list --repo ${{ github.repository }} --limit 1 --json name)
           echo "::set-output name=release_name::$(echo $RELEASE_JSON | jq -r '.[0].name')"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -154,8 +153,7 @@ jobs:
       - name: Get Latest Release
         id: get_release
         run: |
-          RELEASE_JSON=$(gh release list --repo ${{ github.repository }} --limit 1 --json name,id)
-          echo "::set-output name=release_id::$(echo $RELEASE_JSON | jq -r '.[0].id')"
+          RELEASE_JSON=$(gh release list --repo ${{ github.repository }} --limit 1 --json name)
           echo "::set-output name=release_name::$(echo $RELEASE_JSON | jq -r '.[0].name')"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
