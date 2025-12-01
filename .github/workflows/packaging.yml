@@ -8,6 +8,10 @@ on:
     types:
       - completed
 
+permissions:
+  contents: read
+  pull-requests: read
+
 env:
   DIST: clys
   ARCH: x86_64

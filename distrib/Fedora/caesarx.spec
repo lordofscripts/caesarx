@@ -38,10 +38,10 @@ install -m 0755  bin/affine $RPM_BUILD_ROOT/%{_bindir}
 install -m 0755  bin/tabularecta $RPM_BUILD_ROOT/%{_bindir}
 install -m 0755  bin/codebook $RPM_BUILD_ROOT/%{_bindir}
 install -m 0755  bin/bip39 $RPM_BUILD_ROOT/%{_bindir}
-ln -s -r %{_bindir}/%{name} %{buildroot}%{_bindir}/didimus
-ln -s -r %{_bindir}/%{name} %{buildroot}%{_bindir}/fibonacci
-ln -s -r %{_bindir}/%{name} %{buildroot}%{_bindir}/bellaso
-ln -s -r %{_bindir}/%{name} %{buildroot}%{_bindir}/vigenere
+ln -sf %{name} %{buildroot}%{_bindir}/didimus
+ln -sf %{name} %{buildroot}%{_bindir}/fibonacci
+ln -sf %{name} %{buildroot}%{_bindir}/bellaso
+ln -sf %{name} %{buildroot}%{_bindir}/vigenere
 #mkdir -p $RPM_BUILD_ROOT/%{_sysconfdir}
 #install %{name}rc $RPM_BUILD_ROOT/%{_sysconfdir}
 mkdir -p $RPM_BUILD_ROOT/%{_mandir}/man1/
